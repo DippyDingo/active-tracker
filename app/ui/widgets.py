@@ -100,6 +100,8 @@ def _mix(a: QColor, b: QColor, t: float) -> QColor:
 
 
 class MiniChart(QWidget):
+    view_changed = Signal(int, int)
+
     def __init__(self, height: int = 46, parent=None):
         super().__init__(parent)
         self.setFixedHeight(height)
@@ -110,6 +112,10 @@ class MiniChart(QWidget):
         self._hover = -1
         self._progress = 1.0
         self._pulse = 1.0
+        self._visible: int | None = None
+        self._offset = 0
+        self._drag_x: float | None = None
+        self._drag_offset = 0
 
         self._draw_anim = QPropertyAnimation(self, b"progress")
         self._draw_anim.setDuration(900)
@@ -153,7 +159,11 @@ class MiniChart(QWidget):
     def set_values(self, values: list[int], animate: bool = False) -> None:
         self._values = [max(0, int(v)) for v in values]
         self._hover = -1
-        if animate and len(self._values) >= 2:
+        n = len(self._values)
+        if self._visible is not None:
+            self._visible = max(2, min(self._visible, max(n, 2)))
+            self._offset = max(0, n - self._visible)
+        if animate and n >= 2:
             self._drawn_at_least_once = False
             self._draw_anim.stop()
             self._draw_anim.start()
@@ -162,36 +172,70 @@ class MiniChart(QWidget):
             self._drawn_at_least_once = True
         self.update()
 
+    def set_view(self, visible: int | None) -> None:
+        n = len(self._values)
+        self._visible = None if visible is None else max(2, min(int(visible), max(n, 2)))
+        self._offset = max(0, n - self._visible) if self._visible else 0
+        self._hover = -1
+        self._emit_view()
+        self.update()
+
+    def _window(self) -> tuple[int, int]:
+        n = len(self._values)
+        if self._visible is None or n <= self._visible:
+            return 0, n
+        return self._clamp_offset(self._offset), self._visible
+
+    def _clamp_offset(self, off: int) -> int:
+        n = len(self._values)
+        vis = self._visible if self._visible and n > self._visible else n
+        return min(max(int(off), 0), max(0, n - vis))
+
+    def _emit_view(self) -> None:
+        off, vis = self._window()
+        self.view_changed.emit(off, vis)
+
     def _points(self) -> list[QPointF]:
+        off, vis = self._window()
+        vals = self._values[off : off + vis]
         w = max(self.width(), 10)
         h = max(self.height(), 10)
-        n = len(self._values)
+        n = len(vals)
         if n < 2:
             return []
-        vmax = max(max(self._values), 1)
-        pad_l, pad_r, pad_t, pad_b = 3.0, 3.0, 5.0, 4.0
+        vmax = max(max(vals), 1)
+        pad_l, pad_r, pad_t, pad_b = 3.0, 3.0, 5.0, 6.0
         pts = []
-        for i, v in enumerate(self._values):
+        for i, v in enumerate(vals):
             x = pad_l + i * (w - pad_l - pad_r) / (n - 1)
             y = h - pad_b - (v / vmax) * (h - pad_t - pad_b)
             pts.append(QPointF(x, y))
         return pts
 
     def paintEvent(self, event) -> None:
+        try:
+            self._paint(event)
+        except Exception:
+            from .. import config
+
+            config.log_error("MiniChart.paintEvent")
+
+    def _paint(self, event) -> None:
+        off, vis = self._window()
         pts = self._points()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         w = self.width()
         h = self.height()
         anchor = None
-        anchor_idx = self._hover
+        anchor_idx = -1
 
         if not pts:
-            if len(self._values) != 1:
+            if vis != 1:
                 painter.end()
                 return
-            v = self._values[0]
-            pad_t, pad_b = 5.0, 4.0
+            v = self._values[off]
+            pad_t, pad_b = 5.0, 6.0
             bw = min(46.0, w * 0.25)
             x = (w - bw) / 2
             bh = (h - pad_t - pad_b) if v > 0 else 3.0
@@ -206,7 +250,7 @@ class MiniChart(QWidget):
             painter.drawRoundedRect(QRectF(x, y, bw, bh), 6, 6)
             painter.restore()
             anchor = QPointF(x + bw / 2, y)
-            anchor_idx = 0
+            anchor_idx = off
         else:
             path = QPainterPath()
             path.moveTo(pts[0])
@@ -232,8 +276,20 @@ class MiniChart(QWidget):
             painter.restore()
             if 0 <= self._hover < len(pts):
                 anchor = pts[self._hover]
+                anchor_idx = off + self._hover
 
-        if anchor is not None and self._progress >= 0.99:
+        n_total = len(self._values)
+        if self._visible is not None and n_total > self._visible:
+            track = QRectF(2, h - 3.5, w - 4, 2.5)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(255, 255, 255, 18))
+            painter.drawRoundedRect(track, 1.5, 1.5)
+            x0 = 2 + (w - 4) * off / n_total
+            bw = max(14.0, (w - 4) * vis / n_total)
+            painter.setBrush(QColor("#3b82f6"))
+            painter.drawRoundedRect(QRectF(x0, h - 3.5, bw, 2.5), 1.5, 1.5)
+
+        if anchor is not None and self._progress >= 0.99 and anchor_idx >= 0:
             p = anchor
             painter.setPen(QPen(QColor(11, 18, 32), 1.5))
             painter.setBrush(QColor("#60a5fa"))
@@ -260,7 +316,19 @@ class MiniChart(QWidget):
         painter.end()
 
     def mouseMoveEvent(self, event) -> None:
-        if len(self._values) == 1:
+        off, vis = self._window()
+        n = len(self._values)
+        if self._drag_x is not None and n > vis:
+            ppp = max(self.width(), 10) / vis
+            delta = int(round((self._drag_x - event.position().x()) / ppp))
+            new_off = self._clamp_offset(self._drag_offset + delta)
+            if new_off != self._offset:
+                self._offset = new_off
+                self._hover = -1
+                self._emit_view()
+                self.update()
+            return
+        if vis == 1:
             if self._hover != 0 and self._progress >= 0.99:
                 self._hover = 0
                 self.update()
@@ -275,6 +343,47 @@ class MiniChart(QWidget):
         if idx != self._hover:
             self._hover = idx
             self.update()
+
+    def mousePressEvent(self, event) -> None:
+        off, vis = self._window()
+        if event.button() == Qt.LeftButton and len(self._values) > vis:
+            self._drag_x = event.position().x()
+            self._drag_offset = self._offset
+            self.setCursor(Qt.ClosedHandCursor)
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event) -> None:
+        self._drag_x = None
+        self.setCursor(Qt.ArrowCursor)
+        super().mouseReleaseEvent(event)
+
+    def wheelEvent(self, event) -> None:
+        off, vis = self._window()
+        n = len(self._values)
+        if self._visible is None or n <= vis:
+            return
+        if event.modifiers() & Qt.ControlModifier:
+            factor = 0.8 if event.angleDelta().y() > 0 else 1.25
+            new_vis = int(round(vis * factor))
+            new_vis = min(max(new_vis, min(7, n)), n)
+            if new_vis != vis:
+                ratio = min(max(event.position().x() / max(self.width(), 10), 0.0), 1.0)
+                anchor_idx = off + ratio * vis
+                new_off = int(round(anchor_idx - ratio * new_vis))
+                self._visible = new_vis
+                self._offset = self._clamp_offset(new_off)
+                self._hover = -1
+                self._emit_view()
+                self.update()
+        else:
+            step = max(1, vis // 8)
+            d = -step if event.angleDelta().y() > 0 else step
+            new_off = self._clamp_offset(off + d)
+            if new_off != self._offset:
+                self._offset = new_off
+                self._hover = -1
+                self._emit_view()
+                self.update()
 
     def leaveEvent(self, event) -> None:
         if self._hover != -1:
@@ -296,7 +405,6 @@ class AppCard(QFrame):
         self.setProperty("selected", False)
         self.setMinimumHeight(206)
         self.setCursor(Qt.PointingHandCursor)
-        self.setToolTip(f"{name}\n{exe_path}")
 
         self._shown_period = -1
         self._shown_today = -1
