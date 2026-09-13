@@ -75,6 +75,21 @@ def magnifier_icon(color: str = "#9db2c7", size: int = 18) -> QIcon:
     return QIcon(pm)
 
 
+def menu_icon(color: str = "#c3d0dd", size: int = 18) -> QIcon:
+    scale = 3
+    px = size * scale
+    pm = QPixmap(px, px)
+    pm.fill(Qt.transparent)
+    painter = QPainter(pm)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setPen(QPen(QColor(color), 2.2 * scale, Qt.SolidLine, Qt.RoundCap))
+    for y in (4.6, 9.0, 13.4):
+        painter.drawLine(QPointF(2.8 * scale, y * scale), QPointF(15.2 * scale, y * scale))
+    painter.end()
+    pm.setDevicePixelRatio(scale)
+    return QIcon(pm)
+
+
 def _mix(a: QColor, b: QColor, t: float) -> QColor:
     return QColor(
         int(a.red() + (b.red() - a.red()) * t),
