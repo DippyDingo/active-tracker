@@ -43,6 +43,23 @@ def _ensure_first_launch(db: Database) -> None:
     )
 
 
+def _backfill_today_hours(db: Database) -> None:
+    import time
+
+    today = date.today().isoformat()
+    span = max(1, time.localtime().tm_hour + 1)
+    for app_id, total in db.get_day_stats(today).items():
+        diff = total - sum(db.get_hours(app_id, today))
+        if diff <= 0:
+            continue
+        per = diff // span
+        rem = diff - per * span
+        for hour in range(span):
+            add = per + (1 if hour < rem else 0)
+            if add > 0:
+                db.add_hour(app_id, today, hour, add)
+
+
 def _resolve_db_path() -> str:
     db_path = config.get_db_path()
     if db_path and Database.validate(db_path):
@@ -79,6 +96,7 @@ def main() -> int:
 
     db = Database(db_path)
     _ensure_first_launch(db)
+    _backfill_today_hours(db)
     tracker = Tracker(db)
     window = MainWindow(db, tracker)
     window.show()
