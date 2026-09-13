@@ -166,6 +166,7 @@ class InlineEdit(QFrame):
         super().__init__(parent)
         self.setObjectName("inlineEdit")
         self.setFixedHeight(38)
+        self._done = False
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 4, 10, 4)
         self._edit = QLineEdit()
@@ -180,14 +181,37 @@ class InlineEdit(QFrame):
         self._edit.selectAll()
         self._edit.activateWindow()
 
+    def confirm(self) -> None:
+        self._finish_accept(self._edit.text().strip())
+
+    def cancel(self) -> None:
+        self._finish_cancel()
+
+    def _finish_accept(self, text: str) -> None:
+        if self._done:
+            return
+        self._done = True
+        self.accepted.emit(text)
+
+    def _finish_cancel(self) -> None:
+        if self._done:
+            return
+        self._done = True
+        self.cancelled.emit()
+
     def eventFilter(self, obj, event) -> bool:
-        if obj is self._edit and event.type() == QEvent.KeyPress:
-            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-                self.accepted.emit(self._edit.text().strip())
-                return True
-            if event.key() == Qt.Key_Escape:
-                self.cancelled.emit()
-                return True
+        if obj is self._edit:
+            t = event.type()
+            if t == QEvent.KeyPress:
+                if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                    self._finish_accept(self._edit.text().strip())
+                    return True
+                if event.key() == Qt.Key_Escape:
+                    self._finish_cancel()
+                    return True
+            elif t == QEvent.FocusOut:
+                # Потеря фокуса (клик вне поля и т.п.) = отмена, не подтверждение.
+                self._finish_cancel()
         return super().eventFilter(obj, event)
 
 

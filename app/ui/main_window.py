@@ -357,6 +357,7 @@ class MainWindow(QMainWindow):
         self.tracker.flush()
         apps = self.db.list_apps()
 
+        self._discard_inline()
         while self._grid.count():
             item = self._grid.takeAt(0)
             widget = item.widget()
@@ -687,8 +688,33 @@ class MainWindow(QMainWindow):
             self._side_layout.removeWidget(widget)
             widget.deleteLater()
 
+    def _discard_inline(self) -> None:
+        # Тихо убрать редактор без срабатывания сигналов (используется при
+        # перестроении списка, чтобы отложенный FocusOut не трогал удалённые виджеты).
+        edit = self._inline
+        self._inline = None
+        if edit is None:
+            return
+        edit._done = True
+        try:
+            edit.accepted.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+        try:
+            edit.cancelled.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+        self._side_layout.removeWidget(edit)
+        edit.deleteLater()
+
+    def _cancel_active_inline(self) -> None:
+        # Отменить текущее редактирование без сохранения (восстанавливает заголовок).
+        edit = self._inline
+        if edit is not None:
+            edit.cancel()
+
     def _start_inline_create(self, for_app_id: int | None = None) -> None:
-        self._remove_inline()
+        self._cancel_active_inline()
         edit = InlineEdit(placeholder="Имя категории, затем Enter")
         edit.accepted.connect(lambda text: self._finish_create(text, for_app_id))
         edit.cancelled.connect(self._remove_inline)
@@ -720,21 +746,29 @@ class MainWindow(QMainWindow):
         header = self._cat_headers.get(cat_id)
         if header is None:
             return
-        self._remove_inline()
+        self._cancel_active_inline()
         edit = InlineEdit(initial=current_name)
         idx = self._side_layout.indexOf(header)
         header.setVisible(False)
         edit.accepted.connect(lambda text: self._finish_rename(cat_id, text))
         edit.cancelled.connect(lambda: (header.setVisible(True), self._remove_inline()))
         self._inline = edit
-        self._side_layout.insertWidget(idx, edit)
+        if idx >= 0:
+            self._side_layout.insertWidget(idx, edit)
+        else:
+            self._side_layout.addWidget(edit)
         QTimer.singleShot(30, self._focus_inline)
 
     def _finish_rename(self, cat_id: int, text: str) -> None:
+        header = self._cat_headers.get(cat_id)
         self._remove_inline()
         if text:
             self.db.rename_category(cat_id, text)
-        self.refresh_apps()
+            self.refresh_apps()
+        else:
+            # Пустое имя = отмена: вернуть старое название без записи в БД.
+            if header is not None:
+                header.setVisible(True)
 
     def eventFilter(self, obj, event) -> bool:
         if isinstance(obj, SidebarItem):
