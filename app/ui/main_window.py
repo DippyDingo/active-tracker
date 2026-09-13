@@ -80,6 +80,30 @@ class SearchEdit(QLineEdit):
         self.setTextMargins(14, 0, 0, 0)
 
 
+class _PopupItem(QFrame):
+    clicked = Signal()
+
+    def __init__(self, icon, text, parent=None):
+        super().__init__(parent)
+        self.setObjectName("popupItem")
+        self.setCursor(Qt.PointingHandCursor)
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(12, 9, 12, 9)
+        lay.setSpacing(10)
+        ic = QLabel()
+        ic.setFixedSize(18, 18)
+        ic.setPixmap(icon.pixmap(QSize(18, 18)))
+        lay.addWidget(ic)
+        lb = QLabel(text)
+        lb.setObjectName("popupItemText")
+        lay.addWidget(lb, 1)
+
+    def mouseReleaseEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit()
+        super().mouseReleaseEvent(event)
+
+
 class AppMenuPopup(QFrame):
     settings_requested = Signal()
     export_requested = Signal()
@@ -102,26 +126,18 @@ class AppMenuPopup(QFrame):
             ("Экспорт базы данных", self.export_requested, "upload"),
             ("Загрузить базу данных", self.load_requested, "download"),
         ):
-            btn = QPushButton(text)
-            btn.setObjectName("popupItem")
-            btn.setCursor(Qt.PointingHandCursor)
-            btn.setIcon(ui_icon(icon_kind))
-            btn.setIconSize(QSize(16, 16))
-            btn.clicked.connect(signal.emit)
-            layout.addWidget(btn)
+            item = _PopupItem(ui_icon(icon_kind), text)
+            item.clicked.connect(signal.emit)
+            layout.addWidget(item)
 
         sep = QFrame()
         sep.setFixedHeight(1)
         sep.setStyleSheet("background: #1e293b; border: none;")
         layout.addWidget(sep)
 
-        quit_btn = QPushButton("Выход")
-        quit_btn.setObjectName("popupItem")
-        quit_btn.setCursor(Qt.PointingHandCursor)
-        quit_btn.setIcon(ui_icon("power", "#f87171"))
-        quit_btn.setIconSize(QSize(16, 16))
-        quit_btn.clicked.connect(self.quit_requested)
-        layout.addWidget(quit_btn)
+        quit_item = _PopupItem(ui_icon("power", "#f87171"), "Выход")
+        quit_item.clicked.connect(self.quit_requested)
+        layout.addWidget(quit_item)
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
@@ -683,7 +699,9 @@ class MainWindow(QMainWindow):
     def _focus_inline(self) -> None:
         if self._inline is not None:
             self._side_scroll.ensureWidgetVisible(self._inline, 10, 10)
+            self.activateWindow()
             self._inline.focus_edit()
+            QTimer.singleShot(60, self._inline.focus_edit)
 
     def _finish_create(self, text: str, for_app_id: int | None) -> None:
         self._remove_inline()

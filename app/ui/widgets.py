@@ -176,8 +176,9 @@ class InlineEdit(QFrame):
         layout.addWidget(self._edit)
 
     def focus_edit(self) -> None:
-        self._edit.setFocus()
+        self._edit.setFocus(Qt.OtherFocusReason)
         self._edit.selectAll()
+        self._edit.activateWindow()
 
     def eventFilter(self, obj, event) -> bool:
         if obj is self._edit and event.type() == QEvent.KeyPress:
@@ -1257,7 +1258,9 @@ class SidebarItem(QFrame):
     def contextMenuEvent(self, event) -> None:
         if self._menu is not None:
             self._menu.exec(event.globalPos())
-        super().contextMenuEvent(event)
+            event.accept()
+        else:
+            super().contextMenuEvent(event)
 
     def resizeEvent(self, event) -> None:
         self._inner.setGeometry(int(self._slide), 0, int(self.width() - self._slide), self.height())
@@ -1345,4 +1348,6 @@ class CategoryHeader(QFrame):
     def contextMenuEvent(self, event) -> None:
         if self._menu is not None:
             self._menu.exec(event.globalPos())
-        super().contextMenuEvent(event)
+            event.accept()
+        else:
+            super().contextMenuEvent(event)

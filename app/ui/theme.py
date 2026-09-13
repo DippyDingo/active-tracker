@@ -395,17 +395,20 @@ QPushButton#profileBtn {
 QPushButton#profileBtn:hover {
     background: rgba(255, 255, 255, 6%);
 }
-QPushButton#popupItem {
+QFrame#popupItem {
     background: transparent;
     border: none;
     border-radius: 8px;
-    text-align: left;
-    padding: 9px 14px;
+}
+QFrame#popupItem:hover {
+    background: rgba(96, 165, 250, 10%);
+}
+QLabel#popupItemText {
     color: #9ca3af;
     font-weight: 600;
+    background: transparent;
 }
-QPushButton#popupItem:hover {
-    background: rgba(96, 165, 250, 10%);
+QFrame#popupItem:hover QLabel#popupItemText {
     color: #e5e7eb;
 }
 
