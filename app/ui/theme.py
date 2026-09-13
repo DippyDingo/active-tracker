@@ -291,6 +291,11 @@ QFrame#statBox {
     background: rgba(255, 255, 255, 3%);
     padding: 8px;
 }
+QFrame#rangeResult {
+    border-radius: 12px;
+    border: 1px solid #1e293b;
+    background: rgba(255, 255, 255, 3%);
+}
 
 QPushButton {
     background: rgba(255, 255, 255, 5%);

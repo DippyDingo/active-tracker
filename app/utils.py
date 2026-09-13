@@ -5,6 +5,11 @@ MONTHS_GEN = [
     "июля", "августа", "сентября", "октября", "ноября", "декабря",
 ]
 
+SHORT_MONTHS = [
+    "Янв", "Фев", "Мар", "Апр", "Май", "Июн",
+    "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек",
+]
+
 WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
 
 
@@ -32,3 +37,7 @@ def format_compact(total: float) -> str:
 
 def ru_date(d: date) -> str:
     return f"{d.day} {MONTHS_GEN[d.month - 1].capitalize()}"
+
+
+def ru_date_short(d: date) -> str:
+    return f"{d.day} {SHORT_MONTHS[d.month - 1]}"
