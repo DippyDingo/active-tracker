@@ -513,6 +513,8 @@ class RangeChart(QWidget):
         self._buckets: list[tuple[int, int, str, str, int]] = []
         self._offset = 0.0
         self._visible = 7.0
+        self._unit = "days"
+        self._min_visible = 7.0
         self._sel: tuple[int, int] | None = None
         self._sel_float: tuple[float, float] | None = None
         self._hover = -1
@@ -526,8 +528,22 @@ class RangeChart(QWidget):
         self._vis_pts: list[QPointF] = []
 
     def set_data(self, values: list[int], dates: list[date]) -> None:
+        self.set_days(values, dates)
+
+    def set_days(self, values: list[int], dates: list[date]) -> None:
+        self._unit = "days"
+        self._min_visible = 7.0
         self._days = [max(0, int(v)) for v in values]
         self._dates = list(dates)
+        self._sel = None
+        self._sel_float = None
+        self.set_window_days(None)
+
+    def set_hours(self, values: list[int]) -> None:
+        self._unit = "hours"
+        self._min_visible = 4.0
+        self._days = [max(0, int(v)) for v in values]
+        self._dates = []
         self._sel = None
         self._sel_float = None
         self.set_window_days(None)
@@ -569,7 +585,7 @@ class RangeChart(QWidget):
         if days is None:
             vis = float(n)
         else:
-            vis = min(max(float(days), self.MIN_VISIBLE), float(n))
+            vis = min(max(float(days), self._min_visible), float(n))
         self._visible = vis
         self._offset = float(n) - vis
         self._clamp_view()
@@ -578,14 +594,21 @@ class RangeChart(QWidget):
 
     def _clamp_view(self) -> None:
         n = self._n()
-        max_vis = max(float(n), self.MIN_VISIBLE)
-        self._visible = min(max(self._visible, self.MIN_VISIBLE), max_vis)
+        max_vis = max(float(n), self._min_visible)
+        self._visible = min(max(self._visible, self._min_visible), max_vis)
         self._offset = min(max(self._offset, 0.0), max(0.0, n - self._visible))
 
     def _rebuild_buckets(self) -> None:
         n = self._n()
         if n == 0:
             self._buckets = []
+            return
+        buckets: list[tuple[int, int, str, str, int]] = []
+        if self._unit == "hours":
+            for i, v in enumerate(self._days):
+                label = f"{i:02d}:00"
+                buckets.append((i, i + 1, f"{i:02d}", label, v))
+            self._buckets = buckets
             return
         vis = self._visible
         unit = "day" if vis <= 90 else ("week" if vis <= 730 else "month")
