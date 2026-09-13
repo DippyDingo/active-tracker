@@ -173,7 +173,7 @@ class AddPanel(QFrame):
         self._search.setAttribute(Qt.WA_InputMethodEnabled, False)
         self._search.setInputMethodHints(Qt.ImhNoAutoUppercase)
         self._search.addAction(magnifier_icon(), QLineEdit.LeadingPosition)
-        self._search.setTextMargins(6, 0, 0, 0)
+        self._search.setTextMargins(14, 0, 0, 0)
         self._search.textChanged.connect(self._apply_filter)
         layout.addWidget(self._search)
 
