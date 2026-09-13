@@ -178,6 +178,10 @@ QFrame#catHeader {
 QFrame#catHeader:hover {
     background: rgba(255, 255, 255, 4%);
 }
+QFrame#catHeader[droptarget="true"] {
+    background: rgba(96, 165, 250, 12%);
+    border: 1px solid rgba(96, 165, 250, 60%);
+}
 QLabel#catName {
     color: #9ca3af;
     font-size: 11px;
