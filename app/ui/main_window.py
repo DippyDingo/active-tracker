@@ -251,11 +251,7 @@ class MainWindow(QMainWindow):
         add_btn.setObjectName("primary")
         add_btn.setCursor(Qt.PointingHandCursor)
         add_btn.clicked.connect(self._open_add)
-        settings_btn = QPushButton("⚙  Настройки")
-        settings_btn.setCursor(Qt.PointingHandCursor)
-        settings_btn.clicked.connect(self._open_settings)
         buttons.addWidget(add_btn)
-        buttons.addWidget(settings_btn)
         layout.addLayout(buttons)
 
         root_layout.addWidget(sidebar)
@@ -381,7 +377,7 @@ class MainWindow(QMainWindow):
 
             item = QListWidgetItem()
             widget = SidebarItem(row.name, row.icon)
-            item.setSizeHint(QSize(0, 52))
+            item.setSizeHint(QSize(0, 46))
             item.setData(Qt.UserRole, row.id)
             self._sidebar_list.addItem(item)
             self._sidebar_list.setItemWidget(item, widget)
@@ -484,9 +480,6 @@ class MainWindow(QMainWindow):
             card.set_period_seconds(self._base.get(app_id, 0) + today_live, animate=True)
             card.set_chart(self._series.get(app_id, [0] * 6) + [today_live], animate=True)
         self._update_values(animate_header=True)
-        for app_id, (_item, widget) in self._side_items.items():
-            today_live = today_db.get(app_id, 0) + self.tracker.pending_seconds(app_id)
-            widget.set_time(format_compact(self._base.get(app_id, 0) + today_live))
 
     def _on_sidebar_changed(self, current, _previous) -> None:
         if current is None:
