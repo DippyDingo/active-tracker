@@ -171,6 +171,9 @@ class MainWindow(QMainWindow):
         self._uncat_header: QLabel | None = None
         self._collapsed: set[int] = set()
         self._inline: InlineEdit | None = None
+        self._side_drag: dict | None = None
+        self._side_ghost: QLabel | None = None
+        self._drop_hint = None
         self._rows_meta: dict[int, object] = {}
         self._order: list[int] = []
         self._names: dict[int, str] = {}
@@ -352,6 +355,9 @@ class MainWindow(QMainWindow):
         self._cat_headers.clear()
         self._uncat_header = None
         self._inline = None
+        self._side_drag = None
+        self._destroy_side_ghost()
+        self._drop_hint = None
         self._rows_meta.clear()
         self._order.clear()
         self._names.clear()
@@ -459,10 +465,16 @@ class MainWindow(QMainWindow):
                         uncat_visible += 1
                     else:
                         visible_per_cat[cat_id] += 1
-        for cat_id, header in self._cat_headers.items():
-            header.setVisible(visible_per_cat.get(cat_id, 0) > 0)
-        if self._uncat_header is not None:
-            self._uncat_header.setVisible(uncat_visible > 0)
+        if self._filter:
+            for cat_id, header in self._cat_headers.items():
+                header.setVisible(visible_per_cat.get(cat_id, 0) > 0)
+            if self._uncat_header is not None:
+                self._uncat_header.setVisible(uncat_visible > 0)
+        else:
+            for header in self._cat_headers.values():
+                header.setVisible(True)
+            if self._uncat_header is not None:
+                self._uncat_header.setVisible(True)
 
     def _on_filter_changed(self, text: str) -> None:
         self._apply_filter(text)
@@ -523,6 +535,7 @@ class MainWindow(QMainWindow):
             self._cat_rows[cat_id] = []
             for row in rows:
                 item = self._make_side_item(row)
+                self._side_layout.addWidget(item)
                 if collapsed:
                     item.setVisible(False)
                 self._cat_rows[cat_id].append(item)
@@ -548,6 +561,7 @@ class MainWindow(QMainWindow):
         item = SidebarItem(row.name, row.icon)
         item.clicked.connect(lambda app_id=row.id: self._on_side_row_clicked(app_id))
         item.set_context_menu(self._app_menu(row.id))
+        item.installEventFilter(self)
         self._side_items[row.id] = item
         return item
 
@@ -564,6 +578,10 @@ class MainWindow(QMainWindow):
         header.set_arrow(collapsed)
         for item in self._cat_rows.get(cat_id, []):
             item.setVisible(not collapsed)
+
+    def _move_app(self, app_id: int, cat_id: int | None) -> None:
+        self.db.set_app_category(app_id, cat_id)
+        self.refresh_apps()
 
     def _delete_category(self, cat_id: int, cat_name: str) -> None:
         box = QMessageBox(self)
@@ -582,7 +600,7 @@ class MainWindow(QMainWindow):
     def _sidebar_context_menu(self, pos: QPoint) -> None:
         menu = QMenu(self)
         add_action = menu.addAction(ui_icon("plus"), "Добавить приложение")
-        add_action.triggered.connect(self._open_add)
+        add_action.triggered.connect(lambda: self._open_add())
         cat_action = menu.addAction(ui_icon("folder"), "Создать категорию")
         cat_action.triggered.connect(lambda: self._start_inline_create(None))
         menu.exec(self._side_container.mapToGlobal(pos))
@@ -612,6 +630,8 @@ class MainWindow(QMainWindow):
 
     def _category_menu(self, cat_id: int, cat_name: str) -> QMenu:
         menu = QMenu(self)
+        add_here_action = menu.addAction(ui_icon("plus"), "Добавить приложение сюда")
+        add_here_action.triggered.connect(lambda: self._open_add(cat_id))
         rename_action = menu.addAction(ui_icon("pen"), "Переименовать")
         delete_action = menu.addAction(ui_icon("trash", "#f87171"), "Удалить")
         rename_action.triggered.connect(lambda: self._start_inline_rename(cat_id, cat_name))
@@ -665,6 +685,10 @@ class MainWindow(QMainWindow):
         self.refresh_apps()
 
     def eventFilter(self, obj, event) -> bool:
+        if isinstance(obj, SidebarItem):
+            if self._side_item_event(obj, event):
+                return True
+            return super().eventFilter(obj, event)
         if isinstance(obj, AppCard) and obj.app_id in self._cards:
             etype = event.type()
             if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
@@ -685,6 +709,7 @@ class MainWindow(QMainWindow):
                         if (pos - self._drag["start"]).manhattanLength() > 14:
                             self._drag["dragging"] = True
                             self.setCursor(Qt.ClosedHandCursor)
+                            obj.grabMouse()
                             self._start_drag(self._drag["app_id"], pos, self._drag["grab"])
                     if self._drag["dragging"]:
                         self._move_ghost(pos)
@@ -697,6 +722,7 @@ class MainWindow(QMainWindow):
                     self._drag = None
                     self.setCursor(Qt.ArrowCursor)
                     if was_dragging:
+                        obj.releaseMouse()
                         self._end_drag(app_id)
                         self._persist_order()
                     else:
@@ -719,11 +745,9 @@ class MainWindow(QMainWindow):
         ghost.setPixmap(pm)
         ghost.setFixedSize(host.size())
         ghost.setAttribute(Qt.WA_TransparentForMouseEvents)
-        shadow = QGraphicsDropShadowEffect(ghost)
-        shadow.setBlurRadius(34)
-        shadow.setOffset(0, 14)
-        shadow.setColor(QColor(2, 6, 23, 190))
-        ghost.setGraphicsEffect(shadow)
+        opacity = QGraphicsOpacityEffect(ghost)
+        opacity.setOpacity(0.8)
+        ghost.setGraphicsEffect(opacity)
         ghost.show()
         ghost.raise_()
         self._drag_ghost = ghost
@@ -739,7 +763,9 @@ class MainWindow(QMainWindow):
         if self._drag_ghost is None or self._drag is None:
             return
         local = self.mapFromGlobal(global_pos - self._drag["grab"])
-        self._drag_ghost.move(local)
+        x = min(max(local.x(), 0), max(0, self.width() - self._drag_ghost.width()))
+        y = min(max(local.y(), 0), max(0, self.height() - self._drag_ghost.height()))
+        self._drag_ghost.move(x, y)
 
     def _end_drag(self, app_id: int) -> None:
         host = self._hosts.get(app_id)
@@ -785,6 +811,145 @@ class MainWindow(QMainWindow):
         except Exception:
             config.log_error("MainWindow._persist_order")
 
+    def _app_id_for_item(self, item: SidebarItem) -> int | None:
+        for app_id, widget in self._side_items.items():
+            if widget is item:
+                return app_id
+        return None
+
+    def _side_item_event(self, item: SidebarItem, event) -> bool:
+        etype = event.type()
+        if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
+            app_id = self._app_id_for_item(item)
+            if app_id is not None:
+                self._side_drag = {
+                    "app_id": app_id,
+                    "item": item,
+                    "start": event.globalPosition().toPoint(),
+                    "grab": event.position().toPoint() + item.pos(),
+                    "dragging": False,
+                }
+        elif etype == QEvent.MouseMove and self._side_drag is not None:
+            if self._side_drag["item"] is item and event.buttons() & Qt.LeftButton:
+                pos = event.globalPosition().toPoint()
+                if not self._side_drag["dragging"]:
+                    if (pos - self._side_drag["start"]).manhattanLength() > 12:
+                        self._side_drag["dragging"] = True
+                        item.grabMouse()
+                        self.setCursor(Qt.ClosedHandCursor)
+                        self._start_side_ghost(item, pos)
+                if self._side_drag["dragging"]:
+                    self._move_side_ghost(pos)
+                    self._set_drop_hint(self._side_drop_target_at(pos))
+                return True
+        elif etype == QEvent.MouseButtonRelease and self._side_drag is not None:
+            if self._side_drag["item"] is item:
+                state = self._side_drag
+                self._side_drag = None
+                self.setCursor(Qt.ArrowCursor)
+                if state["dragging"]:
+                    item.releaseMouse()
+                    self._destroy_side_ghost()
+                    target = self._side_drop_target_at(event.globalPosition().toPoint())
+                    self._set_drop_hint(None)
+                    self._apply_side_drop(state["app_id"], target)
+                    return True
+        return False
+
+    def _start_side_ghost(self, item: SidebarItem, global_pos: QPoint) -> None:
+        pm = item.grab()
+        dpr = pm.devicePixelRatioF() or 1.0
+        pm = pm.scaled(
+            int(item.width() * dpr), int(item.height() * dpr),
+            Qt.IgnoreAspectRatio, Qt.SmoothTransformation,
+        )
+        pm.setDevicePixelRatio(dpr)
+        ghost = QLabel(self)
+        ghost.setPixmap(pm)
+        ghost.setFixedSize(item.size())
+        ghost.setAttribute(Qt.WA_TransparentForMouseEvents)
+        opacity = QGraphicsOpacityEffect(ghost)
+        opacity.setOpacity(0.75)
+        ghost.setGraphicsEffect(opacity)
+        ghost.show()
+        ghost.raise_()
+        self._side_ghost = ghost
+        self._move_side_ghost(global_pos)
+
+    def _move_side_ghost(self, global_pos: QPoint) -> None:
+        ghost = self._side_ghost
+        if ghost is None or self._side_drag is None:
+            return
+        local = self.mapFromGlobal(global_pos - self._side_drag["grab"])
+        x = min(max(local.x(), 0), max(0, self.width() - ghost.width()))
+        y = min(max(local.y(), 0), max(0, self.height() - ghost.height()))
+        ghost.move(x, y)
+
+    def _destroy_side_ghost(self) -> None:
+        if self._side_ghost is not None:
+            self._side_ghost.deleteLater()
+            self._side_ghost = None
+
+    def _side_drop_target_at(self, global_pos: QPoint):
+        container = self._side_container
+        local = container.mapFromGlobal(global_pos)
+        if not container.rect().contains(local):
+            return None
+        for cat_id, header in self._cat_headers.items():
+            if header.isVisible() and header.geometry().contains(local):
+                return ("cat", cat_id)
+            for row in self._cat_rows.get(cat_id, []):
+                if row.isVisible() and row.geometry().contains(local):
+                    return ("cat", cat_id)
+        if self._uncat_header is not None and self._uncat_header.isVisible():
+            if self._uncat_header.geometry().contains(local):
+                return ("uncat", None)
+            for app_id, item in self._side_items.items():
+                meta = self._rows_meta.get(app_id)
+                if (
+                    meta is not None
+                    and meta.category_id is None
+                    and item.isVisible()
+                    and item.geometry().contains(local)
+                ):
+                    return ("uncat", None)
+        return None
+
+    def _apply_side_drop(self, app_id: int, target) -> None:
+        if target is None:
+            return
+        meta = self._rows_meta.get(app_id)
+        if meta is None:
+            return
+        kind, cat_id = target
+        new_cat = cat_id if kind == "cat" else None
+        if meta.category_id == new_cat:
+            return
+        self.db.set_app_category(app_id, new_cat)
+        self.refresh_apps()
+
+    def _set_drop_hint(self, target) -> None:
+        widget = None
+        if target is not None:
+            kind, cat_id = target
+            widget = self._cat_headers.get(cat_id) if kind == "cat" else self._uncat_header
+        if self._drop_hint is widget:
+            return
+        old = self._drop_hint
+        self._drop_hint = widget
+        if isinstance(old, CategoryHeader):
+            old.setProperty("droptarget", False)
+            old.style().unpolish(old)
+            old.style().polish(old)
+        elif old is not None:
+            old.setStyleSheet("")
+        if isinstance(widget, CategoryHeader):
+            widget.setProperty("droptarget", True)
+            widget.style().unpolish(widget)
+            widget.style().polish(widget)
+        elif widget is not None:
+            widget.setStyleSheet("background: rgba(96, 165, 250, 10%); border-radius: 8px;")
+
     def _show_modal(self, panel, start_rect: QRect | None = None, on_closed=None) -> ModalOverlay | None:
         if self._overlay is not None:
             self._pending_modal = (panel, start_rect, on_closed)
@@ -805,15 +970,17 @@ class MainWindow(QMainWindow):
             self._pending_modal = None
             self._show_modal(panel, start_rect, on_closed)
 
-    def _open_add(self) -> None:
+    def _open_add(self, cat_id: int | None = None) -> None:
         existing = {row.exe_path for row in self.db.list_apps()}
         panel = AddPanel(existing, self)
-        panel.add_requested.connect(self._on_add_request)
+        panel.add_requested.connect(lambda app: self._on_add_request(app, cat_id))
         self._show_modal(panel, on_closed=lambda: (panel.shutdown(), self.refresh_apps()))
 
-    def _on_add_request(self, app) -> None:
+    def _on_add_request(self, app, cat_id: int | None = None) -> None:
         icon_bytes = win32_utils.extract_icon_png(app.icon_path, app.icon_index, 64)
-        self.db.add_app(app.name, app.exe_path, icon_bytes)
+        new_id = self.db.add_app(app.name, app.exe_path, icon_bytes)
+        if new_id is not None and cat_id is not None:
+            self.db.set_app_category(new_id, cat_id)
         self.refresh_apps()
 
     def _open_settings(self) -> None:
