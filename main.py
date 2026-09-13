@@ -77,14 +77,14 @@ def main() -> int:
     if sys.platform == "win32":
         try:
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                "DippyDingo.ActiveTracker"
+                "DippyDingo.Nodexy"
             )
         except Exception:
             pass
 
     qt = QApplication(sys.argv)
-    qt.setApplicationName("Active Tracker")
-    qt.setOrganizationName("ActiveTracker")
+    qt.setApplicationName("Nodexy")
+    qt.setOrganizationName("Nodexy")
     qt.setStyleSheet(theme.QSS)
     qt.setWindowIcon(theme.load_app_icon())
     qt.setQuitOnLastWindowClosed(False)
