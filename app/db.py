@@ -61,6 +61,7 @@ class Database:
         self._conn = sqlite3.connect(str(self.path))
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA journal_mode=WAL")
+        self._conn.execute("PRAGMA synchronous=NORMAL")
         self._conn.execute("PRAGMA foreign_keys=ON")
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
@@ -219,6 +220,23 @@ class Database:
     def get_day_stats(self, day: str) -> dict[int, int]:
         rows = self._conn.execute("SELECT app_id, seconds FROM stats WHERE day=?", (day,))
         return {r["app_id"]: r["seconds"] for r in rows}
+
+    def query_app_stats(
+        self, app_id: int, start_day: str | None = None, end_day: str | None = None
+    ) -> list[tuple[str, int]]:
+        sql = "SELECT day, seconds FROM stats WHERE app_id=?"
+        args: list = [app_id]
+        if start_day is not None:
+            sql += " AND day >= ?"
+            args.append(start_day)
+        if end_day is not None:
+            sql += " AND day <= ?"
+            args.append(end_day)
+        return [(r["day"], r["seconds"]) for r in self._conn.execute(sql, args)]
+
+    def get_min_day(self) -> str | None:
+        row = self._conn.execute("SELECT MIN(day) AS day FROM stats").fetchone()
+        return row["day"] if row else None
 
     def query_stats(
         self, start_day: str | None = None, end_day: str | None = None

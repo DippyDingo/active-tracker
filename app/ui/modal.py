@@ -1,7 +1,6 @@
 from PySide6.QtCore import (
     QEasingCurve,
     QEvent,
-    QParallelAnimationGroup,
     QPoint,
     QPropertyAnimation,
     QRect,
@@ -16,7 +15,7 @@ from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 class ModalOverlay(QWidget):
     closed = Signal()
 
-    def __init__(self, host: QWidget, panel: QWidget, start_rect: QRect | None = None):
+    def __init__(self, host: QWidget, panel: QWidget):
         super().__init__(host)
         self._host = host
         self._panel = panel
@@ -33,16 +32,8 @@ class ModalOverlay(QWidget):
         target.moveCenter(QPoint(host.width() // 2, host.height() // 2))
         self._target = target
 
-        if start_rect is not None:
-            self._start = QRect(start_rect)
-        else:
-            self._start = QRect(target)
-            dw = int(target.width() * 0.04)
-            dh = int(target.height() * 0.04)
-            self._start.adjust(dw, dh, -dw, -dh)
-
         self.setGeometry(host.rect())
-        panel.setGeometry(self._start)
+        panel.setGeometry(target)
         host.installEventFilter(self)
 
         if hasattr(panel, "close_requested"):
@@ -57,21 +48,14 @@ class ModalOverlay(QWidget):
         self.raise_()
         self.setFocus(Qt.PopupFocusReason)
 
-        group = QParallelAnimationGroup(self)
         fade = QPropertyAnimation(self._opacity, b"opacity")
-        fade.setDuration(170)
+        fade.setDuration(160)
         fade.setStartValue(0.0)
         fade.setEndValue(1.0)
-        move = QPropertyAnimation(panel, b"geometry")
-        move.setDuration(230)
-        move.setStartValue(self._start)
-        move.setEndValue(target)
-        move.setEasingCurve(QEasingCurve.OutCubic)
-        group.addAnimation(fade)
-        group.addAnimation(move)
-        group.finished.connect(self._on_opened)
-        self._group = group
-        group.start()
+        fade.setEasingCurve(QEasingCurve.OutCubic)
+        fade.finished.connect(self._on_opened)
+        self._group = fade
+        fade.start()
 
     def _on_opened(self) -> None:
         self._panel.setGraphicsEffect(None)
@@ -105,26 +89,15 @@ class ModalOverlay(QWidget):
             effect.setOpacity(1.0)
             self._panel.setGraphicsEffect(effect)
             self._opacity = effect
-        shrink = QRect(self._target)
-        dw = int(shrink.width() * 0.04)
-        dh = int(shrink.height() * 0.04)
-        shrink.adjust(dw, dh, -dw, -dh)
 
-        group = QParallelAnimationGroup(self)
         fade = QPropertyAnimation(self._opacity, b"opacity")
-        fade.setDuration(150)
+        fade.setDuration(130)
         fade.setStartValue(self._opacity.opacity())
         fade.setEndValue(0.0)
-        move = QPropertyAnimation(self._panel, b"geometry")
-        move.setDuration(150)
-        move.setStartValue(self._panel.geometry())
-        move.setEndValue(shrink)
-        move.setEasingCurve(QEasingCurve.InCubic)
-        group.addAnimation(fade)
-        group.addAnimation(move)
-        group.finished.connect(self._on_closed)
-        self._group = group
-        group.start()
+        fade.setEasingCurve(QEasingCurve.InCubic)
+        fade.finished.connect(self._on_closed)
+        self._group = fade
+        fade.start()
 
     def _on_closed(self) -> None:
         self.closed.emit()
