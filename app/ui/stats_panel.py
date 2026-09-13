@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -16,26 +15,25 @@ from PySide6.QtWidgets import (
 from ..db import Database
 from ..tracker import Tracker
 from ..utils import format_compact, ru_date, ru_date_short
-from .widgets import MiniChart, RangeChart, pixmap_from_png, rounded_pixmap, ui_icon
+from .widgets import RangeChart, pixmap_from_png, rounded_pixmap, ui_icon
 
 PERIODS = [
     ("Сегодня", 1, "СЕГОДНЯ"),
     ("7 дней", 7, "7 ДНЕЙ"),
-    ("30 дней", 30, "30 ДНЕЙ"),
+    ("2 недели", 14, "2 НЕДЕЛИ"),
+    ("Месяц", 30, "МЕСЯЦ"),
+    ("Год", 365, "ГОД"),
     ("Всё время", 0, "ВСЁ ВРЕМЯ"),
 ]
 
-PRESETS = [
-    ("Неделя", 7),
-    ("Месяц", 30),
-    ("Год", 365),
-    ("Всё", None),
-]
+NO_SELECTION_HINT = "Выделение не выбрано — протяните по графику, чтобы посчитать время за период"
 
-SELECT_HINT = (
-    "Протяните по графику, чтобы выделить период  ·  колесо — зум  ·  "
-    "Shift+колесо / пробел+драг — перемотка"
-)
+HELP_LINES = [
+    "Протяните по графику — выделите период и увидите время в нём.",
+    "Колесо или Ctrl+колесо — зум вокруг курсора.",
+    "Shift+колесо или пробел+перетаскивание — перемотка.",
+    "Границы выделения можно двигать мышью. Сброс — Esc, клик мимо или ✕.",
+]
 
 
 class StatsPanel(QFrame):
@@ -56,14 +54,16 @@ class StatsPanel(QFrame):
     ):
         super().__init__(parent)
         self.setObjectName("modalPanel")
-        self.setFixedSize(620, 660)
+        self.setFixedSize(620, 700)
 
+        self._db = db
         self._app_id = app_id
         self._today = date.today()
         self._big_value = 0
         self._big_anim = None
         self._period_idx = max(0, min(start_period_idx, len(PERIODS) - 1))
-        self._cur_labels: list[str] = []
+        self._period_unit = "days"
+        self._period_dates: list[date] | None = None
 
         today_str = self._today.isoformat()
         history: dict[str, int] = {}
@@ -75,11 +75,6 @@ class StatsPanel(QFrame):
             app_id
         )
         self._hours = db.get_hours(app_id, today_str)
-
-        if first_day is None:
-            past = [date.fromisoformat(d) for d in history]
-            first_day = min(past) if past else self._today
-        self._first_day = min(first_day, self._today)
 
         past_days = sorted(history.keys())
         first_activity = date.fromisoformat(past_days[0]) if past_days else self._today
@@ -165,45 +160,9 @@ class StatsPanel(QFrame):
         big_box.addWidget(self._sel_note)
         layout.addLayout(big_box)
 
-        self._presets_box = QWidget()
-        presets_layout = QHBoxLayout(self._presets_box)
-        presets_layout.setContentsMargins(0, 0, 0, 0)
-        presets_layout.setSpacing(2)
-        for label, days in PRESETS:
-            btn = QPushButton(label)
-            btn.setObjectName("periodBtn")
-            btn.setCursor(Qt.PointingHandCursor)
-            btn.clicked.connect(lambda _checked=False, d=days: self._range_chart.set_window_days(d))
-            presets_layout.addWidget(btn)
-        presets_layout.addStretch(1)
-        self._presets_box.setVisible(False)
-        layout.addWidget(self._presets_box)
-
-        self._mini_chart = MiniChart(150)
-        self._mini_chart.view_changed.connect(self._on_chart_view)
-        self._range_chart = RangeChart(150)
-        self._range_chart.selection_changed.connect(self._on_range_selection)
-        self._range_chart.set_data(self._daily, self._daily_dates)
-        self._chart_stack = QStackedWidget()
-        self._chart_stack.addWidget(self._mini_chart)
-        self._chart_stack.addWidget(self._range_chart)
-        layout.addWidget(self._chart_stack)
-
-        self._axis_box = QWidget()
-        axis = QHBoxLayout(self._axis_box)
-        axis.setContentsMargins(0, 2, 0, 0)
-        axis.setSpacing(6)
-        self._ax_first = QLabel("")
-        self._ax_mid = QLabel("")
-        self._ax_last = QLabel("")
-        for lbl in (self._ax_first, self._ax_mid, self._ax_last):
-            lbl.setObjectName("mutedLabel")
-        self._ax_mid.setAlignment(Qt.AlignCenter)
-        self._ax_last.setAlignment(Qt.AlignRight)
-        axis.addWidget(self._ax_first)
-        axis.addWidget(self._ax_mid, 1)
-        axis.addWidget(self._ax_last)
-        layout.addWidget(self._axis_box)
+        self._chart = RangeChart(170)
+        self._chart.selection_changed.connect(self._on_range_selection)
+        layout.addWidget(self._chart)
 
         self._result_box = QFrame()
         self._result_box.setObjectName("rangeResult")
@@ -211,7 +170,7 @@ class StatsPanel(QFrame):
         result_layout = QHBoxLayout(self._result_box)
         result_layout.setContentsMargins(14, 4, 8, 4)
         result_layout.setSpacing(10)
-        self._result_label = QLabel(SELECT_HINT)
+        self._result_label = QLabel(NO_SELECTION_HINT)
         self._result_label.setObjectName("subtleLabel")
         result_layout.addWidget(self._result_label, 1)
         self._result_clear = QPushButton("✕")
@@ -220,10 +179,12 @@ class StatsPanel(QFrame):
         self._result_clear.setCursor(Qt.PointingHandCursor)
         self._result_clear.setToolTip("Сбросить выделение")
         self._result_clear.setVisible(False)
-        self._result_clear.clicked.connect(self._range_chart.clear_selection)
+        self._result_clear.clicked.connect(self._chart.clear_selection)
         result_layout.addWidget(self._result_clear)
-        self._result_box.setVisible(False)
         layout.addWidget(self._result_box)
+
+        self._help_box = self._build_help_box()
+        layout.addWidget(self._help_box)
 
         layout.addStretch(1)
 
@@ -245,22 +206,39 @@ class StatsPanel(QFrame):
 
         self._set_period(self._period_idx, animate=False)
 
-    def _series_for(self, days: int) -> tuple[list[int], list[str]]:
-        if days <= 0:
-            n = (self._today - self._first_day).days + 1
-        else:
-            n = days
-        series: list[int] = []
-        labels: list[str] = []
-        for i in range(n - 1, -1, -1):
-            d = self._today - timedelta(days=i)
-            if d == self._today:
-                value = self._today_live
-            else:
-                value = self._history.get(d.isoformat(), 0)
-            series.append(value)
-            labels.append(ru_date(d))
-        return series, labels
+    def _build_help_box(self) -> QFrame:
+        box = QFrame()
+        box.setObjectName("helpBox")
+        layout = QVBoxLayout(box)
+        layout.setContentsMargins(14, 10, 10, 12)
+        layout.setSpacing(6)
+
+        head = QHBoxLayout()
+        title = QLabel("Как пользоваться графиком")
+        title.setObjectName("helpTitle")
+        head.addWidget(title)
+        head.addStretch(1)
+        hide_btn = QPushButton("✕")
+        hide_btn.setObjectName("deleteBtn")
+        hide_btn.setFixedSize(22, 22)
+        hide_btn.setCursor(Qt.PointingHandCursor)
+        hide_btn.setToolTip("Скрыть подсказку (вернуть можно в настройках)")
+        hide_btn.clicked.connect(self._hide_help)
+        head.addWidget(hide_btn)
+        layout.addLayout(head)
+
+        for line in HELP_LINES:
+            lbl = QLabel(f"•  {line}")
+            lbl.setObjectName("helpBullet")
+            lbl.setWordWrap(True)
+            layout.addWidget(lbl)
+
+        box.setVisible(bool(self._db.get_int("show_chart_help", 1)))
+        return box
+
+    def _hide_help(self) -> None:
+        self._db.set_int("show_chart_help", 0)
+        self._help_box.setVisible(False)
 
     def _on_period_clicked(self, idx: int) -> None:
         if idx == self._period_idx:
@@ -268,16 +246,38 @@ class StatsPanel(QFrame):
         self._period_idx = idx
         self._set_period(idx, animate=True)
 
+    def _series_days(self, n: int) -> tuple[list[int], list[date]]:
+        values: list[int] = []
+        dates: list[date] = []
+        for i in range(n - 1, -1, -1):
+            d = self._today - timedelta(days=i)
+            if d == self._today:
+                value = self._today_live
+            else:
+                value = self._history.get(d.isoformat(), 0)
+            values.append(value)
+            dates.append(d)
+        return values, dates
+
     def _set_period(self, idx: int, animate: bool) -> None:
         _label, days, caption = PERIODS[idx]
 
         if idx == 0:
-            series = list(self._hours)
-            day_labels = [f"{h:02d}:00" for h in range(24)]
+            values = list(self._hours)
+            self._period_unit = "hours"
+            self._period_dates = None
+            self._chart.set_hours(values)
         else:
-            series, day_labels = self._series_for(days)
+            if days <= 0:
+                values = list(self._daily)
+                dates = list(self._daily_dates)
+            else:
+                values, dates = self._series_days(days)
+            self._period_unit = "days"
+            self._period_dates = dates
+            self._chart.set_days(values, dates)
 
-        total = sum(series)
+        total = sum(values)
         self._big_caption.setText(f"АКТИВНО ЗА {caption}")
         if animate:
             self._animate_big(total)
@@ -286,51 +286,39 @@ class StatsPanel(QFrame):
                 self._big_anim.stop()
             self._big_value = total
             self._big.setText(format_compact(total))
-
-        if idx == 3:
-            self._chart_stack.setCurrentWidget(self._range_chart)
-            self._presets_box.setVisible(True)
-            self._axis_box.setVisible(False)
-            self._result_box.setVisible(True)
-            self._on_range_selection(self._range_chart.selection())
-        else:
-            self._chart_stack.setCurrentWidget(self._mini_chart)
-            self._presets_box.setVisible(False)
-            self._axis_box.setVisible(True)
-            self._result_box.setVisible(False)
-            self._sel_note.setText("")
-            self._cur_labels = day_labels
-            self._mini_chart.set_days(day_labels)
-            self._mini_chart.set_view(None)
-            self._mini_chart.set_values(series, animate=animate)
-            self._on_chart_view(0, len(series))
-
-    def _on_chart_view(self, off: int, vis: int) -> None:
-        labels = self._cur_labels
-        if not labels:
-            return
-        off = min(max(off, 0), max(0, len(labels) - 1))
-        last = min(off + vis - 1, len(labels) - 1)
-        self._ax_first.setText(labels[off])
-        self._ax_mid.setText(labels[off + (last - off) // 2] if last - off >= 2 else "")
-        self._ax_last.setText(labels[last])
+        self._on_range_selection(self._chart.selection())
 
     def _on_range_selection(self, sel) -> None:
         if not sel:
-            self._result_label.setText(SELECT_HINT)
+            self._result_label.setText(NO_SELECTION_HINT)
             self._result_clear.setVisible(False)
             self._sel_note.setText("")
             return
         start, end = sel
-        total = sum(self._daily[start : end + 1])
-        days = end - start + 1
-        avg = total / days if days else 0
-        d0 = self._daily_dates[start]
-        d1 = self._daily_dates[end]
-        self._result_label.setText(
-            f"{ru_date_short(d0)} — {ru_date_short(d1)}  ·  {days} дн.  ·  "
-            f"{format_compact(total)}  ·  в среднем {format_compact(avg)}/день"
-        )
+        if self._period_unit == "hours":
+            values = list(self._hours)
+            total = sum(values[start : end + 1])
+            count = end - start + 1
+            avg = total / count if count else 0
+            span = f"{start:02d}:00 — {end + 1:02d}:00"
+            text = (
+                f"{span}  ·  {count} ч  ·  {format_compact(total)}  ·  "
+                f"в среднем {format_compact(avg)}/час"
+            )
+        else:
+            dates = self._period_dates or []
+            total = sum(self._chart._days[start : end + 1])
+            count = end - start + 1
+            avg = total / count if count else 0
+            if start < len(dates) and end < len(dates):
+                span = f"{ru_date_short(dates[start])} — {ru_date_short(dates[end])}"
+            else:
+                span = ""
+            text = (
+                f"{span}  ·  {count} дн.  ·  {format_compact(total)}  ·  "
+                f"в среднем {format_compact(avg)}/день"
+            )
+        self._result_label.setText(text)
         self._result_clear.setVisible(True)
         self._sel_note.setText(f"Выделено: {format_compact(total)}")
 
