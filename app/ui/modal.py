@@ -5,6 +5,7 @@ from PySide6.QtCore import (
     QPoint,
     QPropertyAnimation,
     QRect,
+    QSize,
     Qt,
     Signal,
 )
@@ -23,10 +24,12 @@ class ModalOverlay(QWidget):
         self._group = None
 
         panel.setParent(self)
-        hint = panel.sizeHint()
+        hint = panel.sizeHint().expandedTo(panel.minimumSize())
         max_w = max(320, host.width() - 90)
         max_h = max(240, host.height() - 70)
-        target = QRect(0, 0, min(hint.width(), max_w), min(hint.height(), max_h))
+        size = QSize(min(hint.width(), max_w), min(hint.height(), max_h))
+        panel.setFixedSize(size)
+        target = QRect(0, 0, size.width(), size.height())
         target.moveCenter(QPoint(host.width() // 2, host.height() // 2))
         self._target = target
 
@@ -78,6 +81,17 @@ class ModalOverlay(QWidget):
         if obj is self._host and event.type() == QEvent.Resize:
             self.setGeometry(self._host.rect())
             self.raise_()
+            geom = self._panel.geometry()
+            if geom.width() > self.width() or geom.height() > self.height():
+                size = QSize(
+                    min(geom.width(), max(320, self.width() - 90)),
+                    min(geom.height(), max(240, self.height() - 70)),
+                )
+                self._panel.setFixedSize(size)
+            target = QRect(self._panel.geometry())
+            target.moveCenter(QPoint(self.width() // 2, self.height() // 2))
+            self._panel.setGeometry(target)
+            self._target = target
         return super().eventFilter(obj, event)
 
     def close_modal(self) -> None:
