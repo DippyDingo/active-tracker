@@ -165,7 +165,7 @@ class InlineEdit(QFrame):
     def __init__(self, initial: str = "", placeholder: str = "", parent=None):
         super().__init__(parent)
         self.setObjectName("inlineEdit")
-        self.setFixedHeight(38)
+        self.setFixedHeight(34)
         self._done = False
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 4, 10, 4)
@@ -1346,6 +1346,8 @@ class CategoryHeader(QFrame):
         fm = QFontMetrics(name_label.font())
         name_label.setText(fm.elidedText(name.upper(), Qt.ElideRight, 130))
         name_label.setToolTip(name)
+        self._name_label = name_label
+        self._name_fm = fm
         layout.addWidget(name_label)
         layout.addStretch(1)
 
@@ -1360,6 +1362,10 @@ class CategoryHeader(QFrame):
 
     def set_count(self, count: int) -> None:
         self._count.setText(str(count))
+
+    def set_name(self, name: str) -> None:
+        self._name_label.setText(self._name_fm.elidedText(name.upper(), Qt.ElideRight, 130))
+        self._name_label.setToolTip(name)
 
     def set_context_menu(self, menu) -> None:
         self._menu = menu
