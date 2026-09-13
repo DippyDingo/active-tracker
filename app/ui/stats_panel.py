@@ -32,7 +32,10 @@ PRESETS = [
     ("Всё", None),
 ]
 
-SELECT_HINT = "Протяните по графику, чтобы выделить период и посчитать время за него"
+SELECT_HINT = (
+    "Протяните по графику, чтобы выделить период  ·  колесо — зум  ·  "
+    "Shift+колесо / пробел+драг — перемотка"
+)
 
 
 class StatsPanel(QFrame):
@@ -156,7 +159,7 @@ class StatsPanel(QFrame):
         self._sel_note = QLabel("")
         self._sel_note.setObjectName("mutedLabel")
         self._sel_note.setAlignment(Qt.AlignCenter)
-        self._sel_note.setVisible(False)
+        self._sel_note.setMinimumHeight(14)
         big_box.addWidget(self._big)
         big_box.addWidget(self._big_caption)
         big_box.addWidget(self._sel_note)
@@ -173,9 +176,6 @@ class StatsPanel(QFrame):
             btn.clicked.connect(lambda _checked=False, d=days: self._range_chart.set_window_days(d))
             presets_layout.addWidget(btn)
         presets_layout.addStretch(1)
-        hint = QLabel("колесо — зум · Shift+колесо — перемотка · пробел+драг — перемотка")
-        hint.setObjectName("mutedLabel")
-        presets_layout.addWidget(hint)
         self._presets_box.setVisible(False)
         layout.addWidget(self._presets_box)
 
@@ -298,7 +298,7 @@ class StatsPanel(QFrame):
             self._presets_box.setVisible(False)
             self._axis_box.setVisible(True)
             self._result_box.setVisible(False)
-            self._sel_note.setVisible(False)
+            self._sel_note.setText("")
             self._cur_labels = day_labels
             self._mini_chart.set_days(day_labels)
             self._mini_chart.set_view(None)
@@ -319,7 +319,7 @@ class StatsPanel(QFrame):
         if not sel:
             self._result_label.setText(SELECT_HINT)
             self._result_clear.setVisible(False)
-            self._sel_note.setVisible(False)
+            self._sel_note.setText("")
             return
         start, end = sel
         total = sum(self._daily[start : end + 1])
@@ -333,7 +333,6 @@ class StatsPanel(QFrame):
         )
         self._result_clear.setVisible(True)
         self._sel_note.setText(f"Выделено: {format_compact(total)}")
-        self._sel_note.setVisible(True)
 
     def _animate_big(self, value: int) -> None:
         if self._big_anim is not None:

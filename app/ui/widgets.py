@@ -1,5 +1,5 @@
 from datetime import date
-from math import ceil
+from math import ceil, floor
 
 from PySide6.QtCore import (
     Property,
@@ -514,12 +514,13 @@ class RangeChart(QWidget):
         self._offset = 0.0
         self._visible = 7.0
         self._sel: tuple[int, int] | None = None
+        self._sel_float: tuple[float, float] | None = None
         self._hover = -1
         self._mode: str | None = None
         self._space = False
         self._press_x = 0.0
         self._pan_start_offset = 0.0
-        self._sel_anchor = 0
+        self._sel_anchor_f = 0.0
         self._drag_moved = False
         self._vis_buckets: list[tuple[int, int, str, str, int]] = []
         self._vis_pts: list[QPointF] = []
@@ -528,6 +529,7 @@ class RangeChart(QWidget):
         self._days = [max(0, int(v)) for v in values]
         self._dates = list(dates)
         self._sel = None
+        self._sel_float = None
         self.set_window_days(None)
 
     def _n(self) -> int:
@@ -537,10 +539,28 @@ class RangeChart(QWidget):
         return self._sel
 
     def clear_selection(self) -> None:
-        if self._sel is not None:
+        if self._sel is not None or self._sel_float is not None:
             self._sel = None
+            self._sel_float = None
             self.update()
             self.selection_changed.emit(None)
+
+    def _float_band_to_days(self, left: float, right: float) -> tuple[int, int]:
+        n = self._n()
+        s = min(max(int(floor(left)), 0), n - 1)
+        e = min(max(int(ceil(right)) - 1, 0), n - 1)
+        if e < s:
+            e = s
+        return s, e
+
+    def _sel_band_px(self) -> tuple[float, float] | None:
+        if self._sel_float is not None:
+            left, right = self._sel_float
+        elif self._sel is not None:
+            left, right = float(self._sel[0]), float(self._sel[1] + 1)
+        else:
+            return None
+        return self._day_to_x(left), self._day_to_x(right)
 
     def set_window_days(self, days: int | None) -> None:
         n = self._n()
@@ -638,9 +658,10 @@ class RangeChart(QWidget):
         painter.save()
         painter.setClipRect(QRectF(pad_l, 0, inner_w, h))
 
-        if self._sel is not None:
-            xs = max(self._day_to_x(self._sel[0]), pad_l)
-            xe = min(self._day_to_x(self._sel[1] + 1), pad_l + inner_w)
+        band = self._sel_band_px()
+        if band is not None:
+            xs = max(band[0], pad_l)
+            xe = min(band[1], pad_l + inner_w)
             if xe > xs:
                 painter.setPen(Qt.NoPen)
                 painter.setBrush(QColor(96, 165, 250, 40))
@@ -668,9 +689,9 @@ class RangeChart(QWidget):
             painter.setBrush(QBrush(QColor(96, 165, 250, 70)))
             painter.drawEllipse(pts[0], 3.0, 3.0)
 
-        if self._sel is not None:
-            xs = max(self._day_to_x(self._sel[0]), pad_l)
-            xe = min(self._day_to_x(self._sel[1] + 1), pad_l + inner_w)
+        if band is not None:
+            xs = max(band[0], pad_l)
+            xe = min(band[1], pad_l + inner_w)
             painter.setPen(QPen(QColor("#60a5fa"), 1.5))
             painter.drawLine(QPointF(xs, pad_t), QPointF(xs, pad_t + inner_h))
             painter.drawLine(QPointF(xe, pad_t), QPointF(xe, pad_t + inner_h))
@@ -719,10 +740,10 @@ class RangeChart(QWidget):
         painter.end()
 
     def _handle_at(self, x: float) -> str | None:
-        if self._sel is None:
+        band = self._sel_band_px()
+        if band is None:
             return None
-        xs = self._day_to_x(self._sel[0])
-        xe = self._day_to_x(self._sel[1] + 1)
+        xs, xe = band
         if abs(x - xs) <= 6:
             return "handle_l"
         if abs(x - xe) <= 6:
@@ -783,21 +804,22 @@ class RangeChart(QWidget):
         if event.button() != Qt.LeftButton:
             return
         handle = self._handle_at(x)
-        if handle is not None:
+        if handle is not None and self._sel is not None:
             self._mode = handle
+            self._sel_float = (float(self._sel[0]), float(self._sel[1] + 1))
             self.grabMouse()
             self._update_cursor()
             return
-        if self._sel is not None:
-            xs = self._day_to_x(self._sel[0])
-            xe = self._day_to_x(self._sel[1] + 1)
-            if xs < x < xe:
-                self._mode = "keep"
-                return
+        band = self._sel_band_px()
+        if band is not None and band[0] < x < band[1]:
+            self._mode = "keep"
+            return
         self._mode = "sel"
         self._drag_moved = False
-        day = min(max(int(self._x_to_day(x)), 0), n - 1)
-        self._sel_anchor = day
+        f = min(max(self._x_to_day(x), 0.0), float(n))
+        self._sel_anchor_f = f
+        self._sel_float = (f, f)
+        day = min(max(int(floor(f)), 0), n - 1)
         self._sel = (day, day)
         self.grabMouse()
         self.selection_changed.emit(self._sel)
@@ -816,20 +838,25 @@ class RangeChart(QWidget):
             self._rebuild_buckets()
             self.update()
             return
-        if self._mode in ("handle_l", "handle_r") and self._sel is not None:
-            day = min(max(int(self._x_to_day(x)), 0), n - 1)
-            start, end = self._sel
+        if self._mode in ("handle_l", "handle_r") and self._sel_float is not None:
+            f = min(max(self._x_to_day(x), 0.0), float(n))
+            left, right = self._sel_float
             if self._mode == "handle_l":
-                self._sel = (min(day, end), end)
+                left = min(f, right - 0.2)
             else:
-                self._sel = (start, max(day, start))
+                right = max(f, left + 0.2)
+            self._sel_float = (left, right)
+            self._sel = self._float_band_to_days(left, right)
             self.selection_changed.emit(self._sel)
             self.update()
             return
         if self._mode == "sel":
             self._drag_moved = True
-            day = min(max(int(self._x_to_day(x)), 0), n - 1)
-            self._sel = (min(self._sel_anchor, day), max(self._sel_anchor, day))
+            f = min(max(self._x_to_day(x), 0.0), float(n))
+            anchor = self._sel_anchor_f
+            left, right = (anchor, f) if anchor <= f else (f, anchor)
+            self._sel_float = (left, right)
+            self._sel = self._float_band_to_days(left, right)
             self.selection_changed.emit(self._sel)
             self.update()
             return
@@ -848,9 +875,13 @@ class RangeChart(QWidget):
         if self._mode == "sel":
             if not self._drag_moved:
                 self._sel = None
+                self._sel_float = None
                 self.selection_changed.emit(None)
                 self.update()
-            self._sel = (min(self._sel[0], self._sel[1]), max(self._sel[0], self._sel[1])) if self._sel else None
+            elif self._sel is not None:
+                self._sel = (min(self._sel[0], self._sel[1]), max(self._sel[0], self._sel[1]))
+                self._sel_float = None
+                self.selection_changed.emit(self._sel)
         self._mode = None
         self._drag_moved = False
         try:
