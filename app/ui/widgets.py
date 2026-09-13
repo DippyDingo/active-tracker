@@ -1,6 +1,7 @@
 from PySide6.QtCore import (
     Property,
     QEasingCurve,
+    QEvent,
     QPointF,
     QRectF,
     Qt,
@@ -26,6 +27,7 @@ from PySide6.QtWidgets import (
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -88,6 +90,100 @@ def menu_icon(color: str = "#c3d0dd", size: int = 18) -> QIcon:
     painter.end()
     pm.setDevicePixelRatio(scale)
     return QIcon(pm)
+
+
+def ui_icon(kind: str, color: str = "#9db2c7", size: int = 16) -> QIcon:
+    scale = 3
+    px = size * scale
+    pm = QPixmap(px, px)
+    pm.fill(Qt.transparent)
+    painter = QPainter(pm)
+    painter.setRenderHint(QPainter.Antialiasing)
+    pen = QPen(QColor(color), 1.8 * scale, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+    painter.setPen(pen)
+    painter.setBrush(Qt.NoBrush)
+
+    def pt(x: float, y: float) -> QPointF:
+        return QPointF(x * scale, y * scale)
+
+    if kind == "plus":
+        painter.drawLine(pt(8, 3.2), pt(8, 12.8))
+        painter.drawLine(pt(3.2, 8), pt(12.8, 8))
+    elif kind == "minus":
+        painter.drawLine(pt(3.2, 8), pt(12.8, 8))
+    elif kind == "folder":
+        path = QPainterPath()
+        path.moveTo(pt(2.4, 13.0))
+        path.lineTo(pt(2.4, 3.8))
+        path.lineTo(pt(6.6, 3.8))
+        path.lineTo(pt(8.2, 5.6))
+        path.lineTo(pt(13.6, 5.6))
+        path.lineTo(pt(13.6, 13.0))
+        path.closeSubpath()
+        painter.drawPath(path)
+    elif kind == "settings":
+        for y, kx in ((4.2, 10.4), (8.0, 5.6), (11.8, 11.0)):
+            painter.drawLine(pt(2.6, y), pt(13.4, y))
+            painter.setBrush(QColor(color))
+            painter.drawEllipse(pt(kx, y), 1.7 * scale, 1.7 * scale)
+            painter.setBrush(Qt.NoBrush)
+    elif kind == "upload":
+        painter.drawLine(pt(8, 13.2), pt(8, 4.2))
+        painter.drawLine(pt(4.6, 7.4), pt(8, 4.0))
+        painter.drawLine(pt(11.4, 7.4), pt(8, 4.0))
+    elif kind == "download":
+        painter.drawLine(pt(8, 2.8), pt(8, 11.8))
+        painter.drawLine(pt(4.6, 8.6), pt(8, 12.0))
+        painter.drawLine(pt(11.4, 8.6), pt(8, 12.0))
+    elif kind == "power":
+        painter.drawArc(int(3.4 * scale), int(3.4 * scale), int(9.2 * scale), int(9.2 * scale), 60 * 16, 240 * 16)
+        painter.drawLine(pt(8, 2.2), pt(8, 7.6))
+    elif kind == "trash":
+        painter.drawLine(pt(3.2, 4.6), pt(12.8, 4.6))
+        painter.drawLine(pt(6.4, 2.8), pt(9.6, 2.8))
+        painter.drawRoundedRect(QRectF(4.4 * scale, 4.6 * scale, 7.2 * scale, 8.6 * scale), 1.6 * scale, 1.6 * scale)
+        painter.drawLine(pt(6.8, 7.0), pt(6.8, 11.0))
+        painter.drawLine(pt(9.2, 7.0), pt(9.2, 11.0))
+    elif kind == "pen":
+        painter.drawLine(pt(3.0, 13.0), pt(12.0, 4.0))
+        painter.drawLine(pt(12.0, 4.0), pt(13.2, 5.2))
+        painter.drawLine(pt(13.2, 5.2), pt(4.2, 14.2))
+        painter.drawLine(pt(3.0, 13.0), pt(4.2, 14.2))
+    painter.end()
+    pm.setDevicePixelRatio(scale)
+    return QIcon(pm)
+
+
+class InlineEdit(QFrame):
+    accepted = Signal(str)
+    cancelled = Signal()
+
+    def __init__(self, initial: str = "", placeholder: str = "", parent=None):
+        super().__init__(parent)
+        self.setObjectName("inlineEdit")
+        self.setFixedHeight(38)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 4, 10, 4)
+        self._edit = QLineEdit()
+        self._edit.setText(initial)
+        self._edit.setPlaceholderText(placeholder)
+        self._edit.setAttribute(Qt.WA_InputMethodEnabled, False)
+        self._edit.installEventFilter(self)
+        layout.addWidget(self._edit)
+
+    def focus_edit(self) -> None:
+        self._edit.setFocus()
+        self._edit.selectAll()
+
+    def eventFilter(self, obj, event) -> bool:
+        if obj is self._edit and event.type() == QEvent.KeyPress:
+            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                self.accepted.emit(self._edit.text().strip())
+                return True
+            if event.key() == Qt.Key_Escape:
+                self.cancelled.emit()
+                return True
+        return super().eventFilter(obj, event)
 
 
 def _mix(a: QColor, b: QColor, t: float) -> QColor:

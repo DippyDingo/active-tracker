@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from PySide6.QtCore import QEasingCurve, Qt, QVariantAnimation, Signal
+from PySide6.QtCore import QEasingCurve, QSize, Qt, QVariantAnimation, Signal
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
     QButtonGroup,
@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 from ..db import Database
 from ..tracker import Tracker
 from ..utils import format_compact, ru_date
-from .widgets import MiniChart, pixmap_from_png, rounded_pixmap
+from .widgets import MiniChart, pixmap_from_png, rounded_pixmap, ui_icon
 
 PERIODS = [
     ("Сегодня", 1, "СЕГОДНЯ"),
@@ -151,9 +151,11 @@ class StatsPanel(QFrame):
         layout.addStretch(1)
 
         bottom = QHBoxLayout()
-        delete_btn = QPushButton("🗑  Удалить приложение")
+        delete_btn = QPushButton("Удалить приложение")
         delete_btn.setObjectName("danger")
         delete_btn.setCursor(Qt.PointingHandCursor)
+        delete_btn.setIcon(ui_icon("trash", "#f87171"))
+        delete_btn.setIconSize(QSize(16, 16))
         delete_btn.clicked.connect(lambda: self.delete_requested.emit(app_id))
         bottom.addWidget(delete_btn)
         bottom.addStretch(1)
