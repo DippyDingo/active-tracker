@@ -11,6 +11,7 @@ from PySide6.QtCore import (
     QRect,
     QSize,
     Qt,
+    QTimer,
     QVariantAnimation,
     Signal,
 )
@@ -582,6 +583,28 @@ class MainWindow(QMainWindow):
     def _move_app(self, app_id: int, cat_id: int | None) -> None:
         self.db.set_app_category(app_id, cat_id)
         self.refresh_apps()
+        self._flash_move_result(app_id, cat_id)
+
+    def _flash_move_result(self, app_id: int, cat_id: int | None) -> None:
+        if cat_id is not None:
+            self._flash_widget(self._cat_headers.get(cat_id))
+        self._flash_widget(self._side_items.get(app_id))
+
+    def _flash_widget(self, widget) -> None:
+        if widget is None:
+            return
+        widget.setProperty("flash", True)
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)
+        QTimer.singleShot(1300, lambda: self._unflash_widget(widget))
+
+    def _unflash_widget(self, widget) -> None:
+        try:
+            widget.setProperty("flash", False)
+            widget.style().unpolish(widget)
+            widget.style().polish(widget)
+        except RuntimeError:
+            pass
 
     def _delete_category(self, cat_id: int, cat_name: str) -> None:
         box = QMessageBox(self)
@@ -652,8 +675,12 @@ class MainWindow(QMainWindow):
         edit.cancelled.connect(self._remove_inline)
         self._inline = edit
         self._side_layout.insertWidget(max(0, self._side_layout.count() - 1), edit)
-        self._side_scroll.ensureWidgetVisible(edit, 10, 10)
-        edit.focus_edit()
+        QTimer.singleShot(0, self._focus_inline)
+
+    def _focus_inline(self) -> None:
+        if self._inline is not None:
+            self._side_scroll.ensureWidgetVisible(self._inline, 10, 10)
+            self._inline.focus_edit()
 
     def _finish_create(self, text: str, for_app_id: int | None) -> None:
         self._remove_inline()
@@ -663,6 +690,10 @@ class MainWindow(QMainWindow):
         if for_app_id is not None:
             self.db.set_app_category(for_app_id, cat_id)
         self.refresh_apps()
+        if for_app_id is not None:
+            self._flash_move_result(for_app_id, cat_id)
+        else:
+            self._flash_widget(self._cat_headers.get(cat_id))
 
     def _start_inline_rename(self, cat_id: int, current_name: str) -> None:
         header = self._cat_headers.get(cat_id)
@@ -676,7 +707,7 @@ class MainWindow(QMainWindow):
         edit.cancelled.connect(lambda: (header.setVisible(True), self._remove_inline()))
         self._inline = edit
         self._side_layout.insertWidget(idx, edit)
-        edit.focus_edit()
+        QTimer.singleShot(0, self._focus_inline)
 
     def _finish_rename(self, cat_id: int, text: str) -> None:
         self._remove_inline()
@@ -826,7 +857,7 @@ class MainWindow(QMainWindow):
                     "app_id": app_id,
                     "item": item,
                     "start": event.globalPosition().toPoint(),
-                    "grab": event.position().toPoint() + item.pos(),
+                    "grab": event.position().toPoint(),
                     "dragging": False,
                 }
         elif etype == QEvent.MouseMove and self._side_drag is not None:
@@ -927,6 +958,7 @@ class MainWindow(QMainWindow):
             return
         self.db.set_app_category(app_id, new_cat)
         self.refresh_apps()
+        self._flash_move_result(app_id, new_cat)
 
     def _set_drop_hint(self, target) -> None:
         widget = None

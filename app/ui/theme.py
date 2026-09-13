@@ -173,17 +173,27 @@ QFrame#sideItem[selected="true"] {
 }
 QFrame#catHeader {
     border-radius: 8px;
-    border: 1px solid transparent;
+    border: 1px solid rgba(96, 165, 250, 10%);
+    background: rgba(255, 255, 255, 3%);
 }
 QFrame#catHeader:hover {
-    background: rgba(255, 255, 255, 4%);
+    background: rgba(96, 165, 250, 7%);
+    border: 1px solid rgba(96, 165, 250, 25%);
 }
 QFrame#catHeader[droptarget="true"] {
     background: rgba(96, 165, 250, 12%);
     border: 1px solid rgba(96, 165, 250, 60%);
 }
+QFrame#catHeader[flash="true"] {
+    background: rgba(96, 165, 250, 16%);
+    border: 1px solid rgba(96, 165, 250, 65%);
+}
+QFrame#sideItem[flash="true"] {
+    background: rgba(96, 165, 250, 18%);
+    border: 1px solid rgba(96, 165, 250, 60%);
+}
 QLabel#catName {
-    color: #9ca3af;
+    color: #b6c4d4;
     font-size: 11px;
     font-weight: 700;
 }
@@ -192,8 +202,44 @@ QLabel#catArrow {
     font-size: 11px;
 }
 QLabel#catCount {
-    color: #6b7280;
+    color: #9db2c7;
+    background: rgba(96, 165, 250, 12%);
+    border-radius: 8px;
+    padding: 1px 8px;
     font-size: 11px;
+    font-weight: 700;
+}
+QMenu {
+    background-color: #101a2c;
+    border: 1px solid #24344d;
+    border-radius: 10px;
+    padding: 6px;
+}
+QMenu::item {
+    padding: 8px 28px 8px 12px;
+    border-radius: 7px;
+    margin: 1px 3px;
+    color: #c7d2de;
+    background: transparent;
+}
+QMenu::item:selected {
+    background: rgba(96, 165, 250, 12%);
+    color: #ffffff;
+}
+QMenu::item:pressed {
+    background: rgba(96, 165, 250, 24%);
+    color: #ffffff;
+}
+QMenu::item:disabled {
+    color: #55677a;
+}
+QMenu::separator {
+    height: 1px;
+    background: #1e293b;
+    margin: 5px 8px;
+}
+QMenu::icon {
+    margin-left: 6px;
 }
 QWidget#sidebarContainer {
     background: transparent;
