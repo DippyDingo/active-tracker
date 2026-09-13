@@ -114,10 +114,6 @@ QLabel#sideName {
     font-size: 13px;
     font-weight: 600;
 }
-QLabel#sideTime {
-    color: #9ca3af;
-    font-size: 11px;
-}
 QLabel#pathLabel {
     color: #6b7280;
     font-size: 11px;
