@@ -363,6 +363,7 @@ class MainWindow(QMainWindow):
 
         self.tracker.set_tracked({row.exe_path: row.id for row in apps})
         self._update_status_right()
+        self._update_values()
 
     def _recompute_base(self) -> None:
         today = date.today()
