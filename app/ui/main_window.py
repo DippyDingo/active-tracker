@@ -68,7 +68,7 @@ class SearchEdit(QLineEdit):
         self.setAttribute(Qt.WA_InputMethodEnabled, False)
         self.setInputMethodHints(Qt.ImhNoAutoUppercase)
         self.addAction(magnifier_icon(), QLineEdit.LeadingPosition)
-        self.setTextMargins(6, 0, 0, 0)
+        self.setTextMargins(14, 0, 0, 0)
 
 
 class ProfilePopup(QFrame):
