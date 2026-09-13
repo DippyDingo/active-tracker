@@ -665,6 +665,7 @@ class SidebarItem(QFrame):
         self.setObjectName("sideItem")
         self.setProperty("selected", False)
         self.setCursor(Qt.PointingHandCursor)
+        self.setFixedHeight(46)
         self._slide = 0.0
         self._anim = None
         self._menu = None
