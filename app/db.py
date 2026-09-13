@@ -51,6 +51,36 @@ class Database:
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
 
+    @staticmethod
+    def validate(path) -> bool:
+        try:
+            p = Path(path)
+            if not p.is_file():
+                return False
+            conn = sqlite3.connect(str(p))
+            try:
+                rows = conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                ).fetchall()
+                names = {r[0] for r in rows}
+                return {"apps", "stats", "settings"} <= names
+            finally:
+                conn.close()
+        except Exception:
+            return False
+
+    def export_to(self, path) -> bool:
+        try:
+            target = str(Path(path).resolve())
+            self._conn.commit()
+            self._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            if Path(target).exists():
+                Path(target).unlink()
+            self._conn.execute("VACUUM INTO ?", (target,))
+            return True
+        except Exception:
+            return False
+
     def close(self) -> None:
         self._conn.close()
 
