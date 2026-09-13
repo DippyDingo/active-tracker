@@ -227,6 +227,9 @@ class MainWindow(QMainWindow):
         self._side_scroll.setWidgetResizable(True)
         side_container = QWidget()
         side_container.setObjectName("sidebarContainer")
+        side_container.setContextMenuPolicy(Qt.CustomContextMenu)
+        side_container.customContextMenuRequested.connect(self._sidebar_context_menu)
+        self._side_container = side_container
         self._side_layout = QVBoxLayout(side_container)
         self._side_layout.setContentsMargins(8, 0, 8, 0)
         self._side_layout.setSpacing(3)
@@ -240,11 +243,7 @@ class MainWindow(QMainWindow):
         add_btn.setObjectName("primary")
         add_btn.setCursor(Qt.PointingHandCursor)
         add_btn.clicked.connect(self._open_add)
-        cat_btn = QPushButton("🗂  Добавить категорию")
-        cat_btn.setCursor(Qt.PointingHandCursor)
-        cat_btn.clicked.connect(self._add_category)
         buttons.addWidget(add_btn)
-        buttons.addWidget(cat_btn)
         layout.addLayout(buttons)
 
         root_layout.addWidget(sidebar)
@@ -600,25 +599,41 @@ class MainWindow(QMainWindow):
             self.db.delete_category(cat_id)
             self.refresh_apps()
 
+    def _sidebar_context_menu(self, pos: QPoint) -> None:
+        menu = QMenu(self)
+        create_action = menu.addAction("📁  Создать категорию")
+        create_action.triggered.connect(self._add_category)
+        menu.exec(self._side_container.mapToGlobal(pos))
+
     def _app_menu(self, app_id: int) -> QMenu:
         menu = QMenu(self)
-        menu.addAction("Переместить в категорию:").setEnabled(False)
+        new_action = menu.addAction("📁  Новая категория…")
+        new_action.triggered.connect(lambda: self._new_category_for(app_id))
         cats = self.db.list_categories()
-        current = self._rows_meta.get(app_id)
-        current_cat = current.category_id if current is not None else None
-        for cat_id, cat_name in cats:
-            mark = "✓ " if cat_id == current_cat else ""
-            action = menu.addAction(f"    {mark}{cat_name}")
-            action.triggered.connect(
-                lambda _checked=False, cid=cat_id: self._move_app(app_id, cid)
-            )
         if cats:
             menu.addSeparator()
-        none_action = menu.addAction(
-            f"    {'✓ ' if current_cat is None else ''}Без категории"
-        )
-        none_action.triggered.connect(lambda: self._move_app(app_id, None))
+            move_menu = menu.addMenu("Добавить в категорию")
+            current = self._rows_meta.get(app_id)
+            current_cat = current.category_id if current is not None else None
+            for cat_id, cat_name in cats:
+                mark = "✓  " if cat_id == current_cat else ""
+                action = move_menu.addAction(f"{mark}{cat_name}")
+                action.triggered.connect(
+                    lambda _checked=False, cid=cat_id: self._move_app(app_id, cid)
+                )
+            if current_cat is not None:
+                menu.addSeparator()
+                none_action = menu.addAction("Убрать из категории")
+                none_action.triggered.connect(lambda: self._move_app(app_id, None))
         return menu
+
+    def _new_category_for(self, app_id: int) -> None:
+        name, ok = QInputDialog.getText(self, "Новая категория", "Название категории:")
+        if not ok or not name.strip():
+            return
+        cat_id = self.db.create_category(name.strip())
+        self.db.set_app_category(app_id, cat_id)
+        self.refresh_apps()
 
     def _move_app(self, app_id: int, cat_id: int | None) -> None:
         self.db.set_app_category(app_id, cat_id)
