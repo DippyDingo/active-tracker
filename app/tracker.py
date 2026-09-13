@@ -38,6 +38,15 @@ class Tracker(QObject):
     def set_tracked(self, mapping: dict[str, int]) -> None:
         self._tracked = {os.path.normcase(k): v for k, v in mapping.items()}
 
+    def switch_db(self, db: Database) -> None:
+        self.flush()
+        self._buffer.clear()
+        self.db = db
+        self._threshold_sec = max(1, db.get_int("idle_threshold_minutes", 30)) * 60
+        self._bg = bool(db.get_int("background_counting", 0))
+        self._running_cache = (0.0, set())
+        self._day = date.today()
+
     def threshold_minutes(self) -> int:
         return int(round(self._threshold_sec / 60))
 
