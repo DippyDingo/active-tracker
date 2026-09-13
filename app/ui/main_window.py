@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QFileDialog,
     QFrame,
+    QGraphicsDropShadowEffect,
+    QGraphicsOpacityEffect,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -168,6 +170,9 @@ class MainWindow(QMainWindow):
         self._overlay = None
         self._pending_modal: tuple | None = None
         self._drag: dict | None = None
+        self._drag_ghost: QLabel | None = None
+        self._drag_dim = None
+        self._drop_anim = None
         self._running: set[str] = set()
         self._header_value = 0
         self._header_anim = None
@@ -478,9 +483,14 @@ class MainWindow(QMainWindow):
         if isinstance(obj, AppCard) and obj.app_id in self._cards:
             etype = event.type()
             if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
+                host = self._hosts.get(obj.app_id)
+                grab = event.position().toPoint() + (
+                    obj.pos() - host.pos() if host is not None else QPoint(0, 0)
+                )
                 self._drag = {
                     "app_id": obj.app_id,
                     "start": event.globalPosition().toPoint(),
+                    "grab": grab,
                     "dragging": False,
                 }
             elif etype == QEvent.MouseMove and self._drag is not None:
@@ -493,7 +503,9 @@ class MainWindow(QMainWindow):
                         if (pos - self._drag["start"]).manhattanLength() > 14:
                             self._drag["dragging"] = True
                             self.setCursor(Qt.ClosedHandCursor)
+                            self._start_drag(self._drag["app_id"], pos, self._drag["grab"])
                     if self._drag["dragging"]:
+                        self._move_ghost(pos)
                         self._drag_over(pos)
                     return True
             elif etype == QEvent.MouseButtonRelease and self._drag is not None:
@@ -503,11 +515,70 @@ class MainWindow(QMainWindow):
                     self._drag = None
                     self.setCursor(Qt.ArrowCursor)
                     if was_dragging:
+                        self._end_drag(app_id)
                         self._persist_order()
                     else:
                         self._on_card_clicked(app_id)
                     return True
         return super().eventFilter(obj, event)
+
+    def _start_drag(self, app_id: int, global_pos: QPoint, grab: QPoint) -> None:
+        host = self._hosts.get(app_id)
+        if host is None:
+            return
+        pm = host.grab()
+        dpr = pm.devicePixelRatioF() or 1.0
+        pm = pm.scaled(
+            int(host.width() * dpr), int(host.height() * dpr),
+            Qt.IgnoreAspectRatio, Qt.SmoothTransformation,
+        )
+        pm.setDevicePixelRatio(dpr)
+        ghost = QLabel(self)
+        ghost.setPixmap(pm)
+        ghost.setFixedSize(host.size())
+        ghost.setAttribute(Qt.WA_TransparentForMouseEvents)
+        shadow = QGraphicsDropShadowEffect(ghost)
+        shadow.setBlurRadius(34)
+        shadow.setOffset(0, 14)
+        shadow.setColor(QColor(2, 6, 23, 190))
+        ghost.setGraphicsEffect(shadow)
+        ghost.show()
+        ghost.raise_()
+        self._drag_ghost = ghost
+
+        dim = QGraphicsOpacityEffect(host)
+        dim.setOpacity(0.35)
+        host.setGraphicsEffect(dim)
+        self._drag_dim = dim
+
+        self._move_ghost(global_pos)
+
+    def _move_ghost(self, global_pos: QPoint) -> None:
+        if self._drag_ghost is None or self._drag is None:
+            return
+        local = self.mapFromGlobal(global_pos - self._drag["grab"])
+        self._drag_ghost.move(local)
+
+    def _end_drag(self, app_id: int) -> None:
+        host = self._hosts.get(app_id)
+        ghost = self._drag_ghost
+        self._drag_ghost = None
+        if host is not None:
+            host.setGraphicsEffect(None)
+        self._drag_dim = None
+        if ghost is None or host is None:
+            if ghost is not None:
+                ghost.deleteLater()
+            return
+        target = self.mapFromGlobal(host.mapToGlobal(QPoint(0, 0)))
+        anim = QPropertyAnimation(ghost, b"pos")
+        anim.setDuration(160)
+        anim.setStartValue(ghost.pos())
+        anim.setEndValue(target)
+        anim.setEasingCurve(QEasingCurve.OutCubic)
+        anim.finished.connect(ghost.deleteLater)
+        self._drop_anim = anim
+        anim.start()
 
     def _drag_over(self, global_pos: QPoint) -> None:
         container = self._scroll.widget()
