@@ -13,6 +13,7 @@ from PySide6.QtGui import (
     QColor,
     QFont,
     QFontMetrics,
+    QIcon,
     QLinearGradient,
     QPainter,
     QPainterPath,
@@ -56,6 +57,19 @@ def rounded_pixmap(src: QPixmap, size: int, radius: int) -> QPixmap:
     painter.drawPixmap(-dx, -dy, scaled)
     painter.end()
     return out
+
+
+def magnifier_icon(color: str = "#8fa3b8", size: int = 16) -> QIcon:
+    pm = QPixmap(size, size)
+    pm.fill(Qt.transparent)
+    painter = QPainter(pm)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setPen(QPen(QColor(color), 1.7, Qt.SolidLine, Qt.RoundCap))
+    painter.setBrush(Qt.NoBrush)
+    painter.drawEllipse(QRectF(1.5, 1.5, 9.0, 9.0))
+    painter.drawLine(QPointF(9.8, 9.8), QPointF(14.2, 14.2))
+    painter.end()
+    return QIcon(pm)
 
 
 def _mix(a: QColor, b: QColor, t: float) -> QColor:
