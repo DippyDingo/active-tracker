@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
     QFrame,
-    QGraphicsDropShadowEffect,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -44,7 +43,7 @@ from .add_dialog import AddPanel
 from .modal import ModalOverlay
 from .settings_dialog import SettingsPanel
 from .stats_panel import StatsPanel
-from .widgets import AppCard, CardHost, SidebarItem
+from .widgets import AppCard, CardHost, SidebarItem, magnifier_icon
 
 PERIODS = [
     ("День", 0, "СЕГОДНЯ"),
@@ -63,23 +62,13 @@ class SearchEdit(QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("searchEdit")
-        self.setPlaceholderText("🔎  Поиск")
+        self.setPlaceholderText("Поиск")
         self.setClearButtonEnabled(True)
         self.setFixedWidth(220)
         self.setAttribute(Qt.WA_InputMethodEnabled, False)
         self.setInputMethodHints(Qt.ImhNoAutoUppercase)
-
-    def focusInEvent(self, event) -> None:
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(18)
-        shadow.setOffset(0, 0)
-        shadow.setColor(QColor(96, 165, 250, 80))
-        self.setGraphicsEffect(shadow)
-        super().focusInEvent(event)
-
-    def focusOutEvent(self, event) -> None:
-        self.setGraphicsEffect(None)
-        super().focusOutEvent(event)
+        self.addAction(magnifier_icon(), QLineEdit.LeadingPosition)
+        self.setTextMargins(6, 0, 0, 0)
 
 
 class ProfilePopup(QFrame):

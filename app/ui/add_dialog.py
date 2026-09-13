@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from .. import installed_apps, win32_utils
 from ..installed_apps import InstalledApp
-from .widgets import pixmap_from_png, rounded_pixmap
+from .widgets import magnifier_icon, pixmap_from_png, rounded_pixmap
 
 
 class _ScanWorker(QThread):
@@ -168,10 +168,12 @@ class AddPanel(QFrame):
 
         self._search = QLineEdit()
         self._search.setObjectName("searchEdit")
-        self._search.setPlaceholderText("🔎  Поиск по названию или пути...")
+        self._search.setPlaceholderText("Поиск по названию или пути")
         self._search.setClearButtonEnabled(True)
         self._search.setAttribute(Qt.WA_InputMethodEnabled, False)
         self._search.setInputMethodHints(Qt.ImhNoAutoUppercase)
+        self._search.addAction(magnifier_icon(), QLineEdit.LeadingPosition)
+        self._search.setTextMargins(6, 0, 0, 0)
         self._search.textChanged.connect(self._apply_filter)
         layout.addWidget(self._search)
 
