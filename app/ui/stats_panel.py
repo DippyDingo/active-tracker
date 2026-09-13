@@ -37,6 +37,7 @@ class StatsPanel(QFrame):
         exe_path: str,
         icon_bytes: bytes | None,
         start_period_idx: int = 1,
+        first_day: date | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -48,6 +49,7 @@ class StatsPanel(QFrame):
         self._big_value = 0
         self._big_anim = None
         self._period_idx = max(0, min(start_period_idx, len(PERIODS) - 1))
+        self._cur_labels: list[str] = []
 
         today_str = self._today.isoformat()
         history: dict[str, int] = {}
@@ -58,6 +60,12 @@ class StatsPanel(QFrame):
         self._today_live = db.get_day_stats(today_str).get(app_id, 0) + tracker.pending_seconds(
             app_id
         )
+        self._hours = db.get_hours(app_id, today_str)
+
+        if first_day is None:
+            past = [date.fromisoformat(d) for d in history]
+            first_day = min(past) if past else self._today
+        self._first_day = min(first_day, self._today)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 18)
@@ -124,6 +132,7 @@ class StatsPanel(QFrame):
         layout.addLayout(big_box)
 
         self.chart = MiniChart(150)
+        self.chart.view_changed.connect(self._on_chart_view)
         layout.addWidget(self.chart)
 
         axis = QHBoxLayout()
@@ -159,10 +168,7 @@ class StatsPanel(QFrame):
 
     def _series_for(self, days: int) -> tuple[list[int], list[str]]:
         if days <= 0:
-            start_dates = [date.fromisoformat(d) for d in self._history]
-            start_dates.append(self._today)
-            start = min(start_dates)
-            n = (self._today - start).days + 1
+            n = (self._today - self._first_day).days + 1
         else:
             n = days
         series: list[int] = []
@@ -185,9 +191,14 @@ class StatsPanel(QFrame):
 
     def _set_period(self, idx: int, animate: bool) -> None:
         _label, days, caption = PERIODS[idx]
-        series, day_labels = self._series_for(days)
-        total = sum(series)
 
+        if idx == 0:
+            series = list(self._hours)
+            day_labels = [f"{h:02d}:00" for h in range(24)]
+        else:
+            series, day_labels = self._series_for(days)
+
+        total = sum(series)
         self._big_caption.setText(f"АКТИВНО ЗА {caption}")
         if animate:
             self._animate_big(total)
@@ -197,13 +208,21 @@ class StatsPanel(QFrame):
             self._big_value = total
             self._big.setText(format_compact(total))
 
+        self._cur_labels = day_labels
         self.chart.set_days(day_labels)
         self.chart.set_values(series, animate=animate)
+        self.chart.set_view(30 if (idx == 3 and len(series) > 60) else None)
+        self._on_chart_view(*self.chart._window())
 
-        n = len(series)
-        self._ax_first.setText(day_labels[0])
-        self._ax_mid.setText(day_labels[n // 2] if n > 2 else "")
-        self._ax_last.setText(day_labels[-1])
+    def _on_chart_view(self, off: int, vis: int) -> None:
+        labels = self._cur_labels
+        if not labels:
+            return
+        off = min(max(off, 0), max(0, len(labels) - 1))
+        last = min(off + vis - 1, len(labels) - 1)
+        self._ax_first.setText(labels[off])
+        self._ax_mid.setText(labels[off + (last - off) // 2] if last - off >= 2 else "")
+        self._ax_last.setText(labels[last])
 
     def _animate_big(self, value: int) -> None:
         if self._big_anim is not None:

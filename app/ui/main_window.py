@@ -592,6 +592,10 @@ class MainWindow(QMainWindow):
             rect = QRect(pos, card.size()).intersected(self.rect())
             if not rect.isEmpty() and rect.width() > 40:
                 start_rect = rect
+        try:
+            first_day = date.fromisoformat(config.read_config().get("first_launch", ""))
+        except (TypeError, ValueError):
+            first_day = None
         panel = StatsPanel(
             self.db,
             self.tracker,
@@ -600,6 +604,7 @@ class MainWindow(QMainWindow):
             row.exe_path,
             row.icon,
             self._period_idx,
+            first_day,
         )
         panel.delete_requested.connect(
             lambda aid: (
@@ -667,10 +672,13 @@ class MainWindow(QMainWindow):
         anim.start()
 
     def _on_tick(self) -> None:
-        if date.today() != self._today:
-            self.refresh_apps()
-        self._update_values()
-        self._update_status()
+        try:
+            if date.today() != self._today:
+                self.refresh_apps()
+            self._update_values()
+            self._update_status()
+        except Exception:
+            config.log_error("MainWindow._on_tick")
 
     def _update_status(self) -> None:
         idle = self.tracker.last_idle_seconds
