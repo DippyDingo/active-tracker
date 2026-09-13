@@ -43,3 +43,15 @@ def set_db_path(path: str) -> None:
     cfg = read_config()
     cfg["db_path"] = str(path)
     write_config(cfg)
+
+
+def log_error(message: str) -> None:
+    try:
+        import traceback
+        from datetime import datetime
+
+        with open(APP_DIR / "crash.log", "a", encoding="utf-8") as f:
+            f.write(f"\n=== {datetime.now().isoformat()} {message} ===\n")
+            f.write(traceback.format_exc())
+    except Exception:
+        pass

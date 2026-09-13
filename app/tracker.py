@@ -103,14 +103,24 @@ class Tracker(QObject):
     def flush(self, day: date | None = None) -> None:
         day = day or self._day
         stamp = day.isoformat()
+        hour = time.localtime().tm_hour
         for app_id, secs in list(self._buffer.items()):
             whole = int(secs)
             if whole > 0:
                 self.db.add_time(app_id, stamp, whole)
+                self.db.add_hour(app_id, stamp, hour, whole)
                 self._buffer[app_id] = secs - whole
         self._last_flush = time.monotonic()
 
     def _on_tick(self) -> None:
+        try:
+            self._tick_impl()
+        except Exception:
+            from . import config
+
+            config.log_error("Tracker._on_tick")
+
+    def _tick_impl(self) -> None:
         now = time.monotonic()
         today = date.today()
         if today != self._day:

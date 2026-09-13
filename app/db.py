@@ -33,6 +33,13 @@ CREATE TABLE IF NOT EXISTS stats (
     seconds INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (app_id, day)
 );
+CREATE TABLE IF NOT EXISTS hours (
+    app_id INTEGER NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+    day TEXT NOT NULL,
+    hour INTEGER NOT NULL,
+    seconds INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (app_id, day, hour)
+);
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -118,6 +125,26 @@ class Database:
                    ON CONFLICT(app_id, day) DO UPDATE SET seconds = seconds + excluded.seconds""",
                 (app_id, day, seconds),
             )
+
+    def add_hour(self, app_id: int, day: str, hour: int, seconds: int) -> None:
+        if seconds <= 0:
+            return
+        with self._conn:
+            self._conn.execute(
+                """INSERT INTO hours(app_id, day, hour, seconds) VALUES(?,?,?,?)
+                   ON CONFLICT(app_id, day, hour) DO UPDATE SET seconds = seconds + excluded.seconds""",
+                (app_id, day, hour, seconds),
+            )
+
+    def get_hours(self, app_id: int, day: str) -> list[int]:
+        rows = self._conn.execute(
+            "SELECT hour, seconds FROM hours WHERE app_id=? AND day=?", (app_id, day)
+        )
+        out = [0] * 24
+        for r in rows:
+            if 0 <= r["hour"] <= 23:
+                out[r["hour"]] += r["seconds"]
+        return out
 
     def get_day_stats(self, day: str) -> dict[int, int]:
         rows = self._conn.execute("SELECT app_id, seconds FROM stats WHERE day=?", (day,))
