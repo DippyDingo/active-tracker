@@ -179,44 +179,68 @@ class MiniChart(QWidget):
 
     def paintEvent(self, event) -> None:
         pts = self._points()
-        if not pts:
-            return
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         w = self.width()
         h = self.height()
+        anchor = None
+        anchor_idx = self._hover
 
-        path = QPainterPath()
-        path.moveTo(pts[0])
-        for i in range(1, len(pts) - 1):
-            mid = QPointF((pts[i].x() + pts[i + 1].x()) / 2, (pts[i].y() + pts[i + 1].y()) / 2)
-            path.quadTo(pts[i], mid)
-        path.lineTo(pts[-1])
+        if not pts:
+            if len(self._values) != 1:
+                painter.end()
+                return
+            v = self._values[0]
+            pad_t, pad_b = 5.0, 4.0
+            bw = min(46.0, w * 0.25)
+            x = (w - bw) / 2
+            bh = (h - pad_t - pad_b) if v > 0 else 3.0
+            y = h - pad_b - bh
+            painter.save()
+            painter.setClipRect(QRectF(0, 0, w * self._progress + 0.5, h))
+            grad = QLinearGradient(0, 0, 0, h)
+            grad.setColorAt(0.0, QColor(96, 165, 250, int(80 * self._pulse)))
+            grad.setColorAt(1.0, QColor(96, 165, 250, 10))
+            painter.setPen(QPen(QColor("#60a5fa"), 2))
+            painter.setBrush(QBrush(grad))
+            painter.drawRoundedRect(QRectF(x, y, bw, bh), 6, 6)
+            painter.restore()
+            anchor = QPointF(x + bw / 2, y)
+            anchor_idx = 0
+        else:
+            path = QPainterPath()
+            path.moveTo(pts[0])
+            for i in range(1, len(pts) - 1):
+                mid = QPointF((pts[i].x() + pts[i + 1].x()) / 2, (pts[i].y() + pts[i + 1].y()) / 2)
+                path.quadTo(pts[i], mid)
+            path.lineTo(pts[-1])
 
-        fill = QPainterPath(path)
-        fill.lineTo(pts[-1].x(), h)
-        fill.lineTo(pts[0].x(), h)
-        fill.closeSubpath()
+            fill = QPainterPath(path)
+            fill.lineTo(pts[-1].x(), h)
+            fill.lineTo(pts[0].x(), h)
+            fill.closeSubpath()
 
-        painter.save()
-        painter.setClipRect(QRectF(0, 0, w * self._progress + 0.5, h))
-        grad = QLinearGradient(0, 0, 0, h)
-        top_alpha = int(70 * self._pulse)
-        grad.setColorAt(0.0, QColor(96, 165, 250, top_alpha))
-        grad.setColorAt(1.0, QColor(96, 165, 250, 6))
-        painter.fillPath(fill, QBrush(grad))
-        painter.setPen(QPen(QColor("#60a5fa"), 2))
-        painter.drawPath(path)
-        painter.restore()
+            painter.save()
+            painter.setClipRect(QRectF(0, 0, w * self._progress + 0.5, h))
+            grad = QLinearGradient(0, 0, 0, h)
+            top_alpha = int(70 * self._pulse)
+            grad.setColorAt(0.0, QColor(96, 165, 250, top_alpha))
+            grad.setColorAt(1.0, QColor(96, 165, 250, 6))
+            painter.fillPath(fill, QBrush(grad))
+            painter.setPen(QPen(QColor("#60a5fa"), 2))
+            painter.drawPath(path)
+            painter.restore()
+            if 0 <= self._hover < len(pts):
+                anchor = pts[self._hover]
 
-        if 0 <= self._hover < len(pts) and self._progress >= 0.99:
-            p = pts[self._hover]
+        if anchor is not None and self._progress >= 0.99:
+            p = anchor
             painter.setPen(QPen(QColor(11, 18, 32), 1.5))
             painter.setBrush(QColor("#60a5fa"))
             painter.drawEllipse(p, 4.2, 4.2)
 
-            value = self._values[self._hover]
-            day = self._day_labels[self._hover] if self._hover < len(self._day_labels) else ""
+            value = self._values[anchor_idx] if anchor_idx < len(self._values) else 0
+            day = self._day_labels[anchor_idx] if anchor_idx < len(self._day_labels) else ""
             text = f"{day} — {format_compact(value)}" if day else format_compact(value)
             font = QFont(self.font())
             font.setPointSizeF(8.5)
@@ -236,6 +260,11 @@ class MiniChart(QWidget):
         painter.end()
 
     def mouseMoveEvent(self, event) -> None:
+        if len(self._values) == 1:
+            if self._hover != 0 and self._progress >= 0.99:
+                self._hover = 0
+                self.update()
+            return
         pts = self._points()
         if not pts or self._progress < 0.99:
             return

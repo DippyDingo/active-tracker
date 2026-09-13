@@ -599,8 +599,7 @@ class MainWindow(QMainWindow):
             row.name,
             row.exe_path,
             row.icon,
-            PERIODS[self._period_idx][2],
-            card._shown_period if card._shown_period >= 0 else 0,
+            self._period_idx,
         )
         panel.delete_requested.connect(
             lambda aid: (
