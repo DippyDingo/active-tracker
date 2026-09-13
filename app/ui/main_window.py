@@ -62,7 +62,7 @@ class SearchEdit(QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("searchEdit")
-        self.setPlaceholderText("Поиск")
+        self.setPlaceholderText("  Поиск")
         self.setClearButtonEnabled(True)
         self.setFixedWidth(220)
         self.setAttribute(Qt.WA_InputMethodEnabled, False)
