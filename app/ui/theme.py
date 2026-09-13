@@ -194,6 +194,19 @@ QLabel#catCount {
 QWidget#sidebarContainer {
     background: transparent;
 }
+QFrame#inlineEdit {
+    border-radius: 10px;
+    border: 1px solid rgba(96, 165, 250, 50%);
+    background: rgba(59, 130, 246, 8%);
+}
+QFrame#inlineEdit QLineEdit {
+    background: transparent;
+    border: none;
+    color: #e5e7eb;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 2px;
+}
 
 QScrollArea {
     border: none;

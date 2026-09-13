@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from .. import installed_apps, win32_utils
 from ..installed_apps import InstalledApp
-from .widgets import magnifier_icon, pixmap_from_png, rounded_pixmap
+from .widgets import magnifier_icon, pixmap_from_png, rounded_pixmap, ui_icon
 
 
 class _ScanWorker(QThread):
@@ -187,9 +187,11 @@ class AddPanel(QFrame):
         layout.addWidget(self._list, 1)
 
         bottom = QHBoxLayout()
-        path_btn = QPushButton("📁  Добавить по пути...")
+        path_btn = QPushButton("Добавить по пути...")
         path_btn.setCursor(Qt.PointingHandCursor)
         path_btn.setToolTip("Выбрать exe-файл приложения вручную")
+        path_btn.setIcon(ui_icon("folder"))
+        path_btn.setIconSize(QSize(16, 16))
         path_btn.clicked.connect(self._pick_path)
         bottom.addWidget(path_btn)
         bottom.addStretch(1)
