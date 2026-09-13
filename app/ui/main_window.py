@@ -8,7 +8,6 @@ from PySide6.QtCore import (
     QParallelAnimationGroup,
     QPoint,
     QPropertyAnimation,
-    QRect,
     QSize,
     Qt,
     QTimer,
@@ -982,13 +981,13 @@ class MainWindow(QMainWindow):
         elif widget is not None:
             widget.setStyleSheet("background: rgba(96, 165, 250, 10%); border-radius: 8px;")
 
-    def _show_modal(self, panel, start_rect: QRect | None = None, on_closed=None) -> ModalOverlay | None:
+    def _show_modal(self, panel, on_closed=None) -> ModalOverlay | None:
         if self._overlay is not None:
-            self._pending_modal = (panel, start_rect, on_closed)
+            self._pending_modal = (panel, on_closed)
             if not self._overlay._closing:
                 self._overlay.close_modal()
             return None
-        overlay = ModalOverlay(self, panel, start_rect)
+        overlay = ModalOverlay(self, panel)
         self._overlay = overlay
         overlay.closed.connect(self._on_modal_closed)
         if on_closed is not None:
@@ -998,9 +997,9 @@ class MainWindow(QMainWindow):
     def _on_modal_closed(self) -> None:
         self._overlay = None
         if self._pending_modal is not None:
-            panel, start_rect, on_closed = self._pending_modal
+            panel, on_closed = self._pending_modal
             self._pending_modal = None
-            self._show_modal(panel, start_rect, on_closed)
+            self._show_modal(panel, on_closed)
 
     def _open_add(self, cat_id: int | None = None) -> None:
         existing = {row.exe_path for row in self.db.list_apps()}
