@@ -1,10 +1,10 @@
 import os
 
-from PySide6.QtCore import QObject, QRunnable, QSize, Qt, QThread, QThreadPool, Signal
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtCore import QObject, QRunnable, QSize, Qt, QThread, QThreadPool, QTimer, Signal
+from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
-    QDialog,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -13,9 +13,12 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 
 from .. import installed_apps, win32_utils
+from ..installed_apps import InstalledApp
+from .widgets import pixmap_from_png, rounded_pixmap
 
 
 class _ScanWorker(QThread):
@@ -34,7 +37,7 @@ class _IconSignals(QObject):
 
 
 class _IconTask(QRunnable):
-    def __init__(self, key: str, icon_path: str, icon_index: int, size: int = 32):
+    def __init__(self, key: str, icon_path: str, icon_index: int, size: int = 28):
         super().__init__()
         self.key = key
         self.icon_path = icon_path
@@ -58,26 +61,114 @@ class _IconTask(QRunnable):
             self.signals.ready.emit(self.key, png)
 
 
-class AddAppDialog(QDialog):
+class _Row(QFrame):
+    add_clicked = Signal(object)
+
+    def __init__(self, app: InstalledApp, parent=None):
+        super().__init__(parent)
+        self.app = app
+        self.added = False
+        self.setObjectName("addRow")
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(12, 7, 12, 7)
+        layout.setSpacing(11)
+
+        self.icon = QLabel()
+        self.icon.setFixedSize(28, 28)
+        layout.addWidget(self.icon)
+
+        texts = QVBoxLayout()
+        texts.setSpacing(1)
+        name = QLabel(app.name)
+        name.setObjectName("sideName")
+        path = QLabel()
+        path.setObjectName("pathLabel")
+        fm = QFontMetrics(path.font())
+        path.setText(fm.elidedText(app.exe_path, Qt.ElideMiddle, 360))
+        path.setToolTip(app.exe_path)
+        texts.addWidget(name)
+        texts.addWidget(path)
+        layout.addLayout(texts)
+        layout.addStretch(1)
+
+        self.btn = QPushButton("＋ Добавить")
+        self.btn.setObjectName("rowAdd")
+        self.btn.setFixedHeight(28)
+        self.btn.setCursor(Qt.PointingHandCursor)
+        self.btn.setVisible(False)
+        self.btn.clicked.connect(self._on_add)
+        layout.addWidget(self.btn)
+
+    def _on_add(self) -> None:
+        if not self.added:
+            self.add_clicked.emit(self.app)
+
+    def set_icon(self, pm) -> None:
+        self.icon.setPixmap(rounded_pixmap(pm, 28, 7))
+
+    def mark_added(self) -> None:
+        self.added = True
+        self.btn.setText("✓ Добавлено")
+        self.btn.setObjectName("rowAddDone")
+        self.btn.setEnabled(False)
+        self.btn.setVisible(True)
+        self.btn.style().unpolish(self.btn)
+        self.btn.style().polish(self.btn)
+
+    def matches(self, lowered: str) -> bool:
+        return (
+            not lowered
+            or lowered in self.app.name.lower()
+            or lowered in self.app.exe_path.lower()
+        )
+
+    def enterEvent(self, event) -> None:
+        if not self.added:
+            self.btn.setVisible(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        if not self.added:
+            self.btn.setVisible(False)
+        super().leaveEvent(event)
+
+
+class AddPanel(QFrame):
+    add_requested = Signal(object)
+    close_requested = Signal()
+
     def __init__(self, existing_exes: set[str], parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Добавить приложение")
-        self.resize(680, 580)
+        self.setObjectName("modalPanel")
+        self.setFixedSize(680, 620)
 
-        self._all_apps: list[installed_apps.InstalledApp] = []
         self._existing = {os.path.normcase(p) for p in existing_exes}
-        self._icon_cache: dict[str, QIcon] = {}
+        self._rows: list[_Row] = []
+        self._items: list[QListWidgetItem] = []
         self._scheduled: set[str] = set()
         self._pool = QThreadPool.globalInstance()
-        self._selected: list[installed_apps.InstalledApp] = []
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 18, 20, 18)
+        layout.setContentsMargins(24, 20, 24, 18)
         layout.setSpacing(12)
+
+        top = QHBoxLayout()
+        title = QLabel("Добавление приложения")
+        title.setObjectName("modalTitle")
+        top.addWidget(title)
+        top.addStretch(1)
+        close_btn = QPushButton("✕")
+        close_btn.setObjectName("deleteBtn")
+        close_btn.setFixedSize(26, 26)
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.clicked.connect(self.close_requested)
+        top.addWidget(close_btn)
+        layout.addLayout(top)
 
         self._search = QLineEdit()
         self._search.setObjectName("searchEdit")
-        self._search.setPlaceholderText("Поиск по названию или пути...")
+        self._search.setPlaceholderText("🔎  Поиск по названию или пути...")
         self._search.setClearButtonEnabled(True)
         self._search.textChanged.connect(self._apply_filter)
         layout.addWidget(self._search)
@@ -87,80 +178,79 @@ class AddAppDialog(QDialog):
         layout.addWidget(self._hint)
 
         self._list = QListWidget()
-        self._list.setSelectionMode(QListWidget.ExtendedSelection)
-        self._list.setIconSize(QSize(28, 28))
-        self._list.itemDoubleClicked.connect(lambda _: self.accept())
+        self._list.setObjectName("addList")
+        self._list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         layout.addWidget(self._list, 1)
 
-        buttons = QHBoxLayout()
-        path_btn = QPushButton("Добавить по пути...")
+        bottom = QHBoxLayout()
+        path_btn = QPushButton("📁  Добавить по пути...")
+        path_btn.setCursor(Qt.PointingHandCursor)
         path_btn.setToolTip("Выбрать exe-файл приложения вручную")
         path_btn.clicked.connect(self._pick_path)
-        buttons.addWidget(path_btn)
-        buttons.addStretch(1)
-        self._cancel_btn = QPushButton("Отмена")
-        self._cancel_btn.clicked.connect(self.reject)
-        self._add_btn = QPushButton("Добавить")
-        self._add_btn.setObjectName("primary")
-        self._add_btn.setEnabled(False)
-        self._add_btn.clicked.connect(self.accept)
-        buttons.addWidget(self._cancel_btn)
-        buttons.addWidget(self._add_btn)
-        layout.addLayout(buttons)
-
-        self._list.itemSelectionChanged.connect(
-            lambda: self._add_btn.setEnabled(bool(self._list.selectedItems()))
-        )
+        bottom.addWidget(path_btn)
+        bottom.addStretch(1)
+        done_btn = QPushButton("Готово")
+        done_btn.setObjectName("primary")
+        done_btn.setCursor(Qt.PointingHandCursor)
+        done_btn.clicked.connect(self.close_requested)
+        bottom.addWidget(done_btn)
+        layout.addLayout(bottom)
 
         self._worker = _ScanWorker(self)
         self._worker.finished_scan.connect(self._on_scanned)
         self._worker.start()
 
     def _on_scanned(self, apps: list) -> None:
-        self._all_apps = [
-            a for a in apps if os.path.normcase(a.exe_path) not in self._existing
-        ]
+        apps = [a for a in apps if os.path.normcase(a.exe_path) not in self._existing]
+        for app in apps:
+            row = _Row(app)
+            row.add_clicked.connect(self._on_row_add)
+            item = QListWidgetItem()
+            item.setSizeHint(QSize(0, 52))
+            self._list.addItem(item)
+            self._list.setItemWidget(item, row)
+            self._rows.append(row)
+            self._items.append(item)
+            self._schedule_icon(app, row)
         self._apply_filter(self._search.text())
+
+    def _schedule_icon(self, app: InstalledApp, row: _Row) -> None:
+        key = os.path.normcase(app.exe_path)
+        if key in self._scheduled:
+            return
+        self._scheduled.add(key)
+        task = _IconTask(key, app.icon_path, app.icon_index, 28)
+        task.signals.ready.connect(self._on_icon_ready)
+        self._pool.start(task)
+
+    def _on_icon_ready(self, key: str, png: bytes) -> None:
+        pm = pixmap_from_png(png)
+        if pm is None:
+            return
+        for row in self._rows:
+            if os.path.normcase(row.app.exe_path) == key:
+                row.set_icon(pm)
+
+    def _on_row_add(self, app: InstalledApp) -> None:
+        self.add_requested.emit(app)
+        for row in self._rows:
+            if row.app is app:
+                row.mark_added()
+                self._existing.add(os.path.normcase(app.exe_path))
 
     def _apply_filter(self, text: str) -> None:
         lowered = (text or "").strip().lower()
-        self._list.clear()
         shown = 0
-        for app in self._all_apps:
-            if lowered and lowered not in app.name.lower() and lowered not in app.exe_path.lower():
-                continue
-            item = QListWidgetItem(app.name)
-            item.setData(Qt.UserRole, app)
-            item.setToolTip(app.exe_path)
-            self._list.addItem(item)
-            key = os.path.normcase(app.exe_path)
-            cached = self._icon_cache.get(key)
-            if cached is not None:
-                item.setIcon(cached)
-            elif key not in self._scheduled:
-                self._scheduled.add(key)
-                task = _IconTask(key, app.icon_path, app.icon_index, 32)
-                task.signals.ready.connect(self._on_icon_ready)
-                self._pool.start(task)
-            shown += 1
-        if not self._all_apps and not self._worker.isFinished():
+        for row, item in zip(self._rows, self._items):
+            match = row.matches(lowered)
+            item.setHidden(not match)
+            shown += 1 if match else 0
+        if self._worker.isRunning() and not self._rows:
             self._hint.setText("Загрузка списка установленных программ...")
         elif lowered:
             self._hint.setText(f"Найдено: {shown}")
         else:
-            self._hint.setText(f"Установленных приложений: {len(self._all_apps)}")
-
-    def _on_icon_ready(self, key: str, png: bytes) -> None:
-        pm = QPixmap()
-        if not pm.loadFromData(png, "PNG"):
-            return
-        icon = QIcon(pm)
-        self._icon_cache[key] = icon
-        for i in range(self._list.count()):
-            item = self._list.item(i)
-            app = item.data(Qt.UserRole)
-            if app is not None and os.path.normcase(app.exe_path) == key:
-                item.setIcon(icon)
+            self._hint.setText(f"Доступно приложений: {len(self._rows)}")
 
     def _pick_path(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -173,29 +263,12 @@ class AddAppDialog(QDialog):
         name, ok = QInputDialog.getText(self, "Название приложения", "Название:", text=suggestion)
         if not ok or not name.strip():
             return
-        self._selected = [
-            installed_apps.InstalledApp(
-                name=name.strip(), exe_path=path, icon_path=path, icon_index=0
-            )
-        ]
-        self._shutdown_worker()
-        QDialog.accept(self)
+        app = InstalledApp(name=name.strip(), exe_path=path, icon_path=path, icon_index=0)
+        self.add_requested.emit(app)
+        self._existing.add(os.path.normcase(path))
+        self._hint.setText(f"Добавлено: {app.name}")
+        QTimer.singleShot(3000, self, lambda: self._apply_filter(self._search.text()))
 
-    def selected_apps(self) -> list[installed_apps.InstalledApp]:
-        return self._selected
-
-    def accept(self) -> None:
-        self._selected = [
-            item.data(Qt.UserRole) for item in self._list.selectedItems()
-        ]
-        self._shutdown_worker()
-        super().accept()
-
-    def reject(self) -> None:
-        self._selected = []
-        self._shutdown_worker()
-        super().reject()
-
-    def _shutdown_worker(self) -> None:
-        if self._worker.isRunning():
+    def shutdown(self) -> None:
+        if self._worker is not None and self._worker.isRunning():
             self._worker.wait(5000)

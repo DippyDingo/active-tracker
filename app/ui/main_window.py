@@ -1,14 +1,29 @@
 import os
-from datetime import date
+from collections import defaultdict
+from datetime import date, timedelta
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import (
+    QEasingCurve,
+    QParallelAnimationGroup,
+    QPoint,
+    QPropertyAnimation,
+    QRect,
+    QSize,
+    Qt,
+    QVariantAnimation,
+    Signal,
+)
 from PySide6.QtWidgets import (
     QApplication,
-    QDialog,
+    QButtonGroup,
     QFrame,
+    QGraphicsDropShadowEffect,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QMenu,
     QMessageBox,
@@ -18,91 +33,139 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from PySide6.QtGui import QColor, QPainter, QPainterPath
 
 from .. import win32_utils
 from ..db import Database
 from ..tracker import GRACE_SECONDS, Tracker
-from ..utils import format_seconds
-from .add_dialog import AddAppDialog
-from .settings_dialog import SettingsDialog
+from ..utils import WEEKDAYS, format_compact, format_seconds, ru_date
+from . import theme
+from .add_dialog import AddPanel
+from .modal import ModalOverlay
+from .settings_dialog import SettingsPanel
+from .stats_panel import StatsPanel
+from .widgets import AppCard, CardHost, SidebarItem
+
+PERIODS = [
+    ("День", 0, "СЕГОДНЯ"),
+    ("Неделя", 6, "НЕДЕЛЮ"),
+    ("Месяц", 29, "МЕСЯЦ"),
+    ("Всё время", None, "ВСЁ ВРЕМЯ"),
+]
 
 
-class AppCard(QFrame):
-    delete_requested = Signal(int)
+def _username() -> str:
+    name = os.environ.get("USERNAME", "").strip() or "Пользователь"
+    return name
 
-    def __init__(self, app_id: int, name: str, exe_path: str, icon_bytes: bytes | None, parent=None):
+
+class SearchEdit(QLineEdit):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.app_id = app_id
-        self.exe_path = exe_path
-        self.setObjectName("appCard")
+        self.setObjectName("searchEdit")
+        self.setPlaceholderText("🔎  Поиск приложения")
+        self.setClearButtonEnabled(True)
+        self.setFixedWidth(220)
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(14, 10, 10, 10)
-        layout.setSpacing(12)
+    def focusInEvent(self, event) -> None:
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(18)
+        shadow.setOffset(0, 0)
+        shadow.setColor(QColor(96, 165, 250, 80))
+        self.setGraphicsEffect(shadow)
+        super().focusInEvent(event)
 
-        icon_label = QLabel()
-        icon_label.setFixedSize(48, 48)
-        icon_label.setAlignment(Qt.AlignCenter)
-        if icon_bytes:
-            pm = QPixmap()
-            if pm.loadFromData(icon_bytes, "PNG"):
-                icon_label.setPixmap(
-                    pm.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                )
-        layout.addWidget(icon_label)
+    def focusOutEvent(self, event) -> None:
+        self.setGraphicsEffect(None)
+        super().focusOutEvent(event)
 
-        info = QVBoxLayout()
-        info.setSpacing(2)
-        name_row = QHBoxLayout()
-        name_row.setSpacing(7)
-        name_label = QLabel(name)
-        name_label.setObjectName("appName")
-        self._dot = QLabel()
-        self._dot.setObjectName("runningDot")
-        self._dot.setFixedSize(8, 8)
-        self._dot.setVisible(False)
-        self._dot.setToolTip("Приложение запущено")
-        name_row.addWidget(name_label)
-        name_row.addWidget(self._dot)
-        name_row.addStretch(1)
 
-        path_label = QLabel(exe_path)
-        path_label.setObjectName("appPath")
-        path_label.setToolTip(exe_path)
-        metrics = path_label.fontMetrics()
-        path_label.setFixedWidth(min(420, max(200, metrics.horizontalAdvance(exe_path) + 8)))
-        path_label.setText(metrics.elidedText(exe_path, Qt.ElideMiddle, path_label.width()))
+class ProfilePopup(QFrame):
+    settings_requested = Signal()
+    quit_requested = Signal()
 
-        info.addLayout(name_row)
-        info.addWidget(path_label)
-        layout.addLayout(info, 1)
+    def __init__(self, username: str, parent=None):
+        super().__init__(parent, Qt.Popup | Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint)
+        self.setObjectName("profilePopup")
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setFixedWidth(236)
+        self._anim = None
 
-        times = QVBoxLayout()
-        times.setSpacing(2)
-        self._today = QLabel()
-        self._today.setObjectName("timeBig")
-        self._today.setAlignment(Qt.AlignRight)
-        self._total = QLabel()
-        self._total.setObjectName("appPath")
-        self._total.setAlignment(Qt.AlignRight)
-        times.addWidget(self._today)
-        times.addWidget(self._total)
-        layout.addLayout(times)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(4)
 
-        delete_btn = QPushButton("✕")
-        delete_btn.setObjectName("deleteBtn")
-        delete_btn.setFixedSize(26, 26)
-        delete_btn.setCursor(Qt.PointingHandCursor)
-        delete_btn.setToolTip("Удалить из списка")
-        delete_btn.clicked.connect(lambda: self.delete_requested.emit(self.app_id))
-        layout.addWidget(delete_btn, 0, Qt.AlignTop)
+        head = QHBoxLayout()
+        head.setSpacing(10)
+        avatar = QLabel(username[0].upper())
+        avatar.setObjectName("avatar")
+        avatar.setFixedSize(34, 34)
+        avatar.setAlignment(Qt.AlignCenter)
+        head.addWidget(avatar)
+        texts = QVBoxLayout()
+        texts.setSpacing(1)
+        name = QLabel(username)
+        name.setObjectName("sideName")
+        sub = QLabel("локальный профиль")
+        sub.setObjectName("mutedLabel")
+        texts.addWidget(name)
+        texts.addWidget(sub)
+        head.addLayout(texts)
+        head.addStretch(1)
+        layout.addLayout(head)
 
-    def set_times(self, today_s: int, total_s: int) -> None:
-        self._today.setText(f"Сегодня · {format_seconds(today_s)}")
-        self._total.setText(f"Всего · {format_seconds(total_s)}")
+        sep = QFrame()
+        sep.setFixedHeight(1)
+        sep.setStyleSheet("background: #1e293b; border: none;")
+        layout.addWidget(sep)
 
-    def set_running(self, running: bool) -> None:
-        self._dot.setVisible(running)
+        settings_btn = QPushButton("⚙  Настройки")
+        settings_btn.setObjectName("popupItem")
+        settings_btn.setCursor(Qt.PointingHandCursor)
+        settings_btn.clicked.connect(self.settings_requested)
+        layout.addWidget(settings_btn)
+
+        quit_btn = QPushButton("⏻  Выход")
+        quit_btn.setObjectName("popupItem")
+        quit_btn.setCursor(Qt.PointingHandCursor)
+        quit_btn.clicked.connect(self.quit_requested)
+        layout.addWidget(quit_btn)
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        path = QPainterPath()
+        path.addRoundedRect(0.5, 0.5, self.width() - 1.0, self.height() - 1.0, 12, 12)
+        painter.fillPath(path, QColor("#101a2c"))
+        painter.setPen(QColor("#24344d"))
+        painter.drawPath(path)
+        painter.end()
+
+    def popup_at(self, global_bottom_right: QPoint) -> None:
+        self.adjustSize()
+        x = global_bottom_right.x() - self.width()
+        y = global_bottom_right.y() + 8
+        target = QPoint(x, y)
+        self.move(x, y - 10)
+        self.setWindowOpacity(0.0)
+        self.show()
+        self.raise_()
+        if self._anim is not None:
+            self._anim.stop()
+        group = QParallelAnimationGroup(self)
+        move = QPropertyAnimation(self, b"pos")
+        move.setDuration(170)
+        move.setStartValue(self.pos())
+        move.setEndValue(target)
+        move.setEasingCurve(QEasingCurve.OutCubic)
+        fade = QPropertyAnimation(self, b"windowOpacity")
+        fade.setDuration(170)
+        fade.setStartValue(0.0)
+        fade.setEndValue(1.0)
+        group.addAnimation(move)
+        group.addAnimation(fade)
+        self._anim = group
+        group.start()
 
 
 class MainWindow(QMainWindow):
@@ -110,70 +173,44 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.db = db
         self.tracker = tracker
+
         self._cards: dict[int, AppCard] = {}
+        self._hosts: dict[int, CardHost] = {}
+        self._side_items: dict[int, tuple] = {}
+        self._rows_meta: dict[int, object] = {}
+        self._order: list[int] = []
         self._names: dict[int, str] = {}
+        self._base: dict[int, int] = {}
+        self._series: dict[int, list[int]] = {}
+        self._day_names: list[str] = []
+        self._day_dates: list[str] = []
+        self._today = date.today()
+        self._period_idx = 1
+        self._selected_id: int | None = None
+        self._filter = ""
+        self._cols = 3
+        self._overlay = None
+        self._pending_modal: tuple | None = None
         self._running: set[str] = set()
-        self._tick_count = 0
-        self._tray_hint_shown = False
+        self._header_value = 0
+        self._header_anim = None
         self._tray = None
-        self._tray_menu = None
+        self._tray_hint_shown = False
 
         self.setWindowTitle("Трекер активности")
-        self.resize(940, 640)
-        self.setMinimumSize(720, 480)
+        self.setWindowIcon(theme.load_app_icon())
+        self.resize(1210, 780)
+        self.setMinimumSize(1020, 680)
 
         root = QWidget()
+        root.setObjectName("mainRoot")
         self.setCentralWidget(root)
-        root_layout = QVBoxLayout(root)
+        root_layout = QHBoxLayout(root)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
 
-        header = QFrame()
-        header.setObjectName("Header")
-        header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(22, 16, 22, 16)
-        header_layout.setSpacing(12)
-
-        titles = QVBoxLayout()
-        titles.setSpacing(2)
-        title = QLabel("Активное время")
-        title.setObjectName("AppTitle")
-        subtitle = QLabel("Честный учёт времени в выбранных приложениях")
-        subtitle.setObjectName("subtleLabel")
-        titles.addWidget(title)
-        titles.addWidget(subtitle)
-        header_layout.addLayout(titles)
-        header_layout.addStretch(1)
-
-        self._today_total = QLabel("—")
-        self._today_total.setObjectName("todayTotal")
-        header_layout.addWidget(self._today_total)
-
-        settings_btn = QPushButton("Настройки")
-        settings_btn.clicked.connect(self._open_settings)
-        header_layout.addWidget(settings_btn)
-
-        add_btn = QPushButton("＋  Добавить приложение")
-        add_btn.setObjectName("primary")
-        add_btn.clicked.connect(self._open_add)
-        header_layout.addWidget(add_btn)
-
-        root_layout.addWidget(header)
-
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        container = QWidget()
-        container.setObjectName("scrollContainer")
-        self._list_layout = QVBoxLayout(container)
-        self._list_layout.setContentsMargins(22, 18, 22, 18)
-        self._list_layout.setSpacing(10)
-        self._empty = QLabel(
-            "Список пуст.\nДобавьте приложение, чтобы начать учёт активного времени."
-        )
-        self._empty.setObjectName("emptyLabel")
-        self._empty.setAlignment(Qt.AlignCenter)
-        scroll.setWidget(container)
-        root_layout.addWidget(scroll, 1)
+        self._build_sidebar(root_layout)
+        self._build_content(root_layout)
 
         self._status = QLabel()
         self.statusBar().addWidget(self._status, 1)
@@ -185,61 +222,429 @@ class MainWindow(QMainWindow):
         self.refresh_apps()
         self._on_tick()
 
+    def _build_sidebar(self, root_layout) -> None:
+        sidebar = QFrame()
+        sidebar.setObjectName("sidebar")
+        sidebar.setFixedWidth(264)
+        layout = QVBoxLayout(sidebar)
+        layout.setContentsMargins(0, 18, 0, 12)
+        layout.setSpacing(10)
+
+        title_wrap = QHBoxLayout()
+        title_wrap.setContentsMargins(22, 0, 16, 0)
+        title = QLabel("МОИ ПРИЛОЖЕНИЯ")
+        title.setObjectName("sectionTitle")
+        title_wrap.addWidget(title)
+        title_wrap.addStretch(1)
+        layout.addLayout(title_wrap)
+
+        self._sidebar_list = QListWidget()
+        self._sidebar_list.setObjectName("sidebarList")
+        self._sidebar_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._sidebar_list.currentItemChanged.connect(self._on_sidebar_changed)
+        layout.addWidget(self._sidebar_list, 1)
+
+        buttons = QVBoxLayout()
+        buttons.setContentsMargins(14, 4, 14, 0)
+        buttons.setSpacing(8)
+        add_btn = QPushButton("＋  Добавить приложение")
+        add_btn.setObjectName("primary")
+        add_btn.setCursor(Qt.PointingHandCursor)
+        add_btn.clicked.connect(self._open_add)
+        settings_btn = QPushButton("⚙  Настройки")
+        settings_btn.setCursor(Qt.PointingHandCursor)
+        settings_btn.clicked.connect(self._open_settings)
+        buttons.addWidget(add_btn)
+        buttons.addWidget(settings_btn)
+        layout.addLayout(buttons)
+
+        root_layout.addWidget(sidebar)
+
+    def _build_content(self, root_layout) -> None:
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(26, 18, 26, 8)
+        layout.setSpacing(16)
+
+        header = QHBoxLayout()
+        header.setSpacing(12)
+        titles = QVBoxLayout()
+        titles.setSpacing(2)
+        page_title = QLabel("ACTIVITY")
+        page_title.setObjectName("pageTitle")
+        self._header_sub = QLabel("")
+        self._header_sub.setObjectName("pageSub")
+        titles.addWidget(page_title)
+        titles.addWidget(self._header_sub)
+        header.addLayout(titles)
+        header.addStretch(1)
+
+        self._period_group = QButtonGroup(self)
+        self._period_group.setExclusive(True)
+        periods_wrap = QHBoxLayout()
+        periods_wrap.setSpacing(2)
+        for idx, (label, _days, _gen) in enumerate(PERIODS):
+            btn = QPushButton(label)
+            btn.setObjectName("periodBtn")
+            btn.setCheckable(True)
+            btn.setCursor(Qt.PointingHandCursor)
+            if idx == self._period_idx:
+                btn.setChecked(True)
+            self._period_group.addButton(btn, idx)
+            periods_wrap.addWidget(btn)
+        self._period_group.idClicked.connect(self._on_period_changed)
+        header.addLayout(periods_wrap)
+
+        self._search = SearchEdit()
+        self._search.textChanged.connect(self._on_filter_changed)
+        header.addWidget(self._search)
+
+        self._profile_btn = QPushButton()
+        self._profile_btn.setObjectName("profileBtn")
+        self._profile_btn.setCursor(Qt.PointingHandCursor)
+        prof_layout = QHBoxLayout(self._profile_btn)
+        prof_layout.setContentsMargins(3, 2, 10, 2)
+        prof_layout.setSpacing(8)
+        name = _username()
+        avatar = QLabel(name[0].upper())
+        avatar.setObjectName("avatar")
+        avatar.setFixedSize(30, 30)
+        avatar.setAlignment(Qt.AlignCenter)
+        avatar.setAttribute(Qt.WA_TransparentForMouseEvents)
+        name_label = QLabel(name)
+        name_label.setObjectName("sideName")
+        name_label.setAttribute(Qt.WA_TransparentForMouseEvents)
+        prof_layout.addWidget(avatar)
+        prof_layout.addWidget(name_label)
+        self._profile_btn.clicked.connect(self._show_profile_popup)
+        header.addWidget(self._profile_btn)
+
+        layout.addLayout(header)
+
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
+        container = QWidget()
+        container.setObjectName("cardsContainer")
+        self._grid = QGridLayout(container)
+        self._grid.setContentsMargins(4, 4, 4, 4)
+        self._grid.setSpacing(18)
+        self._empty_label = QLabel(
+            "Здесь пока пусто.\nДобавьте приложение — и увидите честную статистику активности."
+        )
+        self._empty_label.setObjectName("emptyLabel")
+        self._empty_label.setAlignment(Qt.AlignCenter)
+        self._scroll.setWidget(container)
+        layout.addWidget(self._scroll, 1)
+
+        self._popup = ProfilePopup(name)
+        self._popup.settings_requested.connect(self._open_settings)
+        self._popup.quit_requested.connect(QApplication.quit)
+
+        root_layout.addWidget(content, 1)
+
+    def _show_profile_popup(self) -> None:
+        corner = self._profile_btn.mapToGlobal(
+            QPoint(self._profile_btn.width(), self._profile_btn.height())
+        )
+        self._popup.popup_at(corner)
+
     def refresh_apps(self) -> None:
         self.tracker.flush()
         apps = self.db.list_apps()
 
-        while self._list_layout.count():
-            item = self._list_layout.takeAt(0)
+        while self._grid.count():
+            item = self._grid.takeAt(0)
             widget = item.widget()
-            if widget is not None and widget is not self._empty:
+            if widget is not None and widget is not self._empty_label:
                 widget.deleteLater()
+        self._sidebar_list.blockSignals(True)
+        self._sidebar_list.clear()
+        self._sidebar_list.blockSignals(False)
         self._cards.clear()
+        self._hosts.clear()
+        self._side_items.clear()
+        self._rows_meta.clear()
+        self._order.clear()
         self._names.clear()
 
-        self._empty.setVisible(not apps)
-        self._list_layout.addWidget(self._empty)
-
-        day = date.today().isoformat()
-        stats = self.db.get_day_stats(day)
-        totals = self.db.get_totals()
-        self._running = self.tracker.running_paths()
-
         for row in apps:
-            card = AppCard(row.id, row.name, row.exe_path, row.icon)
-            card.delete_requested.connect(self._confirm_delete)
-            pending = self.tracker.pending_seconds(row.id)
-            card.set_times(stats.get(row.id, 0) + pending, totals.get(row.id, 0) + pending)
-            card.set_running(os.path.normcase(row.exe_path) in self._running)
-            self._cards[row.id] = card
+            self._rows_meta[row.id] = row
             self._names[row.id] = row.name
-            self._list_layout.addWidget(card)
-        self._list_layout.addStretch(1)
+            self._order.append(row.id)
+
+            card = AppCard(row.id, row.name, row.exe_path, row.icon)
+            card.clicked.connect(self._on_card_clicked)
+            card.delete_requested.connect(self._confirm_delete)
+            host = CardHost(card)
+            self._cards[row.id] = card
+            self._hosts[row.id] = host
+
+            item = QListWidgetItem()
+            widget = SidebarItem(row.name, row.icon)
+            item.setSizeHint(QSize(0, 52))
+            item.setData(Qt.UserRole, row.id)
+            self._sidebar_list.addItem(item)
+            self._sidebar_list.setItemWidget(item, widget)
+            self._side_items[row.id] = (item, widget)
+
+        self._recompute_base()
+        self._relayout_grid()
+        self._apply_filter(self._filter)
+
+        if self._selected_id in self._cards:
+            self._cards[self._selected_id].set_selected(True)
+            item = self._side_items[self._selected_id][0]
+            self._sidebar_list.blockSignals(True)
+            self._sidebar_list.setCurrentItem(item)
+            self._sidebar_list.blockSignals(False)
 
         self.tracker.set_tracked({row.exe_path: row.id for row in apps})
         self._update_status_right()
-        self._update_day_total(stats)
+
+    def _recompute_base(self) -> None:
+        today = date.today()
+        self._today = today
+        yesterday = (today - timedelta(days=1)).isoformat()
+        days = PERIODS[self._period_idx][1]
+        start = None if days is None else (today - timedelta(days=days)).isoformat()
+
+        base = defaultdict(int)
+        if start is None or start <= yesterday:
+            for app_id, _day, secs in self.db.query_stats(start, yesterday):
+                base[app_id] += secs
+        self._base = dict(base)
+
+        series = {app_id: [0] * 6 for app_id in self._order}
+        for app_id, day, secs in self.db.query_stats(
+            (today - timedelta(days=6)).isoformat(), yesterday
+        ):
+            delta = (today - date.fromisoformat(day)).days
+            if app_id in series and 1 <= delta <= 6:
+                series[app_id][6 - delta] += secs
+        self._series = series
+
+        self._day_names = [WEEKDAYS[(today - timedelta(days=6 - i)).weekday()] for i in range(7)]
+        self._day_dates = [ru_date(today - timedelta(days=6 - i)) for i in range(7)]
+        for app_id, card in self._cards.items():
+            card.set_day_names(self._day_names)
+            card.set_day_tooltips(self._day_dates)
+
+    def _current_cols(self) -> int:
+        width = self.width()
+        if width >= 1210:
+            return 3
+        if width >= 940:
+            return 2
+        return 1
+
+    def _relayout_grid(self) -> None:
+        self._cols = self._current_cols()
+        for c in range(self._cols):
+            self._grid.setColumnStretch(c, 1)
+        visible_order = [i for i in self._order if i in self._hosts]
+        for idx, app_id in enumerate(visible_order):
+            self._grid.addWidget(self._hosts[app_id], idx // self._cols, idx % self._cols)
+        if not visible_order:
+            self._grid.addWidget(self._empty_label, 0, 0, 1, max(self._cols, 1), Qt.AlignCenter)
+            self._empty_label.setVisible(True)
+        else:
+            self._grid.removeWidget(self._empty_label)
+        self._grid.setRowStretch((max(len(visible_order), 1) - 1) // self._cols + 1, 1)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if hasattr(self, "_grid") and self._current_cols() != self._cols:
+            self._relayout_grid()
+
+    def _apply_filter(self, text: str) -> None:
+        self._filter = (text or "").strip().lower()
+        for app_id in self._order:
+            match = (
+                not self._filter
+                or self._filter in self._names.get(app_id, "").lower()
+                or self._filter in self._rows_meta[app_id].exe_path.lower()
+            )
+            if app_id in self._hosts:
+                self._hosts[app_id].setVisible(match)
+            if app_id in self._side_items:
+                self._side_items[app_id][0].setHidden(not match)
+
+    def _on_filter_changed(self, text: str) -> None:
+        self._apply_filter(text)
+
+    def _on_period_changed(self, idx: int) -> None:
+        if idx == self._period_idx:
+            return
+        self._period_idx = idx
+        self._recompute_base()
+        day_str = date.today().isoformat()
+        today_db = self.db.get_day_stats(day_str)
+        for app_id, card in self._cards.items():
+            today_live = today_db.get(app_id, 0) + self.tracker.pending_seconds(app_id)
+            card.set_period_seconds(self._base.get(app_id, 0) + today_live, animate=True)
+            card.set_chart(self._series.get(app_id, [0] * 6) + [today_live], animate=True)
+        self._update_values(animate_header=True)
+        for app_id, (_item, widget) in self._side_items.items():
+            today_live = today_db.get(app_id, 0) + self.tracker.pending_seconds(app_id)
+            widget.set_time(format_compact(self._base.get(app_id, 0) + today_live))
+
+    def _on_sidebar_changed(self, current, _previous) -> None:
+        if current is None:
+            return
+        app_id = current.data(Qt.UserRole)
+        self._selected_id = app_id
+        for aid, card in self._cards.items():
+            card.set_selected(aid == app_id)
+        host = self._hosts.get(app_id)
+        if host is not None:
+            self._scroll.ensureWidgetVisible(host, 30, 60)
+
+    def _on_card_clicked(self, app_id: int) -> None:
+        self._selected_id = app_id
+        for aid, card in self._cards.items():
+            card.set_selected(aid == app_id)
+        if app_id in self._side_items:
+            item = self._side_items[app_id][0]
+            self._sidebar_list.blockSignals(True)
+            self._sidebar_list.setCurrentItem(item)
+            self._sidebar_list.blockSignals(False)
+        self._open_stats(app_id)
+
+    def _show_modal(self, panel, start_rect: QRect | None = None, on_closed=None) -> ModalOverlay | None:
+        if self._overlay is not None:
+            self._pending_modal = (panel, start_rect, on_closed)
+            if not self._overlay._closing:
+                self._overlay.close_modal()
+            return None
+        overlay = ModalOverlay(self, panel, start_rect)
+        self._overlay = overlay
+        overlay.closed.connect(self._on_modal_closed)
+        if on_closed is not None:
+            overlay.closed.connect(on_closed)
+        return overlay
+
+    def _on_modal_closed(self) -> None:
+        self._overlay = None
+        if self._pending_modal is not None:
+            panel, start_rect, on_closed = self._pending_modal
+            self._pending_modal = None
+            self._show_modal(panel, start_rect, on_closed)
+
+    def _open_add(self) -> None:
+        existing = {row.exe_path for row in self.db.list_apps()}
+        panel = AddPanel(existing, self)
+        panel.add_requested.connect(self._on_add_request)
+        self._show_modal(panel, on_closed=lambda: (panel.shutdown(), self.refresh_apps()))
+
+    def _on_add_request(self, app) -> None:
+        icon_bytes = win32_utils.extract_icon_png(app.icon_path, app.icon_index, 64)
+        self.db.add_app(app.name, app.exe_path, icon_bytes)
+        self.refresh_apps()
+
+    def _open_settings(self) -> None:
+        self._popup.hide()
+        panel = SettingsPanel(
+            self.tracker.threshold_minutes(), self.tracker.background_counting(), self
+        )
+        panel.saved.connect(self._apply_settings)
+        self._show_modal(panel)
+
+    def _apply_settings(self, threshold: int, background: bool) -> None:
+        self.tracker.set_threshold_minutes(threshold)
+        self.tracker.set_background_counting(background)
+        self._update_status_right()
+
+    def _open_stats(self, app_id: int) -> None:
+        row = self._rows_meta.get(app_id)
+        card = self._cards.get(app_id)
+        if row is None or card is None:
+            return
+        start_rect = None
+        host = self._hosts.get(app_id)
+        if host is not None and not host.isHidden():
+            pos = card.mapTo(self, QPoint(0, 0))
+            rect = QRect(pos, card.size()).intersected(self.rect())
+            if not rect.isEmpty() and rect.width() > 40:
+                start_rect = rect
+        panel = StatsPanel(
+            self.db,
+            self.tracker,
+            row.id,
+            row.name,
+            row.exe_path,
+            row.icon,
+            PERIODS[self._period_idx][2],
+            card._shown_period if card._shown_period >= 0 else 0,
+        )
+        panel.delete_requested.connect(
+            lambda aid: (
+                self._overlay.close_modal() if self._overlay else None,
+                self._confirm_delete(aid),
+            )
+        )
+        self._show_modal(panel, start_rect)
+
+    def _confirm_delete(self, app_id: int) -> None:
+        name = self._names.get(app_id, "приложение")
+        box = QMessageBox(self)
+        box.setWindowTitle("Удаление приложения")
+        box.setIcon(QMessageBox.Warning)
+        box.setText(f"Удалить «{name}» из отслеживания?")
+        box.setInformativeText("Накопленная статистика по нему будет удалена.")
+        delete_btn = box.addButton("Удалить", QMessageBox.AcceptRole)
+        box.addButton("Отмена", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is delete_btn:
+            if self._selected_id == app_id:
+                self._selected_id = None
+            self.db.remove_app(app_id)
+            self.refresh_apps()
 
     def _update_status_right(self) -> None:
         suffix = " · фон ✦" if self.tracker.background_counting() else ""
-        self._status_right.setText(f"Порог простоя: {self.tracker.threshold_minutes()} мин{suffix}")
+        self._status_right.setText(
+            f"Порог простоя: {self.tracker.threshold_minutes()} мин{suffix}"
+        )
 
-    def _update_day_total(self, day_stats: dict[int, int]) -> None:
-        total = sum(day_stats.values())
-        total += sum(self.tracker.pending_seconds(i) for i in self._cards)
-        self._today_total.setText(f"Активно сегодня: {format_seconds(total)}")
+    def _update_values(self, animate_header: bool = False) -> None:
+        day_str = date.today().isoformat()
+        today_db = self.db.get_day_stats(day_str)
+        self._running = self.tracker.running_paths()
+        header_total = 0
+        for app_id, card in self._cards.items():
+            today_live = today_db.get(app_id, 0) + self.tracker.pending_seconds(app_id)
+            period_total = self._base.get(app_id, 0) + today_live
+            header_total += period_total
+            card.set_period_seconds(period_total)
+            card.set_today_seconds(today_live)
+            card.set_chart(self._series.get(app_id, [0] * 6) + [today_live])
+            card.set_running(os.path.normcase(card.exe_path) in self._running)
+        self._set_header_total(header_total, animate_header)
+
+    def _set_header_total(self, value: int, animate: bool) -> None:
+        gen = PERIODS[self._period_idx][2]
+        if not animate or abs(value - self._header_value) <= 2:
+            self._header_value = value
+            self._header_sub.setText(f"АКТИВНОСТЬ ЗА {gen}: {format_compact(value)}")
+            return
+        if self._header_anim is not None:
+            self._header_anim.stop()
+        anim = QVariantAnimation(self)
+        anim.setStartValue(self._header_value)
+        anim.setEndValue(value)
+        anim.setDuration(350)
+        anim.setEasingCurve(QEasingCurve.OutCubic)
+        anim.valueChanged.connect(
+            lambda v: self._header_sub.setText(f"АКТИВНОСТЬ ЗА {gen}: {format_compact(v)}")
+        )
+        anim.finished.connect(lambda: setattr(self, "_header_value", value))
+        self._header_anim = anim
+        anim.start()
 
     def _on_tick(self) -> None:
-        self._tick_count += 1
-        self._running = self.tracker.running_paths()
-        day = date.today().isoformat()
-        stats = self.db.get_day_stats(day)
-        totals = self.db.get_totals()
-        for app_id, card in self._cards.items():
-            pending = self.tracker.pending_seconds(app_id)
-            card.set_times(stats.get(app_id, 0) + pending, totals.get(app_id, 0) + pending)
-            card.set_running(os.path.normcase(card.exe_path) in self._running)
-        self._update_day_total(stats)
+        if date.today() != self._today:
+            self.refresh_apps()
+        self._update_values()
         self._update_status()
 
     def _update_status(self) -> None:
@@ -259,43 +664,11 @@ class MainWindow(QMainWindow):
             text = "Активность есть, но текущее приложение не отслеживается"
         self._status.setText(text)
 
-    def _open_add(self) -> None:
-        existing = {row.exe_path for row in self.db.list_apps()}
-        dialog = AddAppDialog(existing, self)
-        if dialog.exec() == QDialog.Accepted:
-            for app in dialog.selected_apps():
-                icon_bytes = win32_utils.extract_icon_png(app.icon_path, app.icon_index, 64)
-                self.db.add_app(app.name, app.exe_path, icon_bytes)
-            self.refresh_apps()
-
-    def _confirm_delete(self, app_id: int) -> None:
-        name = self._names.get(app_id, "приложение")
-        box = QMessageBox(self)
-        box.setWindowTitle("Удаление приложения")
-        box.setIcon(QMessageBox.Warning)
-        box.setText(f"Удалить «{name}» из отслеживания?")
-        box.setInformativeText("Накопленная статистика по нему будет удалена.")
-        delete_btn = box.addButton("Удалить", QMessageBox.AcceptRole)
-        box.addButton("Отмена", QMessageBox.RejectRole)
-        box.exec()
-        if box.clickedButton() is delete_btn:
-            self.db.remove_app(app_id)
-            self.refresh_apps()
-
-    def _open_settings(self) -> None:
-        dialog = SettingsDialog(
-            self.tracker.threshold_minutes(), self.tracker.background_counting(), self
-        )
-        if dialog.exec() == QDialog.Accepted:
-            self.tracker.set_threshold_minutes(dialog.value())
-            self.tracker.set_background_counting(dialog.background_enabled())
-            self._update_status_right()
-
     def _build_tray(self) -> None:
         if not QSystemTrayIcon.isSystemTrayAvailable():
             return
         self._tray = QSystemTrayIcon(self)
-        self._tray.setIcon(QApplication.windowIcon())
+        self._tray.setIcon(theme.load_app_icon())
         self._tray.setToolTip("Трекер активности — учёт времени идёт")
         self._tray_menu = QMenu()
         show_action = self._tray_menu.addAction("Показать окно")

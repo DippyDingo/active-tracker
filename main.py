@@ -1,3 +1,4 @@
+import ctypes
 import sys
 
 from PySide6.QtWidgets import QApplication
@@ -9,11 +10,19 @@ from app.ui.main_window import MainWindow
 
 
 def main() -> int:
+    if sys.platform == "win32":
+        try:
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "DippyDingo.ActiveTracker"
+            )
+        except Exception:
+            pass
+
     qt = QApplication(sys.argv)
     qt.setApplicationName("Active Tracker")
     qt.setOrganizationName("ActiveTracker")
     qt.setStyleSheet(theme.QSS)
-    qt.setWindowIcon(theme.make_clock_icon())
+    qt.setWindowIcon(theme.load_app_icon())
     qt.setQuitOnLastWindowClosed(False)
 
     db = Database()

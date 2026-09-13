@@ -93,6 +93,22 @@ class Database:
         rows = self._conn.execute("SELECT app_id, seconds FROM stats WHERE day=?", (day,))
         return {r["app_id"]: r["seconds"] for r in rows}
 
+    def query_stats(
+        self, start_day: str | None = None, end_day: str | None = None
+    ) -> list[tuple[int, str, int]]:
+        sql = "SELECT app_id, day, seconds FROM stats"
+        where = []
+        args = []
+        if start_day is not None:
+            where.append("day >= ?")
+            args.append(start_day)
+        if end_day is not None:
+            where.append("day <= ?")
+            args.append(end_day)
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        return [(r["app_id"], r["day"], r["seconds"]) for r in self._conn.execute(sql, args)]
+
     def get_totals(self) -> dict[int, int]:
         rows = self._conn.execute(
             "SELECT app_id, SUM(seconds) AS seconds FROM stats GROUP BY app_id"
