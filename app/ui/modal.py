@@ -49,7 +49,6 @@ class ModalOverlay(QWidget):
 
     def _start_open_animation(self) -> None:
         panel = self._panel
-        panel.show()
         snapshot = panel.grab()
         snap = QLabel(self)
         snap.setPixmap(snapshot)
