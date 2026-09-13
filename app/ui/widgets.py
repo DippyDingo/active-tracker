@@ -1,3 +1,6 @@
+from datetime import date
+from math import ceil
+
 from PySide6.QtCore import (
     Property,
     QEasingCurve,
@@ -34,7 +37,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..utils import format_compact
+from ..utils import SHORT_MONTHS, format_compact, ru_date
 
 
 def pixmap_from_png(data: bytes | None) -> QPixmap | None:
@@ -481,6 +484,400 @@ class MiniChart(QWidget):
                 self._hover = -1
                 self._emit_view()
                 self.update()
+
+    def leaveEvent(self, event) -> None:
+        if self._hover != -1:
+            self._hover = -1
+            self.update()
+        super().leaveEvent(event)
+
+
+class RangeChart(QWidget):
+    selection_changed = Signal(object)
+
+    PAD_L = 6.0
+    PAD_R = 6.0
+    PAD_T = 8.0
+    PAD_B = 24.0
+    MIN_VISIBLE = 7.0
+
+    def __init__(self, height: int = 150, parent=None):
+        super().__init__(parent)
+        self.setFixedHeight(height)
+        self.setMinimumWidth(200)
+        self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.ClickFocus)
+        self.setCursor(Qt.CrossCursor)
+        self._days: list[int] = []
+        self._dates: list[date] = []
+        self._buckets: list[tuple[int, int, str, str, int]] = []
+        self._offset = 0.0
+        self._visible = 7.0
+        self._sel: tuple[int, int] | None = None
+        self._hover = -1
+        self._mode: str | None = None
+        self._space = False
+        self._press_x = 0.0
+        self._pan_start_offset = 0.0
+        self._sel_anchor = 0
+        self._drag_moved = False
+        self._vis_buckets: list[tuple[int, int, str, str, int]] = []
+        self._vis_pts: list[QPointF] = []
+
+    def set_data(self, values: list[int], dates: list[date]) -> None:
+        self._days = [max(0, int(v)) for v in values]
+        self._dates = list(dates)
+        self._sel = None
+        self.set_window_days(None)
+
+    def _n(self) -> int:
+        return len(self._days)
+
+    def selection(self) -> tuple[int, int] | None:
+        return self._sel
+
+    def clear_selection(self) -> None:
+        if self._sel is not None:
+            self._sel = None
+            self.update()
+            self.selection_changed.emit(None)
+
+    def set_window_days(self, days: int | None) -> None:
+        n = self._n()
+        if n == 0:
+            return
+        if days is None:
+            vis = float(n)
+        else:
+            vis = min(max(float(days), self.MIN_VISIBLE), float(n))
+        self._visible = vis
+        self._offset = float(n) - vis
+        self._clamp_view()
+        self._rebuild_buckets()
+        self.update()
+
+    def _clamp_view(self) -> None:
+        n = self._n()
+        max_vis = max(float(n), self.MIN_VISIBLE)
+        self._visible = min(max(self._visible, self.MIN_VISIBLE), max_vis)
+        self._offset = min(max(self._offset, 0.0), max(0.0, n - self._visible))
+
+    def _rebuild_buckets(self) -> None:
+        n = self._n()
+        if n == 0:
+            self._buckets = []
+            return
+        vis = self._visible
+        unit = "day" if vis <= 90 else ("week" if vis <= 730 else "month")
+        buckets: list[tuple[int, int, str, str, int]] = []
+        if unit == "day":
+            for i, v in enumerate(self._days):
+                d = self._dates[i]
+                axis = f"{d.day} {SHORT_MONTHS[d.month - 1]}"
+                buckets.append((i, i + 1, axis, ru_date(d), v))
+        elif unit == "week":
+            for i in range(0, n, 7):
+                chunk = self._days[i : i + 7]
+                d0 = self._dates[i]
+                d1 = self._dates[min(i + 7, n) - 1]
+                axis = f"{d0.day} {SHORT_MONTHS[d0.month - 1]}"
+                if d0.month == d1.month:
+                    tip = f"{d0.day}–{d1.day} {SHORT_MONTHS[d0.month - 1]}"
+                else:
+                    tip = f"{d0.day} {SHORT_MONTHS[d0.month - 1]}–{d1.day} {SHORT_MONTHS[d1.month - 1]}"
+                buckets.append((i, i + 7, axis, tip, sum(chunk)))
+        else:
+            i = 0
+            while i < n:
+                year, month = self._dates[i].year, self._dates[i].month
+                j = i
+                while j < n and (self._dates[j].year, self._dates[j].month) == (year, month):
+                    j += 1
+                label = f"{SHORT_MONTHS[month - 1]} {year}"
+                buckets.append((i, j, label, label, sum(self._days[i:j])))
+                i = j
+        self._buckets = buckets
+
+    def _plot(self) -> tuple[float, float, float, float]:
+        w = max(self.width(), 20)
+        h = max(self.height(), 20)
+        return self.PAD_L, self.PAD_T, w - self.PAD_L - self.PAD_R, h - self.PAD_T - self.PAD_B
+
+    def _day_to_x(self, di: float) -> float:
+        pad_l, _pad_t, inner_w, _inner_h = self._plot()
+        return pad_l + (di - self._offset) / self._visible * inner_w
+
+    def _x_to_day(self, x: float) -> float:
+        pad_l, _pad_t, inner_w, _inner_h = self._plot()
+        return self._offset + (x - pad_l) / max(inner_w, 1.0) * self._visible
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        w = self.width()
+        h = self.height()
+        pad_l, pad_t, inner_w, inner_h = self._plot()
+        n = self._n()
+        if n == 0:
+            painter.end()
+            return
+
+        right = self._offset + self._visible
+        vis_buckets = [b for b in self._buckets if b[1] > self._offset and b[0] < right]
+        vmax = max((b[4] for b in vis_buckets), default=1) or 1
+
+        pts: list[QPointF] = []
+        for start, end, _axis, _tip, total in vis_buckets:
+            center = (start + end) / 2.0
+            x = self._day_to_x(center)
+            y = pad_t + inner_h - (total / vmax) * inner_h
+            pts.append(QPointF(x, y))
+        self._vis_buckets = vis_buckets
+        self._vis_pts = pts
+
+        painter.save()
+        painter.setClipRect(QRectF(pad_l, 0, inner_w, h))
+
+        if self._sel is not None:
+            xs = max(self._day_to_x(self._sel[0]), pad_l)
+            xe = min(self._day_to_x(self._sel[1] + 1), pad_l + inner_w)
+            if xe > xs:
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QColor(96, 165, 250, 40))
+                painter.drawRect(QRectF(xs, pad_t, xe - xs, inner_h))
+
+        if len(pts) >= 2:
+            path = QPainterPath()
+            path.moveTo(pts[0])
+            for i in range(1, len(pts) - 1):
+                mid = QPointF((pts[i].x() + pts[i + 1].x()) / 2, (pts[i].y() + pts[i + 1].y()) / 2)
+                path.quadTo(pts[i], mid)
+            path.lineTo(pts[-1])
+            fill = QPainterPath(path)
+            fill.lineTo(pts[-1].x(), pad_t + inner_h)
+            fill.lineTo(pts[0].x(), pad_t + inner_h)
+            fill.closeSubpath()
+            grad = QLinearGradient(0, pad_t, 0, pad_t + inner_h)
+            grad.setColorAt(0.0, QColor(96, 165, 250, 70))
+            grad.setColorAt(1.0, QColor(96, 165, 250, 6))
+            painter.fillPath(fill, QBrush(grad))
+            painter.setPen(QPen(QColor("#60a5fa"), 2))
+            painter.drawPath(path)
+        elif len(pts) == 1:
+            painter.setPen(QPen(QColor("#60a5fa"), 2))
+            painter.setBrush(QBrush(QColor(96, 165, 250, 70)))
+            painter.drawEllipse(pts[0], 3.0, 3.0)
+
+        if self._sel is not None:
+            xs = max(self._day_to_x(self._sel[0]), pad_l)
+            xe = min(self._day_to_x(self._sel[1] + 1), pad_l + inner_w)
+            painter.setPen(QPen(QColor("#60a5fa"), 1.5))
+            painter.drawLine(QPointF(xs, pad_t), QPointF(xs, pad_t + inner_h))
+            painter.drawLine(QPointF(xe, pad_t), QPointF(xe, pad_t + inner_h))
+            mid_y = pad_t + inner_h / 2
+            painter.setPen(QPen(QColor(11, 18, 32), 1))
+            painter.setBrush(QColor("#60a5fa"))
+            painter.drawRoundedRect(QRectF(xs - 3, mid_y - 9, 6, 18), 3, 3)
+            painter.drawRoundedRect(QRectF(xe - 3, mid_y - 9, 6, 18), 3, 3)
+        painter.restore()
+
+        if vis_buckets:
+            font = QFont(self.font())
+            font.setPointSizeF(7.5)
+            painter.setFont(font)
+            painter.setPen(QColor("#6b7280"))
+            max_labels = max(2, int(inner_w // 90))
+            step = max(1, ceil(len(vis_buckets) / max_labels))
+            for k in range(0, len(vis_buckets), step):
+                bucket = vis_buckets[k]
+                x = self._day_to_x((bucket[0] + bucket[1]) / 2.0)
+                if pad_l - 4 <= x <= pad_l + inner_w + 4:
+                    painter.drawText(QRectF(x - 45, h - self.PAD_B + 4, 90, 16), Qt.AlignCenter, bucket[2])
+
+        if 0 <= self._hover < len(vis_buckets):
+            p = pts[self._hover]
+            painter.setPen(QPen(QColor(11, 18, 32), 1.5))
+            painter.setBrush(QColor("#60a5fa"))
+            painter.drawEllipse(p, 4.2, 4.2)
+            bucket = vis_buckets[self._hover]
+            text = f"{bucket[3]} — {format_compact(bucket[4])}"
+            font = QFont(self.font())
+            font.setPointSizeF(8.5)
+            painter.setFont(font)
+            fm = QFontMetrics(font)
+            tw = fm.horizontalAdvance(text) + 16
+            th = 22.0
+            bx = min(max(p.x() - tw / 2, 1.0), max(1.0, w - tw - 1))
+            by = p.y() - th - 8
+            if by < 1:
+                by = p.y() + 10
+            painter.setPen(QPen(QColor("#24344d"), 1))
+            painter.setBrush(QColor(15, 27, 45, 240))
+            painter.drawRoundedRect(QRectF(bx, by, tw, th), 6, 6)
+            painter.setPen(QColor("#e5e7eb"))
+            painter.drawText(QRectF(bx, by, tw, th), Qt.AlignCenter, text)
+        painter.end()
+
+    def _handle_at(self, x: float) -> str | None:
+        if self._sel is None:
+            return None
+        xs = self._day_to_x(self._sel[0])
+        xe = self._day_to_x(self._sel[1] + 1)
+        if abs(x - xs) <= 6:
+            return "handle_l"
+        if abs(x - xe) <= 6:
+            return "handle_r"
+        return None
+
+    def _update_cursor(self, x: float | None = None) -> None:
+        if self._mode == "pan":
+            self.setCursor(Qt.ClosedHandCursor)
+        elif self._mode in ("handle_l", "handle_r"):
+            self.setCursor(Qt.SizeHorCursor)
+        elif self._space:
+            self.setCursor(Qt.OpenHandCursor)
+        elif x is not None and self._handle_at(x):
+            self.setCursor(Qt.SizeHorCursor)
+        else:
+            self.setCursor(Qt.CrossCursor)
+
+    def wheelEvent(self, event) -> None:
+        n = self._n()
+        if n == 0:
+            return
+        delta = event.angleDelta()
+        horizontal = abs(delta.x()) > abs(delta.y())
+        if event.modifiers() & Qt.ShiftModifier or horizontal:
+            notches = (delta.x() if horizontal else delta.y()) / 120.0
+            self._offset += -notches * self._visible / 8.0
+            self._clamp_view()
+            self._rebuild_buckets()
+            self.update()
+            return
+        factor = 0.8 if delta.y() > 0 else 1.25
+        new_vis = min(max(self._visible * factor, self.MIN_VISIBLE), float(n))
+        if new_vis == self._visible:
+            return
+        x = event.position().x()
+        anchor = self._x_to_day(x)
+        pad_l, _t, inner_w, _h = self._plot()
+        ratio = min(max((x - pad_l) / max(inner_w, 1.0), 0.0), 1.0)
+        self._visible = new_vis
+        self._offset = anchor - ratio * new_vis
+        self._clamp_view()
+        self._rebuild_buckets()
+        self.update()
+
+    def mousePressEvent(self, event) -> None:
+        n = self._n()
+        if n == 0:
+            return
+        x = event.position().x()
+        if event.button() == Qt.MiddleButton or (event.button() == Qt.LeftButton and self._space):
+            self._mode = "pan"
+            self._press_x = x
+            self._pan_start_offset = self._offset
+            self.grabMouse()
+            self._update_cursor()
+            return
+        if event.button() != Qt.LeftButton:
+            return
+        handle = self._handle_at(x)
+        if handle is not None:
+            self._mode = handle
+            self.grabMouse()
+            self._update_cursor()
+            return
+        if self._sel is not None:
+            xs = self._day_to_x(self._sel[0])
+            xe = self._day_to_x(self._sel[1] + 1)
+            if xs < x < xe:
+                self._mode = "keep"
+                return
+        self._mode = "sel"
+        self._drag_moved = False
+        day = min(max(int(self._x_to_day(x)), 0), n - 1)
+        self._sel_anchor = day
+        self._sel = (day, day)
+        self.grabMouse()
+        self.selection_changed.emit(self._sel)
+        self.update()
+
+    def mouseMoveEvent(self, event) -> None:
+        n = self._n()
+        if n == 0:
+            return
+        x = event.position().x()
+        if self._mode == "pan":
+            _pad_l, _t, inner_w, _h = self._plot()
+            dx_days = (self._press_x - x) / max(inner_w, 1.0) * self._visible
+            self._offset = self._pan_start_offset + dx_days
+            self._clamp_view()
+            self._rebuild_buckets()
+            self.update()
+            return
+        if self._mode in ("handle_l", "handle_r") and self._sel is not None:
+            day = min(max(int(self._x_to_day(x)), 0), n - 1)
+            start, end = self._sel
+            if self._mode == "handle_l":
+                self._sel = (min(day, end), end)
+            else:
+                self._sel = (start, max(day, start))
+            self.selection_changed.emit(self._sel)
+            self.update()
+            return
+        if self._mode == "sel":
+            self._drag_moved = True
+            day = min(max(int(self._x_to_day(x)), 0), n - 1)
+            self._sel = (min(self._sel_anchor, day), max(self._sel_anchor, day))
+            self.selection_changed.emit(self._sel)
+            self.update()
+            return
+        self._hover = self._bucket_at(x)
+        self._update_cursor(x)
+        self.update()
+
+    def _bucket_at(self, x: float) -> int:
+        day = self._x_to_day(x)
+        for k, bucket in enumerate(self._vis_buckets):
+            if bucket[0] <= day < bucket[1]:
+                return k
+        return -1
+
+    def mouseReleaseEvent(self, event) -> None:
+        if self._mode == "sel":
+            if not self._drag_moved:
+                self._sel = None
+                self.selection_changed.emit(None)
+                self.update()
+            self._sel = (min(self._sel[0], self._sel[1]), max(self._sel[0], self._sel[1])) if self._sel else None
+        self._mode = None
+        self._drag_moved = False
+        try:
+            self.releaseMouse()
+        except RuntimeError:
+            pass
+        self._update_cursor(event.position().x())
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key_Space:
+            self._space = True
+            self._update_cursor()
+            event.accept()
+            return
+        if event.key() == Qt.Key_Escape and self._sel is not None:
+            self.clear_selection()
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event) -> None:
+        if event.key() == Qt.Key_Space:
+            self._space = False
+            self._update_cursor()
+            event.accept()
+            return
+        super().keyReleaseEvent(event)
 
     def leaveEvent(self, event) -> None:
         if self._hover != -1:
