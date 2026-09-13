@@ -5,7 +5,8 @@ import sys
 import traceback
 from datetime import date
 
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtCore import QLockFile
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from app import config
 from app.db import Database
@@ -79,6 +80,12 @@ def main() -> int:
         except Exception:
             pass
 
+    lock = QLockFile(str(config.app_dir() / "nodexy.lock"))
+    if not lock.tryLock(100):
+        app = QApplication(sys.argv)
+        QMessageBox.information(None, "Nodexy", "Приложение уже запущено.")
+        return 0
+
     qt = QApplication(sys.argv)
     qt.setApplicationName("Nodexy")
     qt.setOrganizationName("Nodexy")
@@ -89,7 +96,8 @@ def main() -> int:
     db_path = _resolve_db_path()
     if not db_path:
         return 0
-    config.set_db_path(db_path)
+    if not config.set_db_path(db_path):
+        config.log_error("Не удалось сохранить путь к базе данных в config.json")
 
     db = Database(db_path)
     _ensure_first_launch(db)

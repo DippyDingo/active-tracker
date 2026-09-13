@@ -63,6 +63,9 @@ PERIODS = [
     ("Всё время", None, "ВСЁ ВРЕМЯ"),
 ]
 
+# индекс периода главного окна -> индекс периода панели статистики
+STATS_PERIOD_MAP = {0: 0, 1: 1, 2: 3, 3: 5}
+
 
 class SearchEdit(QLineEdit):
     def __init__(self, parent=None):
@@ -456,15 +459,17 @@ class MainWindow(QMainWindow):
             )
             if app_id in self._hosts:
                 self._hosts[app_id].setVisible(match)
+            cat_id = self._rows_meta[app_id].category_id
+            collapsed = (cat_id in self._collapsed) if cat_id is not None else False
+            row_visible = match and ((not collapsed) or bool(self._filter))
             item = self._side_items.get(app_id)
             if item is not None:
-                item.setVisible(match)
-                if match:
-                    cat_id = self._rows_meta[app_id].category_id
-                    if cat_id is None:
-                        uncat_visible += 1
-                    else:
-                        visible_per_cat[cat_id] += 1
+                item.setVisible(row_visible)
+            if match:
+                if cat_id is None:
+                    uncat_visible += 1
+                else:
+                    visible_per_cat[cat_id] += 1
         if self._filter:
             for cat_id, header in self._cat_headers.items():
                 header.setVisible(visible_per_cat.get(cat_id, 0) > 0)
@@ -576,8 +581,7 @@ class MainWindow(QMainWindow):
             self._collapsed.add(cat_id)
             collapsed = True
         header.set_arrow(collapsed)
-        for item in self._cat_rows.get(cat_id, []):
-            item.setVisible(not collapsed)
+        self._apply_filter(self._filter)
 
     def _move_app(self, app_id: int, cat_id: int | None) -> None:
         self.db.set_app_category(app_id, cat_id)
@@ -1112,7 +1116,7 @@ class MainWindow(QMainWindow):
             row.name,
             row.exe_path,
             row.icon,
-            self._period_idx,
+            STATS_PERIOD_MAP.get(self._period_idx, 0),
             first_day,
         )
         panel.delete_requested.connect(
@@ -1136,6 +1140,7 @@ class MainWindow(QMainWindow):
         if box.clickedButton() is delete_btn:
             if self._selected_id == app_id:
                 self._selected_id = None
+            self.tracker.forget_app(app_id)
             self.db.remove_app(app_id)
             self.refresh_apps()
 
@@ -1245,3 +1250,4 @@ class MainWindow(QMainWindow):
             event.ignore()
         else:
             event.accept()
+            QApplication.quit()

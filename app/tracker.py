@@ -1,6 +1,6 @@
 import os
 import time
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
@@ -18,7 +18,7 @@ class Tracker(QObject):
         super().__init__(parent)
         self.db = db
         self._tracked: dict[str, int] = {}
-        self._buffer: dict[int, float] = {}
+        self._buffer: dict[tuple[int, str, int], float] = {}
         self._threshold_sec = max(1, db.get_int("idle_threshold_minutes", 30)) * 60
         self._bg = bool(db.get_int("background_counting", 0))
         self._running_cache: tuple[float, set[str]] = (0.0, set())
@@ -31,6 +31,7 @@ class Tracker(QObject):
         self.current_app_id: int | None = None
         self.current_ids: set[int] = set()
         self.last_idle_seconds = 0.0
+        self.last_save_error: str | None = None
         self._timer = QTimer(self)
         self._timer.setInterval(1000)
         self._timer.timeout.connect(self._on_tick)
@@ -38,13 +39,29 @@ class Tracker(QObject):
     def set_tracked(self, mapping: dict[str, int]) -> None:
         self._tracked = {os.path.normcase(k): v for k, v in mapping.items()}
 
+    def forget_app(self, app_id: int) -> None:
+        for key in [k for k in self._buffer if k[0] == app_id]:
+            del self._buffer[key]
+        for path in [p for p, aid in self._tracked.items() if aid == app_id]:
+            del self._tracked[path]
+        self._idle_apps.discard(app_id)
+        self.current_ids.discard(app_id)
+        if self.current_app_id == app_id:
+            self.current_app_id = None
+
     def switch_db(self, db: Database) -> None:
         self.flush()
         self._buffer.clear()
         self.db = db
+        self._tracked = {}
         self._threshold_sec = max(1, db.get_int("idle_threshold_minutes", 30)) * 60
         self._bg = bool(db.get_int("background_counting", 0))
         self._running_cache = (0.0, set())
+        self._idle = False
+        self._idle_apps = set()
+        self._idle_since = 0.0
+        self.current_app_id = None
+        self.current_ids = set()
         self._day = date.today()
 
     def threshold_minutes(self) -> int:
@@ -82,7 +99,12 @@ class Tracker(QObject):
         return fg_id, ids
 
     def pending_seconds(self, app_id: int) -> int:
-        return int(self._buffer.get(app_id, 0.0))
+        today = date.today().isoformat()
+        total = 0.0
+        for (aid, day, _hour), secs in self._buffer.items():
+            if aid == app_id and day == today:
+                total += secs
+        return int(total)
 
     @property
     def is_idle(self) -> bool:
@@ -96,20 +118,52 @@ class Tracker(QObject):
         self._timer.stop()
         self.flush()
 
-    def _credit(self, app_id: int, seconds: float) -> None:
-        if seconds > 0:
-            self._buffer[app_id] = self._buffer.get(app_id, 0.0) + seconds
+    def _credit_interval(self, app_id: int, start_epoch: float, end_epoch: float) -> None:
+        if end_epoch <= start_epoch:
+            return
+        t = start_epoch
+        guard = 0
+        while t < end_epoch and guard < 10000:
+            guard += 1
+            dt_local = datetime.fromtimestamp(t)
+            day = dt_local.date().isoformat()
+            hour = dt_local.hour
+            next_hour = (
+                dt_local.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            ).timestamp()
+            seg_end = min(end_epoch, next_hour)
+            secs = seg_end - t
+            if secs > 0:
+                key = (app_id, day, hour)
+                self._buffer[key] = self._buffer.get(key, 0.0) + secs
+            t = seg_end
 
-    def flush(self, day: date | None = None) -> None:
-        day = day or self._day
-        stamp = day.isoformat()
-        hour = time.localtime().tm_hour
-        for app_id, secs in list(self._buffer.items()):
+    def flush(self) -> None:
+        if not self._buffer:
+            self._last_flush = time.monotonic()
+            return
+        entries: list[tuple[int, str, int, int]] = []
+        for (app_id, day, hour), secs in self._buffer.items():
             whole = int(secs)
             if whole > 0:
-                self.db.add_time(app_id, stamp, whole)
-                self.db.add_hour(app_id, stamp, hour, whole)
-                self._buffer[app_id] = secs - whole
+                entries.append((app_id, day, hour, whole))
+        if entries:
+            try:
+                self.db.add_activity_batch(entries)
+                self.last_save_error = None
+                for (app_id, day, hour), secs in list(self._buffer.items()):
+                    whole = int(secs)
+                    if whole > 0:
+                        rem = secs - whole
+                        if rem > 0.001:
+                            self._buffer[(app_id, day, hour)] = rem
+                        else:
+                            del self._buffer[(app_id, day, hour)]
+            except Exception:
+                from . import config
+
+                self.last_save_error = "flush"
+                config.log_error("Tracker.flush (данные сохранены в буфере, повтор при следующем сбросе)")
         self._last_flush = time.monotonic()
 
     def _on_tick(self) -> None:
@@ -122,9 +176,10 @@ class Tracker(QObject):
 
     def _tick_impl(self) -> None:
         now = time.monotonic()
+        now_wall = time.time()
         today = date.today()
         if today != self._day:
-            self.flush(self._day)
+            self.flush()
             self._day = today
 
         idle_s = win32_utils.get_idle_seconds()
@@ -137,7 +192,7 @@ class Tracker(QObject):
                 gap = now - self._idle_since
                 if 0 < gap <= self._threshold_sec and self._idle_apps:
                     for app_id in self._idle_apps:
-                        self._credit(app_id, gap)
+                        self._credit_interval(app_id, now_wall - gap, now_wall)
                 self._idle = False
                 self._idle_apps = set()
                 self._last_active_at = now
@@ -145,7 +200,7 @@ class Tracker(QObject):
                 dt = min(now - self._last_active_at, GRACE_SECONDS + 2.0)
                 fg_id, ids = self._resolve_apps()
                 for app_id in ids:
-                    self._credit(app_id, dt)
+                    self._credit_interval(app_id, now_wall - dt, now_wall)
                 self.current_app_id = fg_id
                 self.current_ids = ids
                 self._last_active_at = now

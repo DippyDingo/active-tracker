@@ -32,6 +32,11 @@ class _ScanWorker(QThread):
         self.finished_scan.emit(apps)
 
 
+# Живые потоки сканирования: панель можно закрыть, поток доживёт сам и не будет
+# уничтожен вместе с ней (иначе возможно падение при работе фонового QThread).
+_active_workers: set = set()
+
+
 class _IconSignals(QObject):
     ready = Signal(str, bytes)
 
@@ -202,8 +207,10 @@ class AddPanel(QFrame):
         bottom.addWidget(done_btn)
         layout.addLayout(bottom)
 
-        self._worker = _ScanWorker(self)
+        self._worker = _ScanWorker()
         self._worker.finished_scan.connect(self._on_scanned)
+        self._worker.finished.connect(lambda: _active_workers.discard(self._worker))
+        _active_workers.add(self._worker)
         self._worker.start()
 
     def _on_scanned(self, apps: list) -> None:
@@ -276,5 +283,10 @@ class AddPanel(QFrame):
         QTimer.singleShot(3000, self, lambda: self._apply_filter(self._search.text()))
 
     def shutdown(self) -> None:
-        if self._worker is not None and self._worker.isRunning():
-            self._worker.wait(5000)
+        # Не блокируем интерфейс: поток сканирования независим и доживёт сам.
+        # Отключаем сигнал, чтобы завершение скана после закрытия не трогало панель.
+        if self._worker is not None:
+            try:
+                self._worker.finished_scan.disconnect(self._on_scanned)
+            except (RuntimeError, TypeError):
+                pass

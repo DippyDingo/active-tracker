@@ -20,29 +20,32 @@ def default_db_path() -> Path:
 
 def read_config() -> dict:
     try:
-        return json.loads(config_path().read_text(encoding="utf-8"))
+        data = json.loads(config_path().read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
     except Exception:
         return {}
 
 
-def write_config(data: dict) -> None:
+def write_config(data: dict) -> bool:
     try:
         app_dir()
-        config_path().write_text(
-            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        tmp = config_path().with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp.replace(config_path())
+        return True
     except Exception:
-        pass
+        log_error("config.write_config")
+        return False
 
 
 def get_db_path() -> str:
     return str(read_config().get("db_path", "") or "")
 
 
-def set_db_path(path: str) -> None:
+def set_db_path(path: str) -> bool:
     cfg = read_config()
     cfg["db_path"] = str(path)
-    write_config(cfg)
+    return write_config(cfg)
 
 
 def log_error(message: str) -> None:
