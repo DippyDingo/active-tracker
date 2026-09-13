@@ -67,8 +67,8 @@ class StatsPanel(QFrame):
 
         today_str = self._today.isoformat()
         history: dict[str, int] = {}
-        for _id, day, secs in db.query_stats():
-            if _id == app_id and day != today_str:
+        for day, secs in db.query_app_stats(app_id, end_day=None):
+            if day != today_str:
                 history[day] = history.get(day, 0) + secs
         self._history = history
         self._today_live = db.get_day_stats(today_str).get(app_id, 0) + tracker.pending_seconds(

@@ -34,10 +34,7 @@ sys.excepthook = _excepthook
 def _ensure_first_launch(db: Database) -> None:
     if config.read_config().get("first_launch"):
         return
-    earliest = None
-    for _app_id, day, _secs in db.query_stats():
-        if earliest is None or day < earliest:
-            earliest = day
+    earliest = db.get_min_day()
     config.write_config(
         {**config.read_config(), "first_launch": earliest or date.today().isoformat()}
     )
