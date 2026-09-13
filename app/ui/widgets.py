@@ -515,15 +515,9 @@ class SidebarItem(QWidget):
         fm = QFontMetrics(name_label.font())
         name_label.setText(fm.elidedText(name, Qt.ElideRight, 152))
         name_label.setToolTip(name)
-        self._time_label = QLabel("0м")
-        self._time_label.setObjectName("sideTime")
         texts.addWidget(name_label)
-        texts.addWidget(self._time_label)
         layout.addLayout(texts)
         layout.addStretch(1)
-
-    def set_time(self, text: str) -> None:
-        self._time_label.setText(text)
 
     def resizeEvent(self, event) -> None:
         self._inner.setGeometry(int(self._slide), 0, int(self.width() - self._slide), self.height())
