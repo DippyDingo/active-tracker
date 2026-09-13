@@ -63,9 +63,11 @@ class SearchEdit(QLineEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("searchEdit")
-        self.setPlaceholderText("🔎  Поиск приложения")
+        self.setPlaceholderText("🔎  Поиск")
         self.setClearButtonEnabled(True)
         self.setFixedWidth(220)
+        self.setAttribute(Qt.WA_InputMethodEnabled, False)
+        self.setInputMethodHints(Qt.ImhNoAutoUppercase)
 
     def focusInEvent(self, event) -> None:
         shadow = QGraphicsDropShadowEffect(self)
