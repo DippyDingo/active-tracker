@@ -14,7 +14,7 @@ from ..db import Database
 class WelcomeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Трекер активности")
+        self.setWindowTitle("Nodexy")
         self.setFixedSize(470, 290)
         self.mode = ""
         self.path = ""
@@ -23,7 +23,7 @@ class WelcomeDialog(QDialog):
         layout.setContentsMargins(28, 26, 28, 24)
         layout.setSpacing(12)
 
-        title = QLabel("Трекер активности")
+        title = QLabel("Nodexy")
         title.setObjectName("pageTitle")
         sub = QLabel(
             "База данных не найдена.\n"

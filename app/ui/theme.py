@@ -160,21 +160,39 @@ QLabel#runningDot {
     max-height: 8px;
 }
 
-QListWidget#sidebarList {
-    background: transparent;
-    border: none;
-}
-QListWidget#sidebarList::item {
+QFrame#sideItem {
     border-radius: 10px;
-    margin: 3px 10px;
     border: 1px solid transparent;
 }
-QListWidget#sidebarList::item:hover {
+QFrame#sideItem:hover {
     background: rgba(255, 255, 255, 5%);
 }
-QListWidget#sidebarList::item:selected {
+QFrame#sideItem[selected="true"] {
     background: rgba(59, 130, 246, 15%);
     border: 1px solid rgba(96, 165, 250, 50%);
+}
+QFrame#catHeader {
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+QFrame#catHeader:hover {
+    background: rgba(255, 255, 255, 4%);
+}
+QLabel#catName {
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 700;
+}
+QLabel#catArrow {
+    color: #6b7280;
+    font-size: 11px;
+}
+QLabel#catCount {
+    color: #6b7280;
+    font-size: 11px;
+}
+QWidget#sidebarContainer {
+    background: transparent;
 }
 
 QScrollArea {
