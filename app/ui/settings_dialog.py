@@ -1,9 +1,9 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QDialog,
-    QDialogButtonBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
+    QPushButton,
     QSpinBox,
     QVBoxLayout,
 )
@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 from .widgets import ToggleSwitch
 
 
-class SettingsPanel(QDialog):
+class SettingsPanel(QFrame):
     saved = Signal(int, bool, bool)
     close_requested = Signal()
 
@@ -23,8 +23,8 @@ class SettingsPanel(QDialog):
         parent=None,
     ):
         super().__init__(parent)
-        self.setWindowTitle("Настройки")
-        self.setMinimumWidth(480)
+        self.setObjectName("modalPanel")
+        self.setFixedWidth(480)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 18)
@@ -35,6 +35,12 @@ class SettingsPanel(QDialog):
         title.setObjectName("modalTitle")
         top.addWidget(title)
         top.addStretch(1)
+        close_btn = QPushButton("✕")
+        close_btn.setObjectName("deleteBtn")
+        close_btn.setFixedSize(26, 26)
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.clicked.connect(self.close_requested)
+        top.addWidget(close_btn)
         layout.addLayout(top)
 
         row1 = QHBoxLayout()
@@ -81,20 +87,25 @@ class SettingsPanel(QDialog):
         )
         note.setObjectName("mutedLabel")
         layout.addWidget(note)
-        layout.addStretch(1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
-        buttons.button(QDialogButtonBox.Save).setText("Сохранить")
-        buttons.button(QDialogButtonBox.Cancel).setText("Отмена")
-        buttons.accepted.connect(self._save)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        bottom = QHBoxLayout()
+        bottom.addStretch(1)
+        cancel_btn = QPushButton("Отмена")
+        cancel_btn.setCursor(Qt.PointingHandCursor)
+        cancel_btn.clicked.connect(self.close_requested)
+        save_btn = QPushButton("Сохранить")
+        save_btn.setObjectName("primary")
+        save_btn.setCursor(Qt.PointingHandCursor)
+        save_btn.clicked.connect(self._save)
+        bottom.addWidget(cancel_btn)
+        bottom.addWidget(save_btn)
+        layout.addLayout(bottom)
 
     def _save(self) -> None:
         self.saved.emit(
             self._spin.value(), self._toggle.isChecked(), self._help_toggle.isChecked()
         )
-        self.accept()
+        self.close_requested.emit()
 
     def value(self) -> int:
         return self._spin.value()
