@@ -190,6 +190,7 @@ class MainWindow(QMainWindow):
         self._uncat_header: QLabel | None = None
         self._collapsed: set[int] = set()
         self._inline: InlineEdit | None = None
+        self._editing_header: CategoryHeader | None = None
         self._side_drag: dict | None = None
         self._side_ghost: QLabel | None = None
         self._drop_hint = None
@@ -375,6 +376,7 @@ class MainWindow(QMainWindow):
         self._cat_headers.clear()
         self._uncat_header = None
         self._inline = None
+        self._editing_header = None
         self._side_drag = None
         self._destroy_side_ghost()
         self._drop_hint = None
@@ -682,17 +684,26 @@ class MainWindow(QMainWindow):
         return menu
 
     def _remove_inline(self) -> None:
-        if self._inline is not None:
-            widget = self._inline
-            self._inline = None
-            self._side_layout.removeWidget(widget)
-            widget.deleteLater()
+        widget = self._inline
+        header = self._editing_header
+        self._inline = None
+        self._editing_header = None
+        if widget is None:
+            return
+        if header is not None:
+            # Вернуть заголовок на место редактора, не трогая остальной список.
+            self._side_layout.replaceWidget(widget, header)
+            header.setVisible(True)
+        self._side_layout.removeWidget(widget)
+        widget.deleteLater()
 
     def _discard_inline(self) -> None:
         # Тихо убрать редактор без срабатывания сигналов (используется при
         # перестроении списка, чтобы отложенный FocusOut не трогал удалённые виджеты).
         edit = self._inline
+        header = self._editing_header
         self._inline = None
+        self._editing_header = None
         if edit is None:
             return
         edit._done = True
@@ -704,6 +715,10 @@ class MainWindow(QMainWindow):
             edit.cancelled.disconnect()
         except (RuntimeError, TypeError):
             pass
+        if header is not None:
+            # Вернуть заголовок в список, чтобы перестроение его корректно удалило.
+            self._side_layout.replaceWidget(edit, header)
+            header.setVisible(True)
         self._side_layout.removeWidget(edit)
         edit.deleteLater()
 
@@ -719,6 +734,7 @@ class MainWindow(QMainWindow):
         edit.accepted.connect(lambda text: self._finish_create(text, for_app_id))
         edit.cancelled.connect(self._remove_inline)
         self._inline = edit
+        self._editing_header = None
         self._side_layout.insertWidget(max(0, self._side_layout.count() - 1), edit)
         QTimer.singleShot(30, self._focus_inline)
 
@@ -748,27 +764,30 @@ class MainWindow(QMainWindow):
             return
         self._cancel_active_inline()
         edit = InlineEdit(initial=current_name)
-        idx = self._side_layout.indexOf(header)
-        header.setVisible(False)
+        edit.setFixedHeight(header.height())
         edit.accepted.connect(lambda text: self._finish_rename(cat_id, text))
-        edit.cancelled.connect(lambda: (header.setVisible(True), self._remove_inline()))
+        edit.cancelled.connect(lambda: (self._remove_inline(), self._apply_filter(self._filter)))
         self._inline = edit
-        if idx >= 0:
-            self._side_layout.insertWidget(idx, edit)
-        else:
-            self._side_layout.addWidget(edit)
+        self._editing_header = header
+        header.setVisible(False)
+        edit.setVisible(True)
+        if self._side_layout.replaceWidget(header, edit) is None:
+            idx = self._side_layout.indexOf(header)
+            if idx >= 0:
+                self._side_layout.insertWidget(idx, edit)
+            else:
+                self._side_layout.addWidget(edit)
         QTimer.singleShot(30, self._focus_inline)
 
     def _finish_rename(self, cat_id: int, text: str) -> None:
-        header = self._cat_headers.get(cat_id)
-        self._remove_inline()
+        header = self._editing_header
         if text:
             self.db.rename_category(cat_id, text)
-            self.refresh_apps()
-        else:
-            # Пустое имя = отмена: вернуть старое название без записи в БД.
             if header is not None:
-                header.setVisible(True)
+                # Меняем только имя этой категории, без полного перестроения.
+                header.set_name(text)
+        self._remove_inline()
+        self._apply_filter(self._filter)
 
     def eventFilter(self, obj, event) -> bool:
         if isinstance(obj, SidebarItem):
