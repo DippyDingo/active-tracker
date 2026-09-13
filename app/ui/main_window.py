@@ -694,14 +694,14 @@ class MainWindow(QMainWindow):
         edit.cancelled.connect(self._remove_inline)
         self._inline = edit
         self._side_layout.insertWidget(max(0, self._side_layout.count() - 1), edit)
-        QTimer.singleShot(0, self._focus_inline)
+        QTimer.singleShot(30, self._focus_inline)
 
     def _focus_inline(self) -> None:
-        if self._inline is not None:
-            self._side_scroll.ensureWidgetVisible(self._inline, 10, 10)
-            self.activateWindow()
-            self._inline.focus_edit()
-            QTimer.singleShot(60, self._inline.focus_edit)
+        if self._inline is None:
+            return
+        self._side_scroll.ensureWidgetVisible(self._inline, 10, 10)
+        self.activateWindow()
+        self._inline.focus_edit()
 
     def _finish_create(self, text: str, for_app_id: int | None) -> None:
         self._remove_inline()
@@ -728,7 +728,7 @@ class MainWindow(QMainWindow):
         edit.cancelled.connect(lambda: (header.setVisible(True), self._remove_inline()))
         self._inline = edit
         self._side_layout.insertWidget(idx, edit)
-        QTimer.singleShot(0, self._focus_inline)
+        QTimer.singleShot(30, self._focus_inline)
 
     def _finish_rename(self, cat_id: int, text: str) -> None:
         self._remove_inline()
