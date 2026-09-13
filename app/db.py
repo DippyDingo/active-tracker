@@ -17,6 +17,7 @@ class AppRow:
     name: str
     exe_path: str
     icon: bytes | None
+    category_id: int | None = None
 
 
 _SCHEMA = """
@@ -45,6 +46,11 @@ CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
 """
 
 
@@ -65,6 +71,11 @@ class Database:
         if "sort_order" not in cols:
             self._conn.execute(
                 "ALTER TABLE apps ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0"
+            )
+            self._conn.commit()
+        if "category_id" not in cols:
+            self._conn.execute(
+                "ALTER TABLE apps ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL"
             )
             self._conn.commit()
 
@@ -127,12 +138,53 @@ class Database:
 
     def list_apps(self) -> list[AppRow]:
         rows = self._conn.execute(
-            "SELECT id, name, exe_path, icon FROM apps ORDER BY sort_order, name COLLATE NOCASE"
+            """SELECT id, name, exe_path, icon, category_id
+               FROM apps ORDER BY sort_order, name COLLATE NOCASE"""
         ).fetchall()
         return [
-            AppRow(r["id"], r["name"], r["exe_path"], bytes(r["icon"]) if r["icon"] else None)
+            AppRow(
+                r["id"],
+                r["name"],
+                r["exe_path"],
+                bytes(r["icon"]) if r["icon"] else None,
+                r["category_id"],
+            )
             for r in rows
         ]
+
+    def set_app_category(self, app_id: int, category_id: int | None) -> None:
+        with self._conn:
+            self._conn.execute(
+                "UPDATE apps SET category_id=? WHERE id=?", (category_id, app_id)
+            )
+
+    def create_category(self, name: str) -> int:
+        with self._conn:
+            cur = self._conn.execute(
+                """INSERT INTO categories(name, sort_order)
+                   VALUES(?, COALESCE((SELECT MAX(sort_order) FROM categories), 0) + 1)""",
+                (name,),
+            )
+        return int(cur.lastrowid)
+
+    def list_categories(self) -> list[tuple[int, str]]:
+        rows = self._conn.execute(
+            "SELECT id, name FROM categories ORDER BY sort_order, name COLLATE NOCASE"
+        )
+        return [(r["id"], r["name"]) for r in rows]
+
+    def rename_category(self, category_id: int, name: str) -> None:
+        with self._conn:
+            self._conn.execute(
+                "UPDATE categories SET name=? WHERE id=?", (name, category_id)
+            )
+
+    def delete_category(self, category_id: int) -> None:
+        with self._conn:
+            self._conn.execute(
+                "UPDATE apps SET category_id=NULL WHERE category_id=?", (category_id,)
+            )
+            self._conn.execute("DELETE FROM categories WHERE id=?", (category_id,))
 
     def add_time(self, app_id: int, day: str, seconds: int) -> None:
         if seconds <= 0:

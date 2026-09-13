@@ -23,10 +23,9 @@ from PySide6.QtWidgets import (
     QGraphicsOpacityEffect,
     QGridLayout,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QMainWindow,
     QMenu,
     QMessageBox,
@@ -47,7 +46,7 @@ from .add_dialog import AddPanel
 from .modal import ModalOverlay
 from .settings_dialog import SettingsPanel
 from .stats_panel import StatsPanel
-from .widgets import AppCard, CardHost, SidebarItem, magnifier_icon, menu_icon
+from .widgets import AppCard, CardHost, CategoryHeader, SidebarItem, magnifier_icon, menu_icon
 
 PERIODS = [
     ("День", 0, "СЕГОДНЯ"),
@@ -154,7 +153,11 @@ class MainWindow(QMainWindow):
 
         self._cards: dict[int, AppCard] = {}
         self._hosts: dict[int, CardHost] = {}
-        self._side_items: dict[int, tuple] = {}
+        self._side_items: dict[int, SidebarItem] = {}
+        self._cat_rows: dict[int, list[SidebarItem]] = {}
+        self._cat_headers: dict[int, CategoryHeader] = {}
+        self._uncat_header: QLabel | None = None
+        self._collapsed: set[int] = set()
         self._rows_meta: dict[int, object] = {}
         self._order: list[int] = []
         self._names: dict[int, str] = {}
@@ -179,7 +182,7 @@ class MainWindow(QMainWindow):
         self._tray = None
         self._tray_hint_shown = False
 
-        self.setWindowTitle("Трекер активности")
+        self.setWindowTitle("Nodexy")
         self.setWindowIcon(theme.load_app_icon())
         self.resize(1210, 780)
         self.setMinimumSize(1020, 680)
@@ -220,11 +223,15 @@ class MainWindow(QMainWindow):
         title_wrap.addStretch(1)
         layout.addLayout(title_wrap)
 
-        self._sidebar_list = QListWidget()
-        self._sidebar_list.setObjectName("sidebarList")
-        self._sidebar_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._sidebar_list.currentItemChanged.connect(self._on_sidebar_changed)
-        layout.addWidget(self._sidebar_list, 1)
+        self._side_scroll = QScrollArea()
+        self._side_scroll.setWidgetResizable(True)
+        side_container = QWidget()
+        side_container.setObjectName("sidebarContainer")
+        self._side_layout = QVBoxLayout(side_container)
+        self._side_layout.setContentsMargins(8, 0, 8, 0)
+        self._side_layout.setSpacing(3)
+        self._side_scroll.setWidget(side_container)
+        layout.addWidget(self._side_scroll, 1)
 
         buttons = QVBoxLayout()
         buttons.setContentsMargins(14, 4, 14, 0)
@@ -233,7 +240,11 @@ class MainWindow(QMainWindow):
         add_btn.setObjectName("primary")
         add_btn.setCursor(Qt.PointingHandCursor)
         add_btn.clicked.connect(self._open_add)
+        cat_btn = QPushButton("🗂  Добавить категорию")
+        cat_btn.setCursor(Qt.PointingHandCursor)
+        cat_btn.clicked.connect(self._add_category)
         buttons.addWidget(add_btn)
+        buttons.addWidget(cat_btn)
         layout.addLayout(buttons)
 
         root_layout.addWidget(sidebar)
@@ -327,12 +338,17 @@ class MainWindow(QMainWindow):
             widget = item.widget()
             if widget is not None and widget is not self._empty_label:
                 widget.deleteLater()
-        self._sidebar_list.blockSignals(True)
-        self._sidebar_list.clear()
-        self._sidebar_list.blockSignals(False)
+        while self._side_layout.count():
+            item = self._side_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
         self._cards.clear()
         self._hosts.clear()
         self._side_items.clear()
+        self._cat_rows.clear()
+        self._cat_headers.clear()
+        self._uncat_header = None
         self._rows_meta.clear()
         self._order.clear()
         self._names.clear()
@@ -349,24 +365,16 @@ class MainWindow(QMainWindow):
             self._cards[row.id] = card
             self._hosts[row.id] = host
 
-            item = QListWidgetItem()
-            widget = SidebarItem(row.name, row.icon)
-            item.setSizeHint(QSize(0, 46))
-            item.setData(Qt.UserRole, row.id)
-            self._sidebar_list.addItem(item)
-            self._sidebar_list.setItemWidget(item, widget)
-            self._side_items[row.id] = (item, widget)
-
+        self._build_side_sections(apps)
         self._recompute_base()
         self._relayout_grid()
         self._apply_filter(self._filter)
 
         if self._selected_id in self._cards:
             self._cards[self._selected_id].set_selected(True)
-            item = self._side_items[self._selected_id][0]
-            self._sidebar_list.blockSignals(True)
-            self._sidebar_list.setCurrentItem(item)
-            self._sidebar_list.blockSignals(False)
+            item = self._side_items.get(self._selected_id)
+            if item is not None:
+                item.set_selected(True)
 
         self.tracker.set_tracked({row.exe_path: row.id for row in apps})
         self._update_status_right()
@@ -429,6 +437,8 @@ class MainWindow(QMainWindow):
 
     def _apply_filter(self, text: str) -> None:
         self._filter = (text or "").strip().lower()
+        visible_per_cat: dict[int, int] = defaultdict(int)
+        uncat_visible = 0
         for app_id in self._order:
             match = (
                 not self._filter
@@ -437,8 +447,19 @@ class MainWindow(QMainWindow):
             )
             if app_id in self._hosts:
                 self._hosts[app_id].setVisible(match)
-            if app_id in self._side_items:
-                self._side_items[app_id][0].setHidden(not match)
+            item = self._side_items.get(app_id)
+            if item is not None:
+                item.setVisible(match)
+                if match:
+                    cat_id = self._rows_meta[app_id].category_id
+                    if cat_id is None:
+                        uncat_visible += 1
+                    else:
+                        visible_per_cat[cat_id] += 1
+        for cat_id, header in self._cat_headers.items():
+            header.setVisible(visible_per_cat.get(cat_id, 0) > 0)
+        if self._uncat_header is not None:
+            self._uncat_header.setVisible(uncat_visible > 0)
 
     def _on_filter_changed(self, text: str) -> None:
         self._apply_filter(text)
@@ -456,28 +477,152 @@ class MainWindow(QMainWindow):
             card.set_chart(self._series.get(app_id, [0] * 6) + [today_live], animate=True)
         self._update_values(animate_header=True)
 
-    def _on_sidebar_changed(self, current, _previous) -> None:
-        if current is None:
-            return
-        app_id = current.data(Qt.UserRole)
+    def _on_side_row_clicked(self, app_id: int) -> None:
         self._selected_id = app_id
         for aid, card in self._cards.items():
             card.set_selected(aid == app_id)
+        for aid, item in self._side_items.items():
+            item.set_selected(aid == app_id)
         host = self._hosts.get(app_id)
         if host is not None:
             self._scroll.ensureWidgetVisible(host, 30, 60)
-        self._open_stats(app_id)
 
     def _on_card_clicked(self, app_id: int) -> None:
         self._selected_id = app_id
         for aid, card in self._cards.items():
             card.set_selected(aid == app_id)
-        if app_id in self._side_items:
-            item = self._side_items[app_id][0]
-            self._sidebar_list.blockSignals(True)
-            self._sidebar_list.setCurrentItem(item)
-            self._sidebar_list.blockSignals(False)
+        for aid, item in self._side_items.items():
+            item.set_selected(aid == app_id)
         self._open_stats(app_id)
+
+    def _build_side_sections(self, apps) -> None:
+        cats = self.db.list_categories()
+        by_cat: dict[int | None, list] = defaultdict(list)
+        for row in apps:
+            by_cat[row.category_id].append(row)
+
+        if not cats:
+            for row in apps:
+                self._side_layout.addWidget(self._make_side_item(row))
+            self._side_layout.addStretch(1)
+            return
+
+        for cat_id, cat_name in cats:
+            rows = by_cat.get(cat_id, [])
+            collapsed = cat_id in self._collapsed
+            header = CategoryHeader(cat_name, len(rows), collapsed)
+            header.toggle_requested.connect(
+                lambda _checked=False, cid=cat_id: self._toggle_category(cid)
+            )
+            header.set_context_menu(self._category_menu(cat_id, cat_name))
+            self._side_layout.addWidget(header)
+            self._cat_headers[cat_id] = header
+            self._cat_rows[cat_id] = []
+            for row in rows:
+                item = self._make_side_item(row)
+                if collapsed:
+                    item.setVisible(False)
+                self._cat_rows[cat_id].append(item)
+
+        uncat = by_cat.get(None, [])
+        if uncat:
+            uncat_label = QLabel("БЕЗ КАТЕГОРИИ")
+            uncat_label.setObjectName("catName")
+            wrap = QHBoxLayout()
+            wrap.setContentsMargins(10, 6, 10, 2)
+            wrap.addWidget(uncat_label)
+            wrap.addStretch(1)
+            holder = QWidget()
+            holder.setLayout(wrap)
+            self._side_layout.addWidget(holder)
+            self._uncat_header = holder
+            for row in uncat:
+                self._side_layout.addWidget(self._make_side_item(row))
+
+        self._side_layout.addStretch(1)
+
+    def _make_side_item(self, row) -> SidebarItem:
+        item = SidebarItem(row.name, row.icon)
+        item.clicked.connect(lambda app_id=row.id: self._on_side_row_clicked(app_id))
+        item.set_context_menu(self._app_menu(row.id))
+        self._side_items[row.id] = item
+        return item
+
+    def _toggle_category(self, cat_id: int) -> None:
+        header = self._cat_headers.get(cat_id)
+        if header is None:
+            return
+        if cat_id in self._collapsed:
+            self._collapsed.discard(cat_id)
+            collapsed = False
+        else:
+            self._collapsed.add(cat_id)
+            collapsed = True
+        header.set_arrow(collapsed)
+        for item in self._cat_rows.get(cat_id, []):
+            item.setVisible(not collapsed)
+
+    def _add_category(self) -> None:
+        name, ok = QInputDialog.getText(self, "Новая категория", "Название категории:")
+        if not ok or not name.strip():
+            return
+        self.db.create_category(name.strip())
+        self.refresh_apps()
+
+    def _category_menu(self, cat_id: int, cat_name: str) -> QMenu:
+        menu = QMenu(self)
+        rename_action = menu.addAction("Переименовать")
+        delete_action = menu.addAction("Удалить")
+        rename_action.triggered.connect(lambda: self._rename_category(cat_id, cat_name))
+        delete_action.triggered.connect(lambda: self._delete_category(cat_id, cat_name))
+        return menu
+
+    def _rename_category(self, cat_id: int, current_name: str) -> None:
+        name, ok = QInputDialog.getText(
+            self, "Переименование категории", "Новое название:", text=current_name
+        )
+        if not ok or not name.strip():
+            return
+        self.db.rename_category(cat_id, name.strip())
+        self.refresh_apps()
+
+    def _delete_category(self, cat_id: int, cat_name: str) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Question)
+        box.setWindowTitle("Удаление категории")
+        box.setText(f"Удалить категорию «{cat_name}»?")
+        box.setInformativeText("Приложения из неё останутся в списке без категории.")
+        yes_btn = box.addButton("Удалить", QMessageBox.AcceptRole)
+        box.addButton("Отмена", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is yes_btn:
+            self._collapsed.discard(cat_id)
+            self.db.delete_category(cat_id)
+            self.refresh_apps()
+
+    def _app_menu(self, app_id: int) -> QMenu:
+        menu = QMenu(self)
+        menu.addAction("Переместить в категорию:").setEnabled(False)
+        cats = self.db.list_categories()
+        current = self._rows_meta.get(app_id)
+        current_cat = current.category_id if current is not None else None
+        for cat_id, cat_name in cats:
+            mark = "✓ " if cat_id == current_cat else ""
+            action = menu.addAction(f"    {mark}{cat_name}")
+            action.triggered.connect(
+                lambda _checked=False, cid=cat_id: self._move_app(app_id, cid)
+            )
+        if cats:
+            menu.addSeparator()
+        none_action = menu.addAction(
+            f"    {'✓ ' if current_cat is None else ''}Без категории"
+        )
+        none_action.triggered.connect(lambda: self._move_app(app_id, None))
+        return menu
+
+    def _move_app(self, app_id: int, cat_id: int | None) -> None:
+        self.db.set_app_category(app_id, cat_id)
+        self.refresh_apps()
 
     def eventFilter(self, obj, event) -> bool:
         if isinstance(obj, AppCard) and obj.app_id in self._cards:
@@ -831,7 +976,7 @@ class MainWindow(QMainWindow):
             return
         self._tray = QSystemTrayIcon(self)
         self._tray.setIcon(theme.load_app_icon())
-        self._tray.setToolTip("Трекер активности — учёт времени идёт")
+        self._tray.setToolTip("Nodexy — учёт времени идёт")
         self._tray_menu = QMenu()
         show_action = self._tray_menu.addAction("Показать окно")
         show_action.triggered.connect(self._show_window)
@@ -856,7 +1001,7 @@ class MainWindow(QMainWindow):
             self.hide()
             if not self._tray_hint_shown:
                 self._tray.showMessage(
-                    "Трекер активности",
+                    "Nodexy",
                     "Программа свёрнута в трей и продолжает учитывать время.",
                     QSystemTrayIcon.Information,
                     3000,

@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
 call .venv\Scripts\pyinstaller.exe --noconfirm --onefile --noconsole ^
-  --name ActiveTracker ^
+  --name Nodexy ^
   --icon assets\app_icon.ico ^
   --add-data "assets;assets" ^
   --hidden-import win32com.client ^

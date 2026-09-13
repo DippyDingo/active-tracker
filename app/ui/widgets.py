@@ -657,11 +657,17 @@ class ToggleSwitch(QAbstractButton):
         painter.end()
 
 
-class SidebarItem(QWidget):
+class SidebarItem(QFrame):
+    clicked = Signal()
+
     def __init__(self, name: str, icon_bytes: bytes | None, parent=None):
         super().__init__(parent)
+        self.setObjectName("sideItem")
+        self.setProperty("selected", False)
+        self.setCursor(Qt.PointingHandCursor)
         self._slide = 0.0
         self._anim = None
+        self._menu = None
 
         self._inner = QWidget(self)
         layout = QHBoxLayout(self._inner)
@@ -675,16 +681,34 @@ class SidebarItem(QWidget):
             icon.setPixmap(rounded_pixmap(pm, 32, 8))
         layout.addWidget(icon)
 
-        texts = QVBoxLayout()
-        texts.setSpacing(1)
         name_label = QLabel()
         name_label.setObjectName("sideName")
         fm = QFontMetrics(name_label.font())
         name_label.setText(fm.elidedText(name, Qt.ElideRight, 152))
         name_label.setToolTip(name)
-        texts.addWidget(name_label)
-        layout.addLayout(texts)
+        layout.addWidget(name_label)
         layout.addStretch(1)
+
+    def set_context_menu(self, menu) -> None:
+        self._menu = menu
+
+    def set_selected(self, selected: bool) -> None:
+        if self.property("selected") == selected:
+            return
+        self.setProperty("selected", selected)
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
+
+    def mouseReleaseEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit()
+        super().mouseReleaseEvent(event)
+
+    def contextMenuEvent(self, event) -> None:
+        if self._menu is not None:
+            self._menu.exec(event.globalPos())
+        super().contextMenuEvent(event)
 
     def resizeEvent(self, event) -> None:
         self._inner.setGeometry(int(self._slide), 0, int(self.width() - self._slide), self.height())
@@ -715,3 +739,54 @@ class SidebarItem(QWidget):
         self._inner.setGeometry(
             int(self._slide), 0, int(self.width() - self._slide), self.height()
         )
+
+
+class CategoryHeader(QFrame):
+    toggle_requested = Signal()
+
+    def __init__(self, name: str, count: int, collapsed: bool = False, parent=None):
+        super().__init__(parent)
+        self.setObjectName("catHeader")
+        self.setCursor(Qt.PointingHandCursor)
+        self.setFixedHeight(30)
+        self._menu = None
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 0, 10, 0)
+        layout.setSpacing(6)
+
+        self._arrow = QLabel("▸" if collapsed else "▾")
+        self._arrow.setObjectName("catArrow")
+        self._arrow.setFixedWidth(12)
+        layout.addWidget(self._arrow)
+
+        name_label = QLabel()
+        name_label.setObjectName("catName")
+        fm = QFontMetrics(name_label.font())
+        name_label.setText(fm.elidedText(name.upper(), Qt.ElideRight, 140))
+        name_label.setToolTip(name)
+        layout.addWidget(name_label)
+        layout.addStretch(1)
+
+        self._count = QLabel(str(count))
+        self._count.setObjectName("catCount")
+        layout.addWidget(self._count)
+
+    def set_arrow(self, collapsed: bool) -> None:
+        self._arrow.setText("▸" if collapsed else "▾")
+
+    def set_count(self, count: int) -> None:
+        self._count.setText(str(count))
+
+    def set_context_menu(self, menu) -> None:
+        self._menu = menu
+
+    def mouseReleaseEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton:
+            self.toggle_requested.emit()
+        super().mouseReleaseEvent(event)
+
+    def contextMenuEvent(self, event) -> None:
+        if self._menu is not None:
+            self._menu.exec(event.globalPos())
+        super().contextMenuEvent(event)
