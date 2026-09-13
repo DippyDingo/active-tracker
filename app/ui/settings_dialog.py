@@ -25,7 +25,7 @@ class SettingsPanel(QFrame):
         layout.setSpacing(14)
 
         top = QHBoxLayout()
-        title = QLabel("⚙  Настройки")
+        title = QLabel("Настройки")
         title.setObjectName("modalTitle")
         top.addWidget(title)
         top.addStretch(1)

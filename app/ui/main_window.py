@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
     QGraphicsOpacityEffect,
     QGridLayout,
     QHBoxLayout,
-    QInputDialog,
     QLabel,
     QLineEdit,
     QMainWindow,
@@ -46,7 +45,16 @@ from .add_dialog import AddPanel
 from .modal import ModalOverlay
 from .settings_dialog import SettingsPanel
 from .stats_panel import StatsPanel
-from .widgets import AppCard, CardHost, CategoryHeader, SidebarItem, magnifier_icon, menu_icon
+from .widgets import (
+    AppCard,
+    CardHost,
+    CategoryHeader,
+    InlineEdit,
+    SidebarItem,
+    magnifier_icon,
+    menu_icon,
+    ui_icon,
+)
 
 PERIODS = [
     ("День", 0, "СЕГОДНЯ"),
@@ -86,14 +94,16 @@ class AppMenuPopup(QFrame):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(4)
 
-        for text, signal in (
-            ("⚙  Настройки", self.settings_requested),
-            ("⇪  Экспорт базы данных", self.export_requested),
-            ("⇧  Загрузить базу данных", self.load_requested),
+        for text, signal, icon_kind in (
+            ("Настройки", self.settings_requested, "settings"),
+            ("Экспорт базы данных", self.export_requested, "upload"),
+            ("Загрузить базу данных", self.load_requested, "download"),
         ):
             btn = QPushButton(text)
             btn.setObjectName("popupItem")
             btn.setCursor(Qt.PointingHandCursor)
+            btn.setIcon(ui_icon(icon_kind))
+            btn.setIconSize(QSize(16, 16))
             btn.clicked.connect(signal.emit)
             layout.addWidget(btn)
 
@@ -102,9 +112,11 @@ class AppMenuPopup(QFrame):
         sep.setStyleSheet("background: #1e293b; border: none;")
         layout.addWidget(sep)
 
-        quit_btn = QPushButton("⏻  Выход")
+        quit_btn = QPushButton("Выход")
         quit_btn.setObjectName("popupItem")
         quit_btn.setCursor(Qt.PointingHandCursor)
+        quit_btn.setIcon(ui_icon("power", "#f87171"))
+        quit_btn.setIconSize(QSize(16, 16))
         quit_btn.clicked.connect(self.quit_requested)
         layout.addWidget(quit_btn)
 
@@ -158,6 +170,7 @@ class MainWindow(QMainWindow):
         self._cat_headers: dict[int, CategoryHeader] = {}
         self._uncat_header: QLabel | None = None
         self._collapsed: set[int] = set()
+        self._inline: InlineEdit | None = None
         self._rows_meta: dict[int, object] = {}
         self._order: list[int] = []
         self._names: dict[int, str] = {}
@@ -235,16 +248,6 @@ class MainWindow(QMainWindow):
         self._side_layout.setSpacing(3)
         self._side_scroll.setWidget(side_container)
         layout.addWidget(self._side_scroll, 1)
-
-        buttons = QVBoxLayout()
-        buttons.setContentsMargins(14, 4, 14, 0)
-        buttons.setSpacing(8)
-        add_btn = QPushButton("＋  Добавить приложение")
-        add_btn.setObjectName("primary")
-        add_btn.setCursor(Qt.PointingHandCursor)
-        add_btn.clicked.connect(self._open_add)
-        buttons.addWidget(add_btn)
-        layout.addLayout(buttons)
 
         root_layout.addWidget(sidebar)
 
@@ -348,6 +351,7 @@ class MainWindow(QMainWindow):
         self._cat_rows.clear()
         self._cat_headers.clear()
         self._uncat_header = None
+        self._inline = None
         self._rows_meta.clear()
         self._order.clear()
         self._names.clear()
@@ -561,30 +565,6 @@ class MainWindow(QMainWindow):
         for item in self._cat_rows.get(cat_id, []):
             item.setVisible(not collapsed)
 
-    def _add_category(self) -> None:
-        name, ok = QInputDialog.getText(self, "Новая категория", "Название категории:")
-        if not ok or not name.strip():
-            return
-        self.db.create_category(name.strip())
-        self.refresh_apps()
-
-    def _category_menu(self, cat_id: int, cat_name: str) -> QMenu:
-        menu = QMenu(self)
-        rename_action = menu.addAction("Переименовать")
-        delete_action = menu.addAction("Удалить")
-        rename_action.triggered.connect(lambda: self._rename_category(cat_id, cat_name))
-        delete_action.triggered.connect(lambda: self._delete_category(cat_id, cat_name))
-        return menu
-
-    def _rename_category(self, cat_id: int, current_name: str) -> None:
-        name, ok = QInputDialog.getText(
-            self, "Переименование категории", "Новое название:", text=current_name
-        )
-        if not ok or not name.strip():
-            return
-        self.db.rename_category(cat_id, name.strip())
-        self.refresh_apps()
-
     def _delete_category(self, cat_id: int, cat_name: str) -> None:
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Question)
@@ -601,18 +581,21 @@ class MainWindow(QMainWindow):
 
     def _sidebar_context_menu(self, pos: QPoint) -> None:
         menu = QMenu(self)
-        create_action = menu.addAction("📁  Создать категорию")
-        create_action.triggered.connect(self._add_category)
+        add_action = menu.addAction(ui_icon("plus"), "Добавить приложение")
+        add_action.triggered.connect(self._open_add)
+        cat_action = menu.addAction(ui_icon("folder"), "Создать категорию")
+        cat_action.triggered.connect(lambda: self._start_inline_create(None))
         menu.exec(self._side_container.mapToGlobal(pos))
 
     def _app_menu(self, app_id: int) -> QMenu:
         menu = QMenu(self)
-        new_action = menu.addAction("📁  Новая категория…")
-        new_action.triggered.connect(lambda: self._new_category_for(app_id))
+        new_action = menu.addAction(ui_icon("folder"), "Новая категория…")
+        new_action.triggered.connect(lambda: self._start_inline_create(app_id))
         cats = self.db.list_categories()
         if cats:
             menu.addSeparator()
             move_menu = menu.addMenu("Добавить в категорию")
+            move_menu.setIcon(ui_icon("folder"))
             current = self._rows_meta.get(app_id)
             current_cat = current.category_id if current is not None else None
             for cat_id, cat_name in cats:
@@ -623,20 +606,62 @@ class MainWindow(QMainWindow):
                 )
             if current_cat is not None:
                 menu.addSeparator()
-                none_action = menu.addAction("Убрать из категории")
+                none_action = menu.addAction(ui_icon("minus"), "Убрать из категории")
                 none_action.triggered.connect(lambda: self._move_app(app_id, None))
         return menu
 
-    def _new_category_for(self, app_id: int) -> None:
-        name, ok = QInputDialog.getText(self, "Новая категория", "Название категории:")
-        if not ok or not name.strip():
+    def _category_menu(self, cat_id: int, cat_name: str) -> QMenu:
+        menu = QMenu(self)
+        rename_action = menu.addAction(ui_icon("pen"), "Переименовать")
+        delete_action = menu.addAction(ui_icon("trash", "#f87171"), "Удалить")
+        rename_action.triggered.connect(lambda: self._start_inline_rename(cat_id, cat_name))
+        delete_action.triggered.connect(lambda: self._delete_category(cat_id, cat_name))
+        return menu
+
+    def _remove_inline(self) -> None:
+        if self._inline is not None:
+            widget = self._inline
+            self._inline = None
+            self._side_layout.removeWidget(widget)
+            widget.deleteLater()
+
+    def _start_inline_create(self, for_app_id: int | None = None) -> None:
+        self._remove_inline()
+        edit = InlineEdit(placeholder="Имя категории, затем Enter")
+        edit.accepted.connect(lambda text: self._finish_create(text, for_app_id))
+        edit.cancelled.connect(self._remove_inline)
+        self._inline = edit
+        self._side_layout.insertWidget(max(0, self._side_layout.count() - 1), edit)
+        self._side_scroll.ensureWidgetVisible(edit, 10, 10)
+        edit.focus_edit()
+
+    def _finish_create(self, text: str, for_app_id: int | None) -> None:
+        self._remove_inline()
+        if not text:
             return
-        cat_id = self.db.create_category(name.strip())
-        self.db.set_app_category(app_id, cat_id)
+        cat_id = self.db.create_category(text)
+        if for_app_id is not None:
+            self.db.set_app_category(for_app_id, cat_id)
         self.refresh_apps()
 
-    def _move_app(self, app_id: int, cat_id: int | None) -> None:
-        self.db.set_app_category(app_id, cat_id)
+    def _start_inline_rename(self, cat_id: int, current_name: str) -> None:
+        header = self._cat_headers.get(cat_id)
+        if header is None:
+            return
+        self._remove_inline()
+        edit = InlineEdit(initial=current_name)
+        idx = self._side_layout.indexOf(header)
+        header.setVisible(False)
+        edit.accepted.connect(lambda text: self._finish_rename(cat_id, text))
+        edit.cancelled.connect(lambda: (header.setVisible(True), self._remove_inline()))
+        self._inline = edit
+        self._side_layout.insertWidget(idx, edit)
+        edit.focus_edit()
+
+    def _finish_rename(self, cat_id: int, text: str) -> None:
+        self._remove_inline()
+        if text:
+            self.db.rename_category(cat_id, text)
         self.refresh_apps()
 
     def eventFilter(self, obj, event) -> bool:
