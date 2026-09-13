@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS apps (
     name TEXT NOT NULL,
     exe_path TEXT NOT NULL UNIQUE COLLATE NOCASE,
     icon BLOB,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     added_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE TABLE IF NOT EXISTS stats (
@@ -57,6 +58,15 @@ class Database:
         self._conn.execute("PRAGMA foreign_keys=ON")
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
+        self._migrate()
+
+    def _migrate(self) -> None:
+        cols = {r[1] for r in self._conn.execute("PRAGMA table_info(apps)")}
+        if "sort_order" not in cols:
+            self._conn.execute(
+                "ALTER TABLE apps ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0"
+            )
+            self._conn.commit()
 
     @staticmethod
     def validate(path) -> bool:
@@ -95,12 +105,20 @@ class Database:
         try:
             with self._conn:
                 cur = self._conn.execute(
-                    "INSERT INTO apps(name, exe_path, icon) VALUES(?,?,?)",
+                    """INSERT INTO apps(name, exe_path, icon, sort_order)
+                       VALUES(?,?,?, COALESCE((SELECT MAX(sort_order) FROM apps), 0) + 1)""",
                     (name, exe_path, sqlite3.Binary(icon) if icon else None),
                 )
             return int(cur.lastrowid)
         except sqlite3.IntegrityError:
             return None
+
+    def set_apps_order(self, app_ids: list[int]) -> None:
+        with self._conn:
+            for idx, app_id in enumerate(app_ids):
+                self._conn.execute(
+                    "UPDATE apps SET sort_order=? WHERE id=?", (idx + 1, app_id)
+                )
 
     def remove_app(self, app_id: int) -> None:
         with self._conn:
@@ -109,7 +127,7 @@ class Database:
 
     def list_apps(self) -> list[AppRow]:
         rows = self._conn.execute(
-            "SELECT id, name, exe_path, icon FROM apps ORDER BY name COLLATE NOCASE"
+            "SELECT id, name, exe_path, icon FROM apps ORDER BY sort_order, name COLLATE NOCASE"
         ).fetchall()
         return [
             AppRow(r["id"], r["name"], r["exe_path"], bytes(r["icon"]) if r["icon"] else None)
