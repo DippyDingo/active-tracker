@@ -168,7 +168,7 @@ class AddPanel(QFrame):
 
         self._search = QLineEdit()
         self._search.setObjectName("searchEdit")
-        self._search.setPlaceholderText("Поиск по названию или пути")
+        self._search.setPlaceholderText("  Поиск по названию или пути")
         self._search.setClearButtonEnabled(True)
         self._search.setAttribute(Qt.WA_InputMethodEnabled, False)
         self._search.setInputMethodHints(Qt.ImhNoAutoUppercase)

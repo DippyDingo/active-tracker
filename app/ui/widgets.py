@@ -59,16 +59,19 @@ def rounded_pixmap(src: QPixmap, size: int, radius: int) -> QPixmap:
     return out
 
 
-def magnifier_icon(color: str = "#8fa3b8", size: int = 16) -> QIcon:
-    pm = QPixmap(size, size)
+def magnifier_icon(color: str = "#9db2c7", size: int = 18) -> QIcon:
+    scale = 3
+    px = size * scale
+    pm = QPixmap(px, px)
     pm.fill(Qt.transparent)
     painter = QPainter(pm)
     painter.setRenderHint(QPainter.Antialiasing)
-    painter.setPen(QPen(QColor(color), 1.7, Qt.SolidLine, Qt.RoundCap))
+    painter.setPen(QPen(QColor(color), 2.0 * scale, Qt.SolidLine, Qt.RoundCap))
     painter.setBrush(Qt.NoBrush)
-    painter.drawEllipse(QRectF(1.5, 1.5, 9.0, 9.0))
-    painter.drawLine(QPointF(9.8, 9.8), QPointF(14.2, 14.2))
+    painter.drawEllipse(QRectF(2.0 * scale, 2.0 * scale, 9.5 * scale, 9.5 * scale))
+    painter.drawLine(QPointF(10.6 * scale, 10.6 * scale), QPointF(15.5 * scale, 15.5 * scale))
     painter.end()
+    pm.setDevicePixelRatio(scale)
     return QIcon(pm)
 
 
