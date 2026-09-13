@@ -483,10 +483,7 @@ class MainWindow(QMainWindow):
         if isinstance(obj, AppCard) and obj.app_id in self._cards:
             etype = event.type()
             if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
-                host = self._hosts.get(obj.app_id)
-                grab = event.position().toPoint() + (
-                    obj.pos() - host.pos() if host is not None else QPoint(0, 0)
-                )
+                grab = event.position().toPoint() + obj.pos()
                 self._drag = {
                     "app_id": obj.app_id,
                     "start": event.globalPosition().toPoint(),
