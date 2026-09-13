@@ -1018,14 +1018,18 @@ class MainWindow(QMainWindow):
     def _open_settings(self) -> None:
         self._popup.hide()
         panel = SettingsPanel(
-            self.tracker.threshold_minutes(), self.tracker.background_counting(), self
+            self.tracker.threshold_minutes(),
+            self.tracker.background_counting(),
+            bool(self.db.get_int("show_chart_help", 1)),
+            self,
         )
         panel.saved.connect(self._apply_settings)
         self._show_modal(panel)
 
-    def _apply_settings(self, threshold: int, background: bool) -> None:
+    def _apply_settings(self, threshold: int, background: bool, show_help: bool = True) -> None:
         self.tracker.set_threshold_minutes(threshold)
         self.tracker.set_background_counting(background)
+        self.db.set_int("show_chart_help", 1 if show_help else 0)
         self._update_status_right()
 
     def _export_database(self) -> None:
@@ -1098,13 +1102,6 @@ class MainWindow(QMainWindow):
         card = self._cards.get(app_id)
         if row is None or card is None:
             return
-        start_rect = None
-        host = self._hosts.get(app_id)
-        if host is not None and not host.isHidden():
-            pos = card.mapTo(self, QPoint(0, 0))
-            rect = QRect(pos, card.size()).intersected(self.rect())
-            if not rect.isEmpty() and rect.width() > 40:
-                start_rect = rect
         try:
             first_day = date.fromisoformat(config.read_config().get("first_launch", ""))
         except (TypeError, ValueError):
@@ -1125,7 +1122,7 @@ class MainWindow(QMainWindow):
                 self._confirm_delete(aid),
             )
         )
-        self._show_modal(panel, start_rect)
+        self._show_modal(panel)
 
     def _confirm_delete(self, app_id: int) -> None:
         name = self._names.get(app_id, "приложение")
