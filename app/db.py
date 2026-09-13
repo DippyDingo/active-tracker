@@ -88,11 +88,19 @@ class Database:
                 return False
             conn = sqlite3.connect(str(p))
             try:
-                rows = conn.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table'"
-                ).fetchall()
-                names = {r[0] for r in rows}
-                return {"apps", "stats", "settings"} <= names
+                tables = {
+                    r[0]
+                    for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                }
+                if not {"apps", "stats"} <= tables:
+                    return False
+                apps_cols = {r[1] for r in conn.execute("PRAGMA table_info(apps)")}
+                if not {"id", "name", "exe_path"} <= apps_cols:
+                    return False
+                stats_cols = {r[1] for r in conn.execute("PRAGMA table_info(stats)")}
+                if not {"app_id", "day", "seconds"} <= stats_cols:
+                    return False
+                return True
             finally:
                 conn.close()
         except Exception:
@@ -100,14 +108,25 @@ class Database:
 
     def export_to(self, path) -> bool:
         try:
-            target = str(Path(path).resolve())
+            target = Path(path).resolve()
+            if target == Path(self.path).resolve():
+                return False
             self._conn.commit()
             self._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-            if Path(target).exists():
-                Path(target).unlink()
-            self._conn.execute("VACUUM INTO ?", (target,))
+            tmp = target.with_suffix(target.suffix + ".part")
+            if tmp.exists():
+                tmp.unlink()
+            self._conn.execute("VACUUM INTO ?", (str(tmp),))
+            if target.exists():
+                target.unlink()
+            tmp.replace(target)
             return True
         except Exception:
+            try:
+                if "tmp" in locals() and Path(tmp).exists():
+                    Path(tmp).unlink()
+            except Exception:
+                pass
             return False
 
     def close(self) -> None:
@@ -206,6 +225,22 @@ class Database:
                    ON CONFLICT(app_id, day, hour) DO UPDATE SET seconds = seconds + excluded.seconds""",
                 (app_id, day, hour, seconds),
             )
+
+    def add_activity_batch(self, entries: list[tuple[int, str, int, int]]) -> None:
+        if not entries:
+            return
+        with self._conn:
+            for app_id, day, hour, seconds in entries:
+                self._conn.execute(
+                    """INSERT INTO stats(app_id, day, seconds) VALUES(?,?,?)
+                       ON CONFLICT(app_id, day) DO UPDATE SET seconds = seconds + excluded.seconds""",
+                    (app_id, day, seconds),
+                )
+                self._conn.execute(
+                    """INSERT INTO hours(app_id, day, hour, seconds) VALUES(?,?,?,?)
+                       ON CONFLICT(app_id, day, hour) DO UPDATE SET seconds = seconds + excluded.seconds""",
+                    (app_id, day, hour, seconds),
+                )
 
     def get_hours(self, app_id: int, day: str) -> list[int]:
         rows = self._conn.execute(
