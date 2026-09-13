@@ -4,6 +4,7 @@ from PySide6.QtCore import (
     QEvent,
     QPointF,
     QRectF,
+    QSize,
     Qt,
     QPropertyAnimation,
     QVariantAnimation,
@@ -845,28 +846,35 @@ class CategoryHeader(QFrame):
         super().__init__(parent)
         self.setObjectName("catHeader")
         self.setCursor(Qt.PointingHandCursor)
-        self.setFixedHeight(30)
+        self.setFixedHeight(34)
         self._menu = None
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(10, 0, 10, 0)
-        layout.setSpacing(6)
+        layout.setContentsMargins(8, 0, 8, 0)
+        layout.setSpacing(7)
 
         self._arrow = QLabel("▸" if collapsed else "▾")
         self._arrow.setObjectName("catArrow")
-        self._arrow.setFixedWidth(12)
+        self._arrow.setFixedWidth(10)
         layout.addWidget(self._arrow)
+
+        icon_label = QLabel()
+        icon_label.setFixedSize(16, 16)
+        icon_label.setPixmap(ui_icon("folder", "#8fa3b8", 16).pixmap(QSize(16, 16)))
+        layout.addWidget(icon_label)
 
         name_label = QLabel()
         name_label.setObjectName("catName")
         fm = QFontMetrics(name_label.font())
-        name_label.setText(fm.elidedText(name.upper(), Qt.ElideRight, 140))
+        name_label.setText(fm.elidedText(name.upper(), Qt.ElideRight, 130))
         name_label.setToolTip(name)
         layout.addWidget(name_label)
         layout.addStretch(1)
 
         self._count = QLabel(str(count))
         self._count.setObjectName("catCount")
+        self._count.setAlignment(Qt.AlignCenter)
+        self._count.setFixedHeight(18)
         layout.addWidget(self._count)
 
     def set_arrow(self, collapsed: bool) -> None:
