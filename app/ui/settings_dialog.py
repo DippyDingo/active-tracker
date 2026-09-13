@@ -1,9 +1,9 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QFrame,
+    QDialog,
+    QDialogButtonBox,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QSpinBox,
     QVBoxLayout,
 )
@@ -11,14 +11,20 @@ from PySide6.QtWidgets import (
 from .widgets import ToggleSwitch
 
 
-class SettingsPanel(QFrame):
-    saved = Signal(int, bool)
+class SettingsPanel(QDialog):
+    saved = Signal(int, bool, bool)
     close_requested = Signal()
 
-    def __init__(self, threshold_minutes: int, background_enabled: bool, parent=None):
+    def __init__(
+        self,
+        threshold_minutes: int,
+        background_enabled: bool,
+        show_chart_help: bool = True,
+        parent=None,
+    ):
         super().__init__(parent)
-        self.setObjectName("modalPanel")
-        self.setFixedSize(480, 330)
+        self.setWindowTitle("Настройки")
+        self.setMinimumWidth(480)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 18)
@@ -29,12 +35,6 @@ class SettingsPanel(QFrame):
         title.setObjectName("modalTitle")
         top.addWidget(title)
         top.addStretch(1)
-        close_btn = QPushButton("✕")
-        close_btn.setObjectName("deleteBtn")
-        close_btn.setFixedSize(26, 26)
-        close_btn.setCursor(Qt.PointingHandCursor)
-        close_btn.clicked.connect(self.close_requested)
-        top.addWidget(close_btn)
         layout.addLayout(top)
 
         row1 = QHBoxLayout()
@@ -62,6 +62,20 @@ class SettingsPanel(QFrame):
         row2.addWidget(self._toggle, 0, Qt.AlignVCenter)
         layout.addLayout(row2)
 
+        row3 = QHBoxLayout()
+        texts3 = QVBoxLayout()
+        texts3.setSpacing(2)
+        help_title = QLabel("Подсказка по графику")
+        help_note = QLabel("Показывать пункты «Как пользоваться графиком» в статистике")
+        help_note.setObjectName("subtleLabel")
+        texts3.addWidget(help_title)
+        texts3.addWidget(help_note)
+        row3.addLayout(texts3)
+        row3.addStretch(1)
+        self._help_toggle = ToggleSwitch(show_chart_help)
+        row3.addWidget(self._help_toggle, 0, Qt.AlignVCenter)
+        layout.addLayout(row3)
+
         note = QLabel(
             "Если активности нет дольше порога простоя — весь период\nпростоя не засчитывается."
         )
@@ -69,19 +83,21 @@ class SettingsPanel(QFrame):
         layout.addWidget(note)
         layout.addStretch(1)
 
-        bottom = QHBoxLayout()
-        bottom.addStretch(1)
-        cancel = QPushButton("Отмена")
-        cancel.setCursor(Qt.PointingHandCursor)
-        cancel.clicked.connect(self.close_requested)
-        save = QPushButton("Сохранить")
-        save.setObjectName("primary")
-        save.setCursor(Qt.PointingHandCursor)
-        save.clicked.connect(self._save)
-        bottom.addWidget(cancel)
-        bottom.addWidget(save)
-        layout.addLayout(bottom)
+        buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        buttons.button(QDialogButtonBox.Save).setText("Сохранить")
+        buttons.button(QDialogButtonBox.Cancel).setText("Отмена")
+        buttons.accepted.connect(self._save)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
 
     def _save(self) -> None:
-        self.saved.emit(self._spin.value(), self._toggle.isChecked())
-        self.close_requested.emit()
+        self.saved.emit(
+            self._spin.value(), self._toggle.isChecked(), self._help_toggle.isChecked()
+        )
+        self.accept()
+
+    def value(self) -> int:
+        return self._spin.value()
+
+    def background_enabled(self) -> bool:
+        return self._toggle.isChecked()

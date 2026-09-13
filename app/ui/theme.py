@@ -296,6 +296,20 @@ QFrame#rangeResult {
     border: 1px solid #1e293b;
     background: rgba(255, 255, 255, 3%);
 }
+QFrame#helpBox {
+    border-radius: 12px;
+    border: 1px solid rgba(96, 165, 250, 12%);
+    background: rgba(96, 165, 250, 4%);
+}
+QLabel#helpTitle {
+    color: #b6c4d4;
+    font-size: 12px;
+    font-weight: 700;
+}
+QLabel#helpBullet {
+    color: #9ca3af;
+    font-size: 12px;
+}
 
 QPushButton {
     background: rgba(255, 255, 255, 5%);
