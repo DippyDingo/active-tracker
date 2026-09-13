@@ -9,7 +9,7 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
+from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
 
 
 class ModalOverlay(QWidget):
@@ -21,6 +21,7 @@ class ModalOverlay(QWidget):
         self._panel = panel
         self._closing = False
         self._group = None
+        self._snap: QLabel | None = None
 
         panel.setParent(self)
         hint = panel.sizeHint().expandedTo(panel.minimumSize())
@@ -39,17 +40,33 @@ class ModalOverlay(QWidget):
         if hasattr(panel, "close_requested"):
             panel.close_requested.connect(self.close_modal)
 
-        self._opacity = QGraphicsOpacityEffect(panel)
-        self._opacity.setOpacity(0.0)
-        panel.setGraphicsEffect(self._opacity)
-
         self.setFocusPolicy(Qt.StrongFocus)
         self.show()
         self.raise_()
         self.setFocus(Qt.PopupFocusReason)
 
-        fade = QPropertyAnimation(self._opacity, b"opacity")
-        fade.setDuration(160)
+        self._start_open_animation()
+
+    def _start_open_animation(self) -> None:
+        panel = self._panel
+        panel.show()
+        snapshot = panel.grab()
+        snap = QLabel(self)
+        snap.setPixmap(snapshot)
+        snap.setGeometry(panel.geometry())
+        snap.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self._snap = snap
+        panel.hide()
+        snap.show()
+        snap.raise_()
+
+        effect = QGraphicsOpacityEffect(snap)
+        effect.setOpacity(0.0)
+        snap.setGraphicsEffect(effect)
+        self._snap_effect = effect
+
+        fade = QPropertyAnimation(effect, b"opacity")
+        fade.setDuration(150)
         fade.setStartValue(0.0)
         fade.setEndValue(1.0)
         fade.setEasingCurve(QEasingCurve.OutCubic)
@@ -58,8 +75,11 @@ class ModalOverlay(QWidget):
         fade.start()
 
     def _on_opened(self) -> None:
-        self._panel.setGraphicsEffect(None)
-        self._opacity = None
+        self._panel.show()
+        self._panel.raise_()
+        if self._snap is not None:
+            self._snap.deleteLater()
+            self._snap = None
 
     def eventFilter(self, obj, event) -> bool:
         if obj is self._host and event.type() == QEvent.Resize:
@@ -84,15 +104,30 @@ class ModalOverlay(QWidget):
         self._closing = True
         if self._group is not None:
             self._group.stop()
-        if self._opacity is None:
-            effect = QGraphicsOpacityEffect(self._panel)
-            effect.setOpacity(1.0)
-            self._panel.setGraphicsEffect(effect)
-            self._opacity = effect
 
-        fade = QPropertyAnimation(self._opacity, b"opacity")
-        fade.setDuration(130)
-        fade.setStartValue(self._opacity.opacity())
+        panel = self._panel
+        if self._snap is not None:
+            snap = self._snap
+        else:
+            snapshot = panel.grab()
+            snap = QLabel(self)
+            snap.setPixmap(snapshot)
+            snap.setGeometry(panel.geometry())
+            snap.setAttribute(Qt.WA_TransparentForMouseEvents)
+            self._snap = snap
+            panel.hide()
+            snap.show()
+            snap.raise_()
+
+        effect = snap.graphicsEffect()
+        if not isinstance(effect, QGraphicsOpacityEffect):
+            effect = QGraphicsOpacityEffect(snap)
+            effect.setOpacity(1.0)
+            snap.setGraphicsEffect(effect)
+
+        fade = QPropertyAnimation(effect, b"opacity")
+        fade.setDuration(120)
+        fade.setStartValue(effect.opacity())
         fade.setEndValue(0.0)
         fade.setEasingCurve(QEasingCurve.InCubic)
         fade.finished.connect(self._on_closed)

@@ -11,6 +11,12 @@ call .venv\Scripts\pyinstaller.exe --noconfirm --onefile --noconsole ^
   --hidden-import win32api ^
   --hidden-import win32con ^
   main.py
+if errorlevel 1 (
+  echo.
+  echo ОШИБКА СБОРКИ: dist\Nodexy.exe не создан.
+  pause
+  exit /b 1
+)
 echo.
-echo Готово: dist\ActiveTracker.exe
+echo Готово: dist\Nodexy.exe
 pause
