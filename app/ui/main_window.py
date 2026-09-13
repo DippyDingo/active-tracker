@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 from PySide6.QtCore import (
     QEasingCurve,
+    QEvent,
     QParallelAnimationGroup,
     QPoint,
     QPropertyAnimation,
@@ -166,6 +167,7 @@ class MainWindow(QMainWindow):
         self._cols = 3
         self._overlay = None
         self._pending_modal: tuple | None = None
+        self._drag: dict | None = None
         self._running: set[str] = set()
         self._header_value = 0
         self._header_anim = None
@@ -336,8 +338,8 @@ class MainWindow(QMainWindow):
             self._order.append(row.id)
 
             card = AppCard(row.id, row.name, row.exe_path, row.icon)
-            card.clicked.connect(self._on_card_clicked)
             card.delete_requested.connect(self._confirm_delete)
+            card.installEventFilter(self)
             host = CardHost(card)
             self._cards[row.id] = card
             self._hosts[row.id] = host
@@ -459,6 +461,7 @@ class MainWindow(QMainWindow):
         host = self._hosts.get(app_id)
         if host is not None:
             self._scroll.ensureWidgetVisible(host, 30, 60)
+        self._open_stats(app_id)
 
     def _on_card_clicked(self, app_id: int) -> None:
         self._selected_id = app_id
@@ -470,6 +473,64 @@ class MainWindow(QMainWindow):
             self._sidebar_list.setCurrentItem(item)
             self._sidebar_list.blockSignals(False)
         self._open_stats(app_id)
+
+    def eventFilter(self, obj, event) -> bool:
+        if isinstance(obj, AppCard) and obj.app_id in self._cards:
+            etype = event.type()
+            if etype == QEvent.MouseButtonPress and event.button() == Qt.LeftButton:
+                self._drag = {
+                    "app_id": obj.app_id,
+                    "start": event.globalPosition().toPoint(),
+                    "dragging": False,
+                }
+            elif etype == QEvent.MouseMove and self._drag is not None:
+                if (
+                    self._drag["app_id"] == obj.app_id
+                    and event.buttons() & Qt.LeftButton
+                ):
+                    pos = event.globalPosition().toPoint()
+                    if not self._drag["dragging"]:
+                        if (pos - self._drag["start"]).manhattanLength() > 14:
+                            self._drag["dragging"] = True
+                            self.setCursor(Qt.ClosedHandCursor)
+                    if self._drag["dragging"]:
+                        self._drag_over(pos)
+                    return True
+            elif etype == QEvent.MouseButtonRelease and self._drag is not None:
+                if self._drag["app_id"] == obj.app_id:
+                    was_dragging = self._drag["dragging"]
+                    app_id = self._drag["app_id"]
+                    self._drag = None
+                    self.setCursor(Qt.ArrowCursor)
+                    if was_dragging:
+                        self._persist_order()
+                    else:
+                        self._on_card_clicked(app_id)
+                    return True
+        return super().eventFilter(obj, event)
+
+    def _drag_over(self, global_pos: QPoint) -> None:
+        container = self._scroll.widget()
+        local = container.mapFromGlobal(global_pos)
+        target = None
+        for app_id in self._order:
+            host = self._hosts.get(app_id)
+            if host is not None and not host.isHidden() and host.geometry().contains(local):
+                target = app_id
+                break
+        drag_id = self._drag["app_id"]
+        if target is None or target == drag_id:
+            return
+        i = self._order.index(drag_id)
+        j = self._order.index(target)
+        self._order[i], self._order[j] = self._order[j], self._order[i]
+        self._relayout_grid()
+
+    def _persist_order(self) -> None:
+        try:
+            self.db.set_apps_order(self._order)
+        except Exception:
+            config.log_error("MainWindow._persist_order")
 
     def _show_modal(self, panel, start_rect: QRect | None = None, on_closed=None) -> ModalOverlay | None:
         if self._overlay is not None:

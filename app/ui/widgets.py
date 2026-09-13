@@ -562,8 +562,6 @@ class AppCard(QFrame):
         blur_anim.start()
 
     def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.LeftButton:
-            self.clicked.emit(self.app_id)
         super().mousePressEvent(event)
 
 
