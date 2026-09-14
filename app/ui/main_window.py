@@ -88,15 +88,18 @@ class _PopupItem(QFrame):
         self.setObjectName("popupItem")
         self.setCursor(Qt.PointingHandCursor)
         lay = QHBoxLayout(self)
-        lay.setContentsMargins(12, 9, 12, 9)
-        lay.setSpacing(10)
-        ic = QLabel()
-        ic.setFixedSize(18, 18)
-        ic.setPixmap(icon.pixmap(QSize(18, 18)))
-        lay.addWidget(ic)
+        lay.setContentsMargins(12, 8, 12, 8)
+        lay.setSpacing(0)
+        # Иконка в фиксированном квадратном контейнере: у всех пунктов одна колонка.
+        icon_box = QLabel()
+        icon_box.setFixedSize(20, 20)
+        icon_box.setAlignment(Qt.AlignCenter)
+        icon_box.setPixmap(icon.pixmap(QSize(18, 18)))
+        lay.addWidget(icon_box, 0, Qt.AlignVCenter)
+        lay.addSpacing(10)
         lb = QLabel(text)
         lb.setObjectName("popupItemText")
-        lay.addWidget(lb, 1)
+        lay.addWidget(lb, 1, Qt.AlignVCenter)
 
     def mouseReleaseEvent(self, event) -> None:
         if event.button() == Qt.LeftButton:
