@@ -1,3 +1,5 @@
+import time
+
 from PySide6.QtCore import (
     QEasingCurve,
     QEvent,
@@ -9,7 +11,7 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QGraphicsOpacityEffect, QLabel, QWidget
+from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
 
 
 class ModalOverlay(QWidget):
@@ -21,7 +23,7 @@ class ModalOverlay(QWidget):
         self._panel = panel
         self._closing = False
         self._group = None
-        self._snap: QLabel | None = None
+        self._opacity = None
 
         panel.setParent(self)
         hint = panel.sizeHint().expandedTo(panel.minimumSize())
@@ -45,24 +47,19 @@ class ModalOverlay(QWidget):
         self.raise_()
         self.setFocus(Qt.PopupFocusReason)
 
+        self._open_time = time.monotonic()
         self._start_open_animation()
 
     def _start_open_animation(self) -> None:
+        # Анимируем настоящую панель: без снимка и промежуточных слоёв.
         panel = self._panel
-        snapshot = panel.grab()
-        snap = QLabel(self)
-        snap.setPixmap(snapshot)
-        snap.setGeometry(panel.geometry())
-        snap.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self._snap = snap
-        panel.hide()
-        snap.show()
-        snap.raise_()
+        panel.show()
+        panel.raise_()
 
-        effect = QGraphicsOpacityEffect(snap)
+        effect = QGraphicsOpacityEffect(panel)
         effect.setOpacity(0.0)
-        snap.setGraphicsEffect(effect)
-        self._snap_effect = effect
+        panel.setGraphicsEffect(effect)
+        self._opacity = effect
 
         fade = QPropertyAnimation(effect, b"opacity")
         fade.setDuration(150)
@@ -74,11 +71,10 @@ class ModalOverlay(QWidget):
         fade.start()
 
     def _on_opened(self) -> None:
-        self._panel.show()
-        self._panel.raise_()
-        if self._snap is not None:
-            self._snap.deleteLater()
-            self._snap = None
+        # После появления убираем эффект, чтобы панель рисовалась как обычно.
+        if self._opacity is not None:
+            self._panel.setGraphicsEffect(None)
+            self._opacity = None
 
     def eventFilter(self, obj, event) -> bool:
         if obj is self._host and event.type() == QEvent.Resize:
@@ -105,24 +101,12 @@ class ModalOverlay(QWidget):
             self._group.stop()
 
         panel = self._panel
-        if self._snap is not None:
-            snap = self._snap
-        else:
-            snapshot = panel.grab()
-            snap = QLabel(self)
-            snap.setPixmap(snapshot)
-            snap.setGeometry(panel.geometry())
-            snap.setAttribute(Qt.WA_TransparentForMouseEvents)
-            self._snap = snap
-            panel.hide()
-            snap.show()
-            snap.raise_()
-
-        effect = snap.graphicsEffect()
+        effect = panel.graphicsEffect()
         if not isinstance(effect, QGraphicsOpacityEffect):
-            effect = QGraphicsOpacityEffect(snap)
+            effect = QGraphicsOpacityEffect(panel)
             effect.setOpacity(1.0)
-            snap.setGraphicsEffect(effect)
+            panel.setGraphicsEffect(effect)
+        self._opacity = effect
 
         fade = QPropertyAnimation(effect, b"opacity")
         fade.setDuration(120)
@@ -138,6 +122,9 @@ class ModalOverlay(QWidget):
         self.deleteLater()
 
     def mousePressEvent(self, event) -> None:
+        # Защита: клик, открывший модалку, не должен её сразу закрыть.
+        if time.monotonic() - self._open_time < 0.2:
+            return
         if not self._panel.geometry().contains(event.position().toPoint()):
             self.close_modal()
 
