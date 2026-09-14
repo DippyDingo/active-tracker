@@ -1,8 +1,0 @@
-{
-  "version": 3,
-  "document": {
-    "name": "Технический анализ приложения и оценка",
-    "protocolJson": "{\"assets\":[],\"page\":{\"id\":\"page_fsd7EaIMYii\",\"type\":\"page\",\"v\":\"3.0.14\",\"layers\":[{\"visible\":true,\"opacity\":1,\"angle\":0,\"scaleX\":1,\"scaleY\":1,\"flipX\":false,\"flipY\":false,\"type\":\"image\",\"lockAspectRatio\":true,\"strokeColor\":{\"type\":\"solid\",\"colors\":[\"#000000\"]},\"strokeWidth\":1,\"paintFirst\":\"fill\",\"strokeEnabled\":false,\"shadow\":{\"offsetX\":0,\"offsetY\":4,\"blur\":4,\"color\":\"#00000040\",\"enabled\":false},\"id\":\"r2YBiJpI4HX\",\"src\":\"https://sc02.alicdn.com/kf/A93632094a27b4af1b27190e4dac00cfdM.png\",\"imageWidth\":1024,\"imageHeight\":1024,\"width\":1024,\"height\":1024,\"left\":656.6666666666666,\"top\":607.5,\"name\":\"Image 1\"},{\"visible\":true,\"opacity\":1,\"angle\":0,\"scaleX\":1,\"scaleY\":1,\"flipX\":false,\"flipY\":false,\"type\":\"image\",\"lockAspectRatio\":true,\"strokeColor\":{\"type\":\"solid\",\"colors\":[\"#000000\"]},\"strokeWidth\":1,\"paintFirst\":\"fill\",\"strokeEnabled\":false,\"shadow\":{\"offsetX\":0,\"offsetY\":4,\"blur\":4,\"color\":\"#00000040\",\"enabled\":false},\"id\":\"0jEr7bDjduO\",\"src\":\"https://sc02.alicdn.com/kf/A2124b3d23c204dc984189c1aed0ee276E.png\",\"imageWidth\":1024,\"imageHeight\":1024,\"width\":1024,\"height\":1024,\"name\":\"Image 2\",\"externalOperationId\":\"history-1gu6mq7:history-1gu6mq7\",\"externalOperationStatus\":\"SUCCEEDED\",\"left\":656.6666666666666,\"top\":1647.5}],\"backgroundColor\":{\"colors\":[\"#F1F4F8\"],\"type\":\"solid\"},\"rulerInfo\":{\"visible\":false,\"horizontal\":[],\"vertical\":[],\"locked\":false}},\"loadingLayers\":[]}"
-  },
-  "updatedAt": 1789344425441
-}

@@ -50,3 +50,6 @@ Thumbs.db
 # PyInstaller
 *.spec
 chat_context.txt
+
+image_generate/
+media-output/
