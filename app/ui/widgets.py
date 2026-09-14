@@ -140,8 +140,9 @@ def ui_icon(kind: str, color: str = "#9db2c7", size: int = 16) -> QIcon:
         painter.drawLine(pt(4.6, 8.6), pt(8, 12.0))
         painter.drawLine(pt(11.4, 8.6), pt(8, 12.0))
     elif kind == "power":
-        painter.drawArc(int(3.4 * scale), int(3.4 * scale), int(9.2 * scale), int(9.2 * scale), 60 * 16, 240 * 16)
-        painter.drawLine(pt(8, 2.2), pt(8, 7.6))
+        painter.setPen(QPen(QColor(color), 1.6 * scale, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawArc(int(4.0 * scale), int(4.0 * scale), int(8.0 * scale), int(8.0 * scale), 150 * 16, 240 * 16)
+        painter.drawLine(pt(8, 3.9), pt(8, 7.6))
     elif kind == "trash":
         painter.drawLine(pt(3.2, 4.6), pt(12.8, 4.6))
         painter.drawLine(pt(6.4, 2.8), pt(9.6, 2.8))
