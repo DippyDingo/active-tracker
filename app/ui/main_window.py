@@ -401,6 +401,7 @@ class MainWindow(QMainWindow):
 
             card = AppCard(row.id, row.name, row.exe_path, row.icon)
             card.delete_requested.connect(self._confirm_delete)
+            card.clicked.connect(self._on_card_clicked)
             card.installEventFilter(self)
             host = CardHost(card)
             self._cards[row.id] = card
@@ -452,11 +453,12 @@ class MainWindow(QMainWindow):
             self._series = {app_id: [0] * 24 for app_id in self._order}
             self._live_slot = -1
             self._base = {}
-            idxs = self._pick_indices(24)
-            self._axis_idx = idxs
-            self._axis_labels = [f"{h:02d}" for h in idxs]
+            self._axis_idx = list(range(24))
+            self._axis_labels = [f"{h:02d}" for h in range(24)]
             self._axis_tips = [f"{h:02d}:00–{(h + 1) % 24:02d}:00" for h in range(24)]
+            win = self._card_window(24)
             for card in self._cards.values():
+                card.set_chart_window(win)
                 card.set_axis(self._axis_idx, self._axis_labels)
                 card.set_day_tooltips(self._axis_tips)
             return
@@ -545,13 +547,44 @@ class MainWindow(QMainWindow):
         self._series = series
         self._base = dict(base)
 
-        idxs = self._pick_indices(n)
-        self._axis_idx = idxs
-        self._axis_labels = [axis_full[i] for i in idxs]
+        self._axis_idx = list(range(n))
+        self._axis_labels = list(axis_full)
         self._axis_tips = tips_full
+        win = self._card_window(n)
         for card in self._cards.values():
+            card.set_chart_window(win)
             card.set_axis(self._axis_idx, self._axis_labels)
             card.set_day_tooltips(self._axis_tips)
+
+    def _card_window(self, n: int) -> int | None:
+        """Размер окна мини-графика по текущему периоду.
+
+        Если точек больше ~14-20, показываем окно и позволяем листать
+        перетаскиванием; для коротких рядов помещаем весь ряд.
+        """
+        key = PERIOD_KEYS[self._period_idx]
+        if key == "day":
+            # Для часов — показываем все 24
+            return None
+        elif key == "week":
+            # Для недели — показываем все 7 дней
+            return None
+        elif key == "month":
+            # Для месяца (до 31 дня) — если больше 20, окно 20
+            if n > 20:
+                return 20
+            return None
+        elif key == "year":
+            # Для года (12 месяцев) — показываем все
+            return None
+        elif key == "all":
+            # Для «Всё время» показываем окно 14-20 точек в зависимости от длины
+            if n > 60:
+                return 20
+            elif n > 14:
+                return 14
+            return None
+        return None
 
     def _card_series(self, app_id: int, today_live: int) -> list[int]:
         """Значения мини-графика карточки с учётом «живого» сегодня."""

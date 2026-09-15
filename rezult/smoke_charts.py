@@ -1,0 +1,115 @@
+"""Offscreen smoke-test для RangeChart / MiniChart / AppCard (не часть приложения)."""
+import os
+import sys
+from datetime import date, timedelta
+
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from PySide6.QtWidgets import QApplication  # noqa: E402
+
+app = QApplication([])
+
+from app.ui.widgets import AppCard, MiniChart, RangeChart  # noqa: E402
+
+errors: list[str] = []
+
+
+def check(cond: bool, msg: str) -> None:
+    if not cond:
+        errors.append(msg)
+
+
+def render(w) -> None:
+    from PySide6.QtGui import QPixmap
+
+    pm = QPixmap(w.size())
+    w.render(pm)
+
+
+# --- RangeChart: 3 дня истории («Всё время» с короткой историей) -------------
+rc = RangeChart(170)
+rc.resize(560, 170)
+today = date.today()
+dates = [today - timedelta(days=2), today - timedelta(days=1), today]
+rc.set_days([100, 200, 50], dates)
+pad_l, pad_t, inner_w, inner_h = rc._plot()
+check(rc._visible == 3.0, f"visible должен быть 3 при n=3, получено {rc._visible}")
+check(abs(rc._day_to_x(0.5) - pad_l) < 1e-6, "первая точка не у левого края")
+check(abs(rc._day_to_x(2.5) - (pad_l + inner_w)) < 1e-6, "последняя точка не у правого края")
+render(rc)
+check(len(rc._vis_pts) == 3, f"ожидалось 3 видимые точки, получено {len(rc._vis_pts)}")
+check(rc.day_tip(0) != "", "day_tip пустой для дневного ряда")
+# обратное преобразование
+for x in (pad_l, pad_l + inner_w / 2, pad_l + inner_w):
+    d = rc._x_to_day(x)
+    check(abs(rc._day_to_x(d) - x) < 1e-6, f"x->day->x не сходится в {x}")
+# выделение всего диапазона: полоса точно в пределах плота
+rc._sel = (0, 2)
+band = rc._sel_band_px()
+check(band[0] <= pad_l + 1e-6 and band[1] >= pad_l + inner_w - 1e-6, "полоса выделения не покрывает плот целиком")
+
+# --- RangeChart: длинная история (месяцы) и зум ---------------------------------
+n = 400
+dates = [today - timedelta(days=n - 1 - i) for i in range(n)]
+rc.set_days([i % 50 for i in range(n)], dates)
+render(rc)
+check(rc._visible == float(n), "полный вид должен показывать все дни")
+first_b, last_b = rc._buckets[0], rc._buckets[-1]
+check(abs(rc._day_to_x((first_b[0] + first_b[1]) / 2) - pad_l) < 1e-6, "центр первого бакета не у левого края")
+check(abs(rc._day_to_x((last_b[0] + last_b[1]) / 2) - (pad_l + inner_w)) < 1e-6, "центр последнего бакета не у правого края")
+check(len(rc._vis_pts) == len(rc._buckets), "не все бакеты видны в полном виде")
+# зум в середину
+rc._visible = 14.0
+rc._offset = 100.0
+rc._clamp_view()
+rc._rebuild_buckets()
+render(rc)
+check(len(rc._vis_pts) >= 14, f"после зума ожидалось ≥14 точек, получено {len(rc._vis_pts)}")
+check(rc._buckets[0][1] - rc._buckets[0][0] == 1, "при vis=14 бакеты должны быть дневными")
+
+# --- RangeChart: одна точка --------------------------------------------------------
+rc.set_days([42], [today])
+render(rc)
+check(len(rc._vis_pts) == 1, "одна точка не отрисована")
+check(abs(rc._day_to_x(0.5) - (pad_l + inner_w / 2)) < 1e-6, "одна точка не по центру")
+
+# --- RangeChart: часы (explicit) ------------------------------------------------
+rc.set_hours([i for i in range(24)])
+render(rc)
+check(rc.day_tip(5) == "05:00–06:00", f"тултип часа: {rc.day_tip(5)!r}")
+check(abs(rc._day_to_x(0.5) - pad_l) < 1e-6, "часы: первая точка не у края")
+
+# --- MiniChart: hover переживает set_values с тем же числом точек --------------
+mc = MiniChart(46)
+mc.resize(240, 60)
+mc.set_values([1, 2, 3, 4, 5, 6, 7])
+mc._progress = 1.0
+mc._hover = 3
+mc.set_values([1, 2, 3, 4, 5, 6, 8])  # «тик» — изменилось только сегодня
+check(mc._hover == 3, "hover сброшен при обновлении значений той же длины")
+mc.set_values([1, 2, 3])
+check(mc._hover == -1, "hover не сброшен при смене длины ряда")
+mc.set_values([5] * 7)
+mc.set_axis([0, 3, 6], ["Пн", "Чт", "Вс"])
+pts = mc._points()
+check(abs(pts[0].x() - mc.PAD_L) < 1e-6, "MiniChart: первая точка не у левого края")
+check(abs(pts[-1].x() - (mc.width() - mc.PAD_R)) < 1e-6, "MiniChart: последняя точка не у правого края")
+check(mc._index_at_x(pts[3].x()) == 3, "MiniChart: _index_at_x не совпадает с точкой")
+render(mc)
+
+# --- AppCard ------------------------------------------------------------------------
+card = AppCard(1, "Test", "C:/x.exe", None)
+card.resize(300, 206)
+card.set_axis([0, 3, 6], ["Пн", "Чт", "Вс"])
+card.set_day_tooltips([f"d{i}" for i in range(7)])
+card.set_chart([1, 2, 3, 4, 5, 6, 7])
+check(not hasattr(card, "_day_labels"), "у AppCard остались QLabel подписей")
+render(card)
+
+if errors:
+    print("FAIL")
+    for e in errors:
+        print(" -", e)
+    sys.exit(1)
+print("OK: all chart smoke checks passed")

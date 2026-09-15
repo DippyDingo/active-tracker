@@ -260,6 +260,7 @@ def _mix(a: QColor, b: QColor, t: float) -> QColor:
 
 class MiniChart(QWidget):
     view_changed = Signal(int, int)
+    clicked = Signal()
 
     AXIS_H = 14.0  # высота полосы подписей под графиком (рисуются самим виджетом)
     PAD_L = 6.0
@@ -273,8 +274,9 @@ class MiniChart(QWidget):
         self.setMinimumWidth(100)
         self.setMouseTracking(True)
         self._values: list[int] = []
+        self._values_start: list[int] = []  # Значения в начале анимации
         self._day_labels: list[str] = []
-        self._axis: list[tuple[int, str]] = []  # (индекс бакета, подпись)
+        self._axis: list[tuple[int, str]] = []  # (индекс точки, подпись) — полный набор
         self._hover = -1
         self._hover_x: float | None = None
         self._progress = 1.0
@@ -283,6 +285,9 @@ class MiniChart(QWidget):
         self._offset = 0
         self._drag_x: float | None = None
         self._drag_offset = 0
+        self._press_x: float | None = None
+        self._press_pan = False
+        self._moved = False
 
         self._draw_anim = QPropertyAnimation(self, b"progress")
         self._draw_anim.setDuration(900)
@@ -327,7 +332,8 @@ class MiniChart(QWidget):
                 self.update()
 
     def set_axis(self, indices: list[int], labels: list[str]) -> None:
-        """Подписи оси: рисуются ровно под точками с указанными индексами."""
+        """Полный набор подписей (индекс точки → текст). Виджет сам прореживает
+        их равномерным шагом под ширину видимого окна и прижимает крайние внутрь."""
         axis = [(int(i), str(t)) for i, t in zip(indices, labels)]
         if axis != self._axis:
             self._axis = axis
@@ -338,11 +344,25 @@ class MiniChart(QWidget):
         same_len = len(new_vals) == len(self._values)
         if same_len and new_vals == self._values and not animate:
             return  # ничего не изменилось — не трогаем ни hover, ни перерисовку
+        
+        # Запоминаем старые значения для плавной интерполяции.
+        if animate:
+            self._values_start = list(self._values) if self._values else []
+            # Если длины разные, дополняем нулями
+            if len(self._values_start) < len(new_vals):
+                self._values_start.extend([0] * (len(new_vals) - len(self._values_start)))
+            elif len(self._values_start) > len(new_vals):
+                self._values_start = self._values_start[:len(new_vals)]
+        
         self._values = new_vals
         n = len(self._values)
         if self._visible is not None:
             self._visible = max(2, min(self._visible, max(n, 2)))
-            self._offset = max(0, n - self._visible)
+            # На тике (та же длина) сохраняем позицию прокрутки; иначе — к концу.
+            if same_len:
+                self._offset = self._clamp_offset(self._offset)
+            else:
+                self._offset = max(0, n - self._visible)
         if not same_len:
             self._hover = -1
         if animate and n >= 2:
@@ -355,9 +375,11 @@ class MiniChart(QWidget):
         self.update()
 
     def set_view(self, visible: int | None) -> None:
+        # Не зажимаем к текущему числу точек (могут ещё не быть загружены);
+        # фактическое окно вычисляется в _window() по актуальным данным.
+        self._visible = None if visible is None else max(2, int(visible))
         n = len(self._values)
-        self._visible = None if visible is None else max(2, min(int(visible), max(n, 2)))
-        self._offset = max(0, n - self._visible) if self._visible else 0
+        self._offset = max(0, n - (self._visible or n))
         self._hover = -1
         self._emit_view()
         self.update()
@@ -394,6 +416,19 @@ class MiniChart(QWidget):
         n = len(vals)
         if n < 2:
             return []
+        
+        # Интерполируем значения во время анимации для плавного перехода.
+        if self._progress < 1.0 and self._values_start:
+            vals_start = self._values_start[off : off + vis]
+            # Дополняем нулями если нужно
+            if len(vals_start) < len(vals):
+                vals_start = vals_start + [0] * (len(vals) - len(vals_start))
+            elif len(vals_start) > len(vals):
+                vals_start = vals_start[:len(vals)]
+            # Интерполируем каждое значение
+            vals = [int(v_start + (v_end - v_start) * self._progress) 
+                    for v_start, v_end in zip(vals_start, vals)]
+        
         vmax = max(max(vals), 1)
         pts = []
         for i, v in enumerate(vals):
@@ -426,6 +461,11 @@ class MiniChart(QWidget):
                 painter.end()
                 return
             v = self._values[off]
+            # Интерполируем значение для одной точки тоже
+            if self._progress < 1.0 and self._values_start and off < len(self._values_start):
+                v_start = self._values_start[off]
+                v = int(v_start + (v - v_start) * self._progress)
+            
             pad_t, pad_b = 5.0, 6.0
             bw = min(46.0, w * 0.25)
             x = (w - bw) / 2
@@ -465,30 +505,36 @@ class MiniChart(QWidget):
                 anchor_idx = off + self._hover
 
         n_total = len(self._values)
-        if self._visible is not None and n_total > self._visible:
-            track = QRectF(2, h - 3.5, w - 4, 2.5)
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(255, 255, 255, 18))
-            painter.drawRoundedRect(track, 1.5, 1.5)
-            x0 = 2 + (w - 4) * off / n_total
-            bw = max(14.0, (w - 4) * vis / n_total)
-            painter.setBrush(QColor("#3b82f6"))
-            painter.drawRoundedRect(QRectF(x0, h - 3.5, bw, 2.5), 1.5, 1.5)
+        # Убрали ползунок (scrollbar) — на мини-графиках карточек он сливается с графиком
+        # и не нужен, т.к. перетаскивание работает и без визуального индикатора.
 
-        # Подписи оси — строго под своими точками.
+        # Подписи оси — прореживаем равномерным шагом под ширину окна,
+        # крайние прижимаем внутрь, чтобы текст не срезался у границы.
         if self._axis and vis > 0:
             font = QFont(self.font())
             font.setPointSizeF(7.5)
             painter.setFont(font)
             painter.setPen(QColor("#6b7280"))
-            for idx, text in self._axis:
-                local = idx - off
-                if not (0 <= local < vis) or not text:
-                    continue
-                x = self._x_at(local, vis) if vis > 1 else w / 2.0
-                painter.drawText(
-                    QRectF(x - 30, h, 60, self.AXIS_H), Qt.AlignHCenter | Qt.AlignVCenter, text
-                )
+            fm = QFontMetrics(font)
+            visible_axis = [(idx, text) for idx, text in self._axis if 0 <= idx - off < vis and text]
+            if visible_axis:
+                slot_w = (w - self.PAD_L - self.PAD_R) / max(vis, 1)
+                label_w = max((fm.horizontalAdvance(t) for _i, t in visible_axis), default=20) + 8
+                step = max(1, int(ceil(label_w / max(slot_w, 1.0))))
+                last = len(visible_axis) - 1
+                for k in range(0, len(visible_axis), step):
+                    idx, text = visible_axis[k]
+                    local = idx - off
+                    x = self._x_at(local, vis) if vis > 1 else w / 2.0
+                    rect = QRectF(x - 30, h, 60, self.AXIS_H)
+                    align = Qt.AlignHCenter
+                    if k == 0:
+                        rect = QRectF(self.PAD_L - 2, h, 60, self.AXIS_H)
+                        align = Qt.AlignLeft
+                    elif k == last:
+                        rect = QRectF(w - self.PAD_R - 58, h, 60, self.AXIS_H)
+                        align = Qt.AlignRight
+                    painter.drawText(rect, align | Qt.AlignVCenter, text)
 
         if anchor is not None and self._progress >= 0.99 and anchor_idx >= 0:
             p = anchor
@@ -530,6 +576,8 @@ class MiniChart(QWidget):
         n = len(self._values)
         x = event.position().x()
         if self._drag_x is not None and n > vis:
+            if abs(x - self._drag_x) > 3:
+                self._moved = True
             ppp = max(self.width(), 10) / vis
             delta = int(round((self._drag_x - x) / ppp))
             new_off = self._clamp_offset(self._drag_offset + delta)
@@ -539,6 +587,8 @@ class MiniChart(QWidget):
                 self._emit_view()
                 self.update()
             return
+        if self._press_x is not None and abs(x - self._press_x) > 3:
+            self._moved = True
         self._hover_x = x
         if self._progress < 0.99:
             return
@@ -549,15 +599,32 @@ class MiniChart(QWidget):
 
     def mousePressEvent(self, event) -> None:
         off, vis = self._window()
-        if event.button() == Qt.LeftButton and len(self._values) > vis:
-            self._drag_x = event.position().x()
-            self._drag_offset = self._offset
-            self.setCursor(Qt.ClosedHandCursor)
+        if event.button() == Qt.LeftButton:
+            self._press_x = event.position().x()
+            self._moved = False
+            self._press_pan = len(self._values) > vis
+            if self._press_pan:
+                self._drag_x = event.position().x()
+                self._drag_offset = self._offset
+                self.setCursor(Qt.ClosedHandCursor)
+            event.accept()
+            return
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
+        was_click = (
+            event.button() == Qt.LeftButton
+            and self._press_x is not None
+            and not self._moved
+        )
         self._drag_x = None
+        self._press_x = None
+        self._press_pan = False
         self.setCursor(Qt.ArrowCursor)
+        if was_click:
+            self.clicked.emit()
+            event.accept()
+            return
         super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event) -> None:
@@ -601,7 +668,7 @@ class RangeChart(QWidget):
 
     PAD_L = 6.0
     PAD_R = 6.0
-    PAD_T = 8.0
+    PAD_T = 16.0  # Увеличен отступ сверху, чтобы график не обрезался
     PAD_B = 24.0
     MIN_VISIBLE = 7.0
 
@@ -638,7 +705,7 @@ class RangeChart(QWidget):
 
     def set_days(self, values: list[int], dates: list[date]) -> None:
         self._unit = "days"
-        self._min_visible = 7.0
+        self._min_visible = 14.0  # Увеличен с 7 до 14, чтобы избежать "дёрганья" при глубоком зуме
         self._explicit = None
         self._days = [max(0, int(v)) for v in values]
         self._dates = list(dates)
@@ -769,7 +836,17 @@ class RangeChart(QWidget):
             self._buckets = buckets
             return
         vis = self._visible
-        unit = "day" if vis <= 90 else ("week" if vis <= 730 else "month")
+        # Изменены пороги для более плавных переходов и меньшего "дёрганья"
+        # день: до 60 дней (2 месяца)
+        # неделя: 60-365 дней (2 месяца - 1 год)
+        # месяц: больше года
+        if vis <= 60:
+            unit = "day"
+        elif vis <= 365:
+            unit = "week"
+        else:
+            unit = "month"
+        
         buckets: list[tuple[int, int, str, str, int]] = []
         if unit == "day":
             for i, v in enumerate(self._days):
@@ -1201,6 +1278,7 @@ class AppCard(QFrame):
         layout.addWidget(self._time)
 
         self.chart = MiniChart(46)
+        self.chart.clicked.connect(lambda: self.clicked.emit(self.app_id))
         layout.addWidget(self.chart)
 
         self._footer = QLabel("СЕГОДНЯ: 0м")
@@ -1222,6 +1300,11 @@ class AppCard(QFrame):
     def set_axis(self, indices: list[int], labels: list[str]) -> None:
         """Подписи под мини-графиком: labels[k] рисуется под точкой indices[k]."""
         self.chart.set_axis(indices, labels)
+
+    def set_chart_window(self, visible: int | None) -> None:
+        """Оконный режим мини-графика: показываем не больше visible точек,
+        остальное листается перетаскиванием. None — показать всё."""
+        self.chart.set_view(visible)
 
     def _animate_number(self, attr_shown: str, attr_anim: str, label, value: int, prefix: str = "") -> None:
         current = getattr(self, attr_shown)
