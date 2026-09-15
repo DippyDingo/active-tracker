@@ -185,6 +185,9 @@ class StatsPanel(QFrame):
 
         self._help_box = self._build_help_box()
         layout.addWidget(self._help_box)
+        # Видимость выставляем только после добавления в layout: setVisible(True)
+        # у виджета без родителя показывает его как отдельное окно (мигание при открытии).
+        self._help_box.setVisible(bool(self._db.get_int("show_chart_help", 1)))
 
         layout.addStretch(1)
 
@@ -207,7 +210,7 @@ class StatsPanel(QFrame):
         self._set_period(self._period_idx, animate=False)
 
     def _build_help_box(self) -> QFrame:
-        box = QFrame()
+        box = QFrame(self)
         box.setObjectName("helpBox")
         layout = QVBoxLayout(box)
         layout.setContentsMargins(14, 10, 10, 12)
@@ -233,7 +236,6 @@ class StatsPanel(QFrame):
             lbl.setWordWrap(True)
             layout.addWidget(lbl)
 
-        box.setVisible(bool(self._db.get_int("show_chart_help", 1)))
         return box
 
     def _hide_help(self) -> None:
