@@ -269,6 +269,16 @@ class Database:
             args.append(end_day)
         return [(r["day"], r["seconds"]) for r in self._conn.execute(sql, args)]
 
+    def query_hours_range(
+        self, app_id: int, start_day: str, end_day: str
+    ) -> dict[tuple[str, int], int]:
+        """Запрос часов за диапазон дней: {(day, hour): seconds}."""
+        rows = self._conn.execute(
+            "SELECT day, hour, seconds FROM hours WHERE app_id=? AND day>=? AND day<=?",
+            (app_id, start_day, end_day),
+        )
+        return {(r["day"], r["hour"]): r["seconds"] for r in rows}
+
     def get_min_day(self) -> str | None:
         row = self._conn.execute("SELECT MIN(day) AS day FROM stats").fetchone()
         return row["day"] if row else None
