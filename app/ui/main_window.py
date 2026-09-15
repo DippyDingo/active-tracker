@@ -208,6 +208,7 @@ class MainWindow(QMainWindow):
         self._base: dict[int, int] = {}
         self._series: dict[int, list[int]] = {}
         self._live_slot = -1
+        self._axis_idx: list[int] = []
         self._axis_labels: list[str] = []
         self._axis_tips: list[str] = []
         self._today = date.today()
@@ -452,10 +453,11 @@ class MainWindow(QMainWindow):
             self._live_slot = -1
             self._base = {}
             idxs = self._pick_indices(24)
+            self._axis_idx = idxs
             self._axis_labels = [f"{h:02d}" for h in idxs]
             self._axis_tips = [f"{h:02d}:00–{(h + 1) % 24:02d}:00" for h in range(24)]
             for card in self._cards.values():
-                card.set_day_names(self._axis_labels)
+                card.set_axis(self._axis_idx, self._axis_labels)
                 card.set_day_tooltips(self._axis_tips)
             return
 
@@ -480,21 +482,43 @@ class MainWindow(QMainWindow):
                 bounds.append((s, e))
                 axis_full.append(SHORT_MONTHS[m - 1])
                 tips_full.append(f"{MONTHS_NOM[m - 1]} {today.year}")
-        else:  # all — по месяцам от первой записи
+        else:  # all — от первой записи до сегодня; шаг бакета по длине истории
             first_str = self.db.get_min_day()
             try:
                 first = date.fromisoformat(first_str) if first_str else today
             except ValueError:
                 first = today
             first = min(first, today)
-            y, m = first.year, first.month
-            while (y, m) <= (today.year, today.month):
-                s = date(y, m, 1)
-                e = date(y, m, month_days(y, m))
-                bounds.append((s, e))
-                axis_full.append(SHORT_MONTHS[m - 1])
-                tips_full.append(f"{MONTHS_NOM[m - 1]} {y}")
-                y, m = add_months(y, m, 1)
+            span = (today - first).days + 1
+            if span <= 90:
+                d = first
+                while d <= today:
+                    bounds.append((d, d))
+                    axis_full.append(f"{d.day} {SHORT_MONTHS[d.month - 1]}")
+                    tips_full.append(f"{WEEKDAYS[d.weekday()]}, {ru_date(d)}")
+                    d += timedelta(days=1)
+            elif span <= 730:
+                s = first
+                while s <= today:
+                    e = min(s + timedelta(days=6), today)
+                    bounds.append((s, e))
+                    axis_full.append(f"{s.day} {SHORT_MONTHS[s.month - 1]}")
+                    if s.month == e.month:
+                        tips_full.append(f"{s.day}–{e.day} {SHORT_MONTHS[s.month - 1]}")
+                    else:
+                        tips_full.append(
+                            f"{s.day} {SHORT_MONTHS[s.month - 1]}–{e.day} {SHORT_MONTHS[e.month - 1]}"
+                        )
+                    s = e + timedelta(days=1)
+            else:
+                y, m = first.year, first.month
+                while (y, m) <= (today.year, today.month):
+                    s = date(y, m, 1)
+                    e = date(y, m, month_days(y, m))
+                    bounds.append((s, e))
+                    axis_full.append(SHORT_MONTHS[m - 1])
+                    tips_full.append(f"{MONTHS_NOM[m - 1]} {y}")
+                    y, m = add_months(y, m, 1)
 
         n = len(bounds)
         # Индекс бакета, содержащего сегодня.
@@ -522,10 +546,11 @@ class MainWindow(QMainWindow):
         self._base = dict(base)
 
         idxs = self._pick_indices(n)
+        self._axis_idx = idxs
         self._axis_labels = [axis_full[i] for i in idxs]
         self._axis_tips = tips_full
         for card in self._cards.values():
-            card.set_day_names(self._axis_labels)
+            card.set_axis(self._axis_idx, self._axis_labels)
             card.set_day_tooltips(self._axis_tips)
 
     def _card_series(self, app_id: int, today_live: int) -> list[int]:

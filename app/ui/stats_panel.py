@@ -75,6 +75,8 @@ class StatsPanel(QFrame):
         self._anchor: date = self._today
         self._unit = "days"
         self._hours_cache: dict[str, list[int]] = {}
+        self._first_day: date | None = first_day
+        self._all_dates: list[date] = []
 
         today_str = self._today.isoformat()
         history: dict[str, int] = {}
@@ -374,24 +376,22 @@ class StatsPanel(QFrame):
             tips = [f"{MONTHS_NOM[m]} {a.year}" for m in range(12)]
             return totals, axis, tips, "months", label_year(a.year)
 
-        # all — по месяцам от первой активности до сегодня
+        # all — дневной ряд от первой активности (или первого запуска) до сегодня.
+        # Бакеты (день / неделя / месяц) RangeChart подбирает сам по масштабу,
+        # поэтому даже при истории в пару дней получается нормальная линия.
         past = sorted(self._history.keys())
         first = date.fromisoformat(past[0]) if past else self._today
-        y, m = first.year, first.month
-        values: list[int] = []
-        axis: list[str] = []
-        tips: list[str] = []
-        while (y, m) <= (self._today.year, self._today.month):
-            prefix = f"{y:04d}-{m:02d}-"
-            total = sum(s for d, s in self._history.items() if d.startswith(prefix))
-            if (y, m) == (self._today.year, self._today.month):
-                total += self._today_live
-            values.append(total)
-            axis.append(SHORT_MONTHS[m - 1])
-            tips.append(f"{MONTHS_NOM[m - 1]} {y}")
-            y, m = add_months(y, m, 1)
-        label = f"{ru_date_short(first)} {first.year} — {ru_date_short(self._today)} {self._today.year}"
-        return values, axis, tips, "months", label
+        if self._first_day is not None:
+            first = min(first, self._first_day)
+        first = min(first, self._today)
+        dates = [first + timedelta(days=i) for i in range((self._today - first).days + 1)]
+        values = [self._day_value(d) for d in dates]
+        if first.year == self._today.year:
+            label = f"{ru_date_short(first)} — {ru_date_short(self._today)} {self._today.year}"
+        else:
+            label = f"{ru_date_short(first)} {first.year} — {ru_date_short(self._today)} {self._today.year}"
+        self._all_dates = dates
+        return values, [], [], "days", label
 
     def _set_period(self, idx: int, animate: bool) -> None:
         self._period_idx = idx
@@ -400,8 +400,11 @@ class StatsPanel(QFrame):
 
         values, axis, tips, unit, period_label = self._series_for()
         self._unit = unit
-        min_vis = 4.0 if unit == "hours" else (6.0 if unit == "months" else 7.0)
-        self._chart.set_series(values, axis, tips, unit=unit, min_visible=min_vis)
+        if key == "all":
+            self._chart.set_days(values, self._all_dates)
+        else:
+            min_vis = 4.0 if unit == "hours" else (6.0 if unit == "months" else 7.0)
+            self._chart.set_series(values, axis, tips, unit=unit, min_visible=min_vis)
 
         total = sum(values)
         self._big_caption.setText(f"АКТИВНО ЗА {PERIOD_CAPTIONS[idx]}")
@@ -430,13 +433,11 @@ class StatsPanel(QFrame):
             return
         start, end = sel
         values = self._chart._days
-        tips = self._chart.bucket_tips()
         total = sum(values[start : end + 1])
         count = end - start + 1
         avg = total / count if count else 0
 
-        def tip(i: int) -> str:
-            return tips[i] if 0 <= i < len(tips) else ""
+        tip = self._chart.day_tip
 
         if self._unit == "hours":
             span = f"{start:02d}:00 — {end + 1:02d}:00"

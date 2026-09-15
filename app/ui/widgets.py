@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..utils import SHORT_MONTHS, format_compact, ru_date
+from ..utils import SHORT_MONTHS, WEEKDAYS, format_compact, ru_date
 
 
 def pixmap_from_png(data: bytes | None) -> QPixmap | None:
@@ -94,6 +94,33 @@ def menu_icon(color: str = "#c3d0dd", size: int = 18) -> QIcon:
     painter.end()
     pm.setDevicePixelRatio(scale)
     return QIcon(pm)
+
+
+def smooth_path(pts: list[QPointF]) -> QPainterPath:
+    """Гладкая кривая, проходящая ТОЧНО через все точки (Catmull-Rom → кубические Безье).
+
+    В отличие от квадратичного сглаживания «через середины», здесь точки данных
+    лежат на самой линии — маркер наведения всегда сидит на графике.
+    """
+    path = QPainterPath()
+    n = len(pts)
+    if n == 0:
+        return path
+    path.moveTo(pts[0])
+    if n == 1:
+        return path
+    if n == 2:
+        path.lineTo(pts[1])
+        return path
+    for i in range(n - 1):
+        p0 = pts[i - 1] if i > 0 else pts[i]
+        p1 = pts[i]
+        p2 = pts[i + 1]
+        p3 = pts[i + 2] if i + 2 < n else pts[i + 1]
+        c1 = QPointF(p1.x() + (p2.x() - p0.x()) / 6.0, p1.y() + (p2.y() - p0.y()) / 6.0)
+        c2 = QPointF(p2.x() - (p3.x() - p1.x()) / 6.0, p2.y() - (p3.y() - p1.y()) / 6.0)
+        path.cubicTo(c1, c2, p2)
+    return path
 
 
 def ui_icon(kind: str, color: str = "#9db2c7", size: int = 16) -> QIcon:
@@ -234,14 +261,22 @@ def _mix(a: QColor, b: QColor, t: float) -> QColor:
 class MiniChart(QWidget):
     view_changed = Signal(int, int)
 
+    AXIS_H = 14.0  # высота полосы подписей под графиком (рисуются самим виджетом)
+    PAD_L = 6.0
+    PAD_R = 6.0
+    PAD_T = 5.0
+    PAD_B = 6.0
+
     def __init__(self, height: int = 46, parent=None):
         super().__init__(parent)
-        self.setFixedHeight(height)
+        self.setFixedHeight(height + int(self.AXIS_H))
         self.setMinimumWidth(100)
         self.setMouseTracking(True)
         self._values: list[int] = []
         self._day_labels: list[str] = []
+        self._axis: list[tuple[int, str]] = []  # (индекс бакета, подпись)
         self._hover = -1
+        self._hover_x: float | None = None
         self._progress = 1.0
         self._pulse = 1.0
         self._visible: int | None = None
@@ -286,15 +321,30 @@ class MiniChart(QWidget):
     progress = Property(float, _get_progress, _set_progress)
 
     def set_days(self, labels: list[str]) -> None:
-        self._day_labels = labels
+        if labels != self._day_labels:
+            self._day_labels = list(labels)
+            if self._hover >= 0:
+                self.update()
+
+    def set_axis(self, indices: list[int], labels: list[str]) -> None:
+        """Подписи оси: рисуются ровно под точками с указанными индексами."""
+        axis = [(int(i), str(t)) for i, t in zip(indices, labels)]
+        if axis != self._axis:
+            self._axis = axis
+            self.update()
 
     def set_values(self, values: list[int], animate: bool = False) -> None:
-        self._values = [max(0, int(v)) for v in values]
-        self._hover = -1
+        new_vals = [max(0, int(v)) for v in values]
+        same_len = len(new_vals) == len(self._values)
+        if same_len and new_vals == self._values and not animate:
+            return  # ничего не изменилось — не трогаем ни hover, ни перерисовку
+        self._values = new_vals
         n = len(self._values)
         if self._visible is not None:
             self._visible = max(2, min(self._visible, max(n, 2)))
             self._offset = max(0, n - self._visible)
+        if not same_len:
+            self._hover = -1
         if animate and n >= 2:
             self._drawn_at_least_once = False
             self._draw_anim.stop()
@@ -327,20 +377,28 @@ class MiniChart(QWidget):
         off, vis = self._window()
         self.view_changed.emit(off, vis)
 
+    def _plot_h(self) -> float:
+        return max(self.height() - self.AXIS_H, 10.0)
+
+    def _x_at(self, i: int, n: int) -> float:
+        """X точки с индексом i (в видимом окне) при n точках: первая у левого края, последняя у правого."""
+        w = max(self.width(), 10)
+        if n <= 1:
+            return w / 2.0
+        return self.PAD_L + i * (w - self.PAD_L - self.PAD_R) / (n - 1)
+
     def _points(self) -> list[QPointF]:
         off, vis = self._window()
         vals = self._values[off : off + vis]
-        w = max(self.width(), 10)
-        h = max(self.height(), 10)
+        h = self._plot_h()
         n = len(vals)
         if n < 2:
             return []
         vmax = max(max(vals), 1)
-        pad_l, pad_r, pad_t, pad_b = 3.0, 3.0, 5.0, 6.0
         pts = []
         for i, v in enumerate(vals):
-            x = pad_l + i * (w - pad_l - pad_r) / (n - 1)
-            y = h - pad_b - (v / vmax) * (h - pad_t - pad_b)
+            x = self._x_at(i, n)
+            y = h - self.PAD_B - (v / vmax) * (h - self.PAD_T - self.PAD_B)
             pts.append(QPointF(x, y))
         return pts
 
@@ -358,9 +416,10 @@ class MiniChart(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         w = self.width()
-        h = self.height()
+        h = self._plot_h()
         anchor = None
         anchor_idx = -1
+
 
         if not pts:
             if vis != 1:
@@ -384,12 +443,7 @@ class MiniChart(QWidget):
             anchor = QPointF(x + bw / 2, y)
             anchor_idx = off
         else:
-            path = QPainterPath()
-            path.moveTo(pts[0])
-            for i in range(1, len(pts) - 1):
-                mid = QPointF((pts[i].x() + pts[i + 1].x()) / 2, (pts[i].y() + pts[i + 1].y()) / 2)
-                path.quadTo(pts[i], mid)
-            path.lineTo(pts[-1])
+            path = smooth_path(pts)
 
             fill = QPainterPath(path)
             fill.lineTo(pts[-1].x(), h)
@@ -421,6 +475,21 @@ class MiniChart(QWidget):
             painter.setBrush(QColor("#3b82f6"))
             painter.drawRoundedRect(QRectF(x0, h - 3.5, bw, 2.5), 1.5, 1.5)
 
+        # Подписи оси — строго под своими точками.
+        if self._axis and vis > 0:
+            font = QFont(self.font())
+            font.setPointSizeF(7.5)
+            painter.setFont(font)
+            painter.setPen(QColor("#6b7280"))
+            for idx, text in self._axis:
+                local = idx - off
+                if not (0 <= local < vis) or not text:
+                    continue
+                x = self._x_at(local, vis) if vis > 1 else w / 2.0
+                painter.drawText(
+                    QRectF(x - 30, h, 60, self.AXIS_H), Qt.AlignHCenter | Qt.AlignVCenter, text
+                )
+
         if anchor is not None and self._progress >= 0.99 and anchor_idx >= 0:
             p = anchor
             painter.setPen(QPen(QColor(11, 18, 32), 1.5))
@@ -447,12 +516,22 @@ class MiniChart(QWidget):
             painter.drawText(QRectF(bx, by, tw, th), Qt.AlignCenter, text)
         painter.end()
 
+    def _index_at_x(self, x: float) -> int:
+        """Ближайшая точка к x (в координатах видимого окна)."""
+        _off, vis = self._window()
+        if vis <= 1:
+            return 0 if vis == 1 else -1
+        span = max(self.width(), 10) - self.PAD_L - self.PAD_R
+        ratio = min(max((x - self.PAD_L) / max(span, 1.0), 0.0), 1.0)
+        return min(max(int(round(ratio * (vis - 1))), 0), vis - 1)
+
     def mouseMoveEvent(self, event) -> None:
         off, vis = self._window()
         n = len(self._values)
+        x = event.position().x()
         if self._drag_x is not None and n > vis:
             ppp = max(self.width(), 10) / vis
-            delta = int(round((self._drag_x - event.position().x()) / ppp))
+            delta = int(round((self._drag_x - x) / ppp))
             new_off = self._clamp_offset(self._drag_offset + delta)
             if new_off != self._offset:
                 self._offset = new_off
@@ -460,18 +539,10 @@ class MiniChart(QWidget):
                 self._emit_view()
                 self.update()
             return
-        if vis == 1:
-            if self._hover != 0 and self._progress >= 0.99:
-                self._hover = 0
-                self.update()
+        self._hover_x = x
+        if self._progress < 0.99:
             return
-        pts = self._points()
-        if not pts or self._progress < 0.99:
-            return
-        w = max(self.width(), 10)
-        ratio = min(max(event.position().x() / w, 0.0), 1.0)
-        idx = int(round(ratio * (len(pts) - 1)))
-        idx = min(max(idx, 0), len(pts) - 1)
+        idx = self._index_at_x(x)
         if idx != self._hover:
             self._hover = idx
             self.update()
@@ -518,6 +589,7 @@ class MiniChart(QWidget):
                 self.update()
 
     def leaveEvent(self, event) -> None:
+        self._hover_x = None
         if self._hover != -1:
             self._hover = -1
             self.update()
@@ -607,6 +679,21 @@ class RangeChart(QWidget):
         """Подписи-тултипы всех бакетов (для итогов выделения)."""
         return [b[3] for b in self._buckets]
 
+    def day_tip(self, i: int) -> str:
+        """Подпись для элемента ряда с индексом i (час / день / месяц) — независимо от бакетов."""
+        if self._explicit is not None:
+            tips = self._explicit[1]
+            return tips[i] if 0 <= i < len(tips) else ""
+        if self._unit == "hours":
+            return f"{i:02d}:00–{(i + 1) % 24:02d}:00"
+        if 0 <= i < len(self._dates):
+            d = self._dates[i]
+            text = f"{WEEKDAYS[d.weekday()]}, {ru_date(d)}"
+            if self._dates and self._dates[0].year != self._dates[-1].year:
+                text += f" {d.year}"
+            return text
+        return ""
+
     def _n(self) -> int:
         return len(self._days)
 
@@ -640,6 +727,10 @@ class RangeChart(QWidget):
     def set_window_days(self, days: int | None) -> None:
         n = self._n()
         if n == 0:
+            self._buckets = []
+            self._vis_buckets = []
+            self._vis_pts = []
+            self.update()
             return
         if days is None:
             vis = float(n)
@@ -653,8 +744,10 @@ class RangeChart(QWidget):
 
     def _clamp_view(self) -> None:
         n = self._n()
-        max_vis = max(float(n), self._min_visible)
-        self._visible = min(max(self._visible, self._min_visible), max_vis)
+        # Если данных меньше минимального окна — показываем все точки на всю ширину,
+        # а не прижимаем их к левому краю.
+        lo = min(self._min_visible, float(max(n, 1)))
+        self._visible = min(max(self._visible, lo), float(max(n, 1)))
         self._offset = min(max(self._offset, 0.0), max(0.0, n - self._visible))
 
     def _rebuild_buckets(self) -> None:
@@ -685,15 +778,16 @@ class RangeChart(QWidget):
                 buckets.append((i, i + 1, axis, ru_date(d), v))
         elif unit == "week":
             for i in range(0, n, 7):
-                chunk = self._days[i : i + 7]
+                end = min(i + 7, n)
+                chunk = self._days[i:end]
                 d0 = self._dates[i]
-                d1 = self._dates[min(i + 7, n) - 1]
+                d1 = self._dates[end - 1]
                 axis = f"{d0.day} {SHORT_MONTHS[d0.month - 1]}"
                 if d0.month == d1.month:
                     tip = f"{d0.day}–{d1.day} {SHORT_MONTHS[d0.month - 1]}"
                 else:
                     tip = f"{d0.day} {SHORT_MONTHS[d0.month - 1]}–{d1.day} {SHORT_MONTHS[d1.month - 1]}"
-                buckets.append((i, i + 7, axis, tip, sum(chunk)))
+                buckets.append((i, end, axis, tip, sum(chunk)))
         else:
             i = 0
             while i < n:
@@ -711,13 +805,39 @@ class RangeChart(QWidget):
         h = max(self.height(), 20)
         return self.PAD_L, self.PAD_T, w - self.PAD_L - self.PAD_R, h - self.PAD_T - self.PAD_B
 
+    def _edge_halves(self) -> tuple[float, float]:
+        """Половины ширин крайних видимых бакетов (в днях).
+
+        Центр первого видимого бакета отображается на левый край плота, центр
+        последнего — на правый: линия и выделение никогда не выходят за график.
+        """
+        if not self._buckets:
+            return 0.5, 0.5
+        lo = self._offset
+        hi = self._offset + self._visible
+        left = right = None
+        for start, end, _a, _t, _v in self._buckets:
+            if left is None and end > lo:
+                left = (end - start) / 2.0
+            if start < hi:
+                right = (end - start) / 2.0
+        return (left if left is not None else 0.5), (right if right is not None else 0.5)
+
     def _day_to_x(self, di: float) -> float:
         pad_l, _pad_t, inner_w, _inner_h = self._plot()
-        return pad_l + (di - self._offset) / self._visible * inner_w
+        lh, rh = self._edge_halves()
+        span = self._visible - lh - rh
+        if span <= 1e-6:
+            return pad_l + inner_w / 2.0
+        return pad_l + (di - self._offset - lh) / span * inner_w
 
     def _x_to_day(self, x: float) -> float:
         pad_l, _pad_t, inner_w, _inner_h = self._plot()
-        return self._offset + (x - pad_l) / max(inner_w, 1.0) * self._visible
+        lh, rh = self._edge_halves()
+        span = self._visible - lh - rh
+        if span <= 1e-6:
+            return self._offset + self._visible / 2.0
+        return self._offset + lh + (x - pad_l) / max(inner_w, 1.0) * span
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
@@ -744,7 +864,8 @@ class RangeChart(QWidget):
         self._vis_pts = pts
 
         painter.save()
-        painter.setClipRect(QRectF(pad_l, 0, inner_w, h))
+        # Клип чуть шире плота, чтобы линия толщиной 2px у крайних точек не срезалась.
+        painter.setClipRect(QRectF(pad_l - 3, 0, inner_w + 6, h))
 
         band = self._sel_band_px()
         if band is not None:
@@ -756,12 +877,7 @@ class RangeChart(QWidget):
                 painter.drawRect(QRectF(xs, pad_t, xe - xs, inner_h))
 
         if len(pts) >= 2:
-            path = QPainterPath()
-            path.moveTo(pts[0])
-            for i in range(1, len(pts) - 1):
-                mid = QPointF((pts[i].x() + pts[i + 1].x()) / 2, (pts[i].y() + pts[i + 1].y()) / 2)
-                path.quadTo(pts[i], mid)
-            path.lineTo(pts[-1])
+            path = smooth_path(pts)
             fill = QPainterPath(path)
             fill.lineTo(pts[-1].x(), pad_t + inner_h)
             fill.lineTo(pts[0].x(), pad_t + inner_h)
@@ -773,9 +889,16 @@ class RangeChart(QWidget):
             painter.setPen(QPen(QColor("#60a5fa"), 2))
             painter.drawPath(path)
         elif len(pts) == 1:
+            # Одна точка — рисуем её как столбик по центру, чтобы график не выглядел пустым.
+            p = pts[0]
+            bw = min(46.0, inner_w * 0.25)
+            top = p.y() if vis_buckets[0][4] > 0 else pad_t + inner_h - 3.0
+            grad = QLinearGradient(0, pad_t, 0, pad_t + inner_h)
+            grad.setColorAt(0.0, QColor(96, 165, 250, 80))
+            grad.setColorAt(1.0, QColor(96, 165, 250, 10))
             painter.setPen(QPen(QColor("#60a5fa"), 2))
-            painter.setBrush(QBrush(QColor(96, 165, 250, 70)))
-            painter.drawEllipse(pts[0], 3.0, 3.0)
+            painter.setBrush(QBrush(grad))
+            painter.drawRoundedRect(QRectF(p.x() - bw / 2, top, bw, pad_t + inner_h - top), 6, 6)
 
         if band is not None:
             xs = max(band[0], pad_l)
@@ -869,7 +992,8 @@ class RangeChart(QWidget):
             self.update()
             return
         factor = 0.8 if delta.y() > 0 else 1.25
-        new_vis = min(max(self._visible * factor, self.MIN_VISIBLE), float(n))
+        lo = min(self._min_visible, float(n))
+        new_vis = min(max(self._visible * factor, lo), float(n))
         if new_vis == self._visible:
             return
         x = event.position().x()
@@ -1079,17 +1203,6 @@ class AppCard(QFrame):
         self.chart = MiniChart(46)
         layout.addWidget(self.chart)
 
-        days = QHBoxLayout()
-        days.setSpacing(0)
-        self._day_labels: list[QLabel] = []
-        for _ in range(7):
-            label = QLabel("")
-            label.setObjectName("dayLabel")
-            label.setAlignment(Qt.AlignCenter)
-            self._day_labels.append(label)
-            days.addWidget(label, 1)
-        layout.addLayout(days)
-
         self._footer = QLabel("СЕГОДНЯ: 0м")
         self._footer.setObjectName("cardFooter")
         layout.addWidget(self._footer)
@@ -1106,9 +1219,9 @@ class AppCard(QFrame):
     def set_running(self, running: bool) -> None:
         self._dot.setVisible(running)
 
-    def set_day_names(self, names: list[str]) -> None:
-        for i, label in enumerate(self._day_labels):
-            label.setText(names[i] if i < len(names) else "")
+    def set_axis(self, indices: list[int], labels: list[str]) -> None:
+        """Подписи под мини-графиком: labels[k] рисуется под точкой indices[k]."""
+        self.chart.set_axis(indices, labels)
 
     def _animate_number(self, attr_shown: str, attr_anim: str, label, value: int, prefix: str = "") -> None:
         current = getattr(self, attr_shown)
@@ -1151,6 +1264,7 @@ class AppCard(QFrame):
         self.chart.set_values(values, animate)
 
     def set_day_tooltips(self, labels: list[str]) -> None:
+        """Подписи точек для всплывающей подсказки (по индексу точки)."""
         self.chart.set_days(labels)
 
     def enterEvent(self, event) -> None:
