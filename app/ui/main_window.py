@@ -39,7 +39,19 @@ from PySide6.QtGui import QColor, QPainter, QPainterPath
 from .. import config, win32_utils
 from ..db import Database
 from ..tracker import GRACE_SECONDS, Tracker
-from ..utils import WEEKDAYS, format_compact, format_seconds, ru_date
+from ..utils import (
+    MONTHS_NOM,
+    PERIOD_KEYS,
+    PERIOD_TITLES,
+    SHORT_MONTHS,
+    WEEKDAYS,
+    add_months,
+    format_compact,
+    format_seconds,
+    month_days,
+    ru_date,
+    week_start,
+)
 from . import theme
 from .add_dialog import AddPanel
 from .modal import ModalOverlay
@@ -56,15 +68,8 @@ from .widgets import (
     ui_icon,
 )
 
-PERIODS = [
-    ("День", 0, "СЕГОДНЯ"),
-    ("Неделя", 6, "НЕДЕЛЮ"),
-    ("Месяц", 29, "МЕСЯЦ"),
-    ("Всё время", None, "ВСЁ ВРЕМЯ"),
-]
-
-# индекс периода главного окна -> индекс периода панели статистики
-STATS_PERIOD_MAP = {0: 0, 1: 1, 2: 3, 3: 5}
+# Подпись «АКТИВНОСТЬ ЗА …» в шапке для каждого периода (индексы = PERIOD_KEYS).
+PERIOD_GENITIVE = ["СЕГОДНЯ", "НЕДЕЛЮ", "МЕСЯЦ", "ГОД", "ВСЁ ВРЕМЯ"]
 
 
 class SearchEdit(QLineEdit):
@@ -202,8 +207,9 @@ class MainWindow(QMainWindow):
         self._names: dict[int, str] = {}
         self._base: dict[int, int] = {}
         self._series: dict[int, list[int]] = {}
-        self._day_names: list[str] = []
-        self._day_dates: list[str] = []
+        self._live_slot = -1
+        self._axis_labels: list[str] = []
+        self._axis_tips: list[str] = []
         self._today = date.today()
         self._period_idx = 1
         self._selected_id: int | None = None
@@ -300,7 +306,7 @@ class MainWindow(QMainWindow):
         self._period_group.setExclusive(True)
         periods_wrap = QHBoxLayout()
         periods_wrap.setSpacing(2)
-        for idx, (label, _days, _gen) in enumerate(PERIODS):
+        for idx, label in enumerate(PERIOD_TITLES):
             btn = QPushButton(label)
             btn.setObjectName("periodBtn")
             btn.setCheckable(True)
@@ -414,33 +420,129 @@ class MainWindow(QMainWindow):
         self._update_status_right()
         self._update_values()
 
+    @staticmethod
+    def _pick_indices(n: int, k: int = 7) -> list[int]:
+        """Равномерная выборка k индексов из n (первый и последний включены)."""
+        if n <= 0:
+            return []
+        if n <= k:
+            return list(range(n))
+        return [round(i * (n - 1) / (k - 1)) for i in range(k)]
+
     def _recompute_base(self) -> None:
+        """Строит бакеты текущего календарного периода для всех приложений.
+
+        self._series[app_id] — значения бакетов без «живого» сегодня;
+        self._live_slot     — индекс бакета, куда добавляется today_live;
+        self._axis_labels / self._axis_tips — подписи под мини-графиком.
+        """
         today = date.today()
         self._today = today
         yesterday = (today - timedelta(days=1)).isoformat()
-        days = PERIODS[self._period_idx][1]
-        start = None if days is None else (today - timedelta(days=days)).isoformat()
+        key = PERIOD_KEYS[self._period_idx]
 
+        # Границы бакетов по дням: список пар (start_date, end_date) включительно.
+        bounds: list[tuple[date, date]] = []
+        axis_full: list[str] = []
+        tips_full: list[str] = []
+
+        if key == "day":
+            # Часы: значения строятся отдельно в _card_series из db.get_hours.
+            self._series = {app_id: [0] * 24 for app_id in self._order}
+            self._live_slot = -1
+            self._base = {}
+            idxs = self._pick_indices(24)
+            self._axis_labels = [f"{h:02d}" for h in idxs]
+            self._axis_tips = [f"{h:02d}:00–{(h + 1) % 24:02d}:00" for h in range(24)]
+            for card in self._cards.values():
+                card.set_day_names(self._axis_labels)
+                card.set_day_tooltips(self._axis_tips)
+            return
+
+        if key == "week":
+            start = week_start(today)
+            for i in range(7):
+                d = start + timedelta(days=i)
+                bounds.append((d, d))
+                axis_full.append(WEEKDAYS[d.weekday()])
+                tips_full.append(f"{WEEKDAYS[d.weekday()]}, {ru_date(d)}")
+        elif key == "month":
+            n = month_days(today.year, today.month)
+            for i in range(n):
+                d = date(today.year, today.month, i + 1)
+                bounds.append((d, d))
+                axis_full.append(str(d.day))
+                tips_full.append(f"{WEEKDAYS[d.weekday()]}, {ru_date(d)}")
+        elif key == "year":
+            for m in range(1, 13):
+                s = date(today.year, m, 1)
+                e = date(today.year, m, month_days(today.year, m))
+                bounds.append((s, e))
+                axis_full.append(SHORT_MONTHS[m - 1])
+                tips_full.append(f"{MONTHS_NOM[m - 1]} {today.year}")
+        else:  # all — по месяцам от первой записи
+            first_str = self.db.get_min_day()
+            try:
+                first = date.fromisoformat(first_str) if first_str else today
+            except ValueError:
+                first = today
+            first = min(first, today)
+            y, m = first.year, first.month
+            while (y, m) <= (today.year, today.month):
+                s = date(y, m, 1)
+                e = date(y, m, month_days(y, m))
+                bounds.append((s, e))
+                axis_full.append(SHORT_MONTHS[m - 1])
+                tips_full.append(f"{MONTHS_NOM[m - 1]} {y}")
+                y, m = add_months(y, m, 1)
+
+        n = len(bounds)
+        # Индекс бакета, содержащего сегодня.
+        live_slot = -1
+        for i, (s, e) in enumerate(bounds):
+            if s <= today <= e:
+                live_slot = i
+                break
+        self._live_slot = live_slot
+
+        range_start = bounds[0][0].isoformat() if bounds else today.isoformat()
+        series = {app_id: [0] * n for app_id in self._order}
         base = defaultdict(int)
-        if start is None or start <= yesterday:
-            for app_id, _day, secs in self.db.query_stats(start, yesterday):
-                base[app_id] += secs
+        if bounds and range_start <= yesterday:
+            for app_id, day, secs in self.db.query_stats(range_start, yesterday):
+                if app_id not in series:
+                    continue
+                d = date.fromisoformat(day)
+                for i, (s, e) in enumerate(bounds):
+                    if s <= d <= e:
+                        series[app_id][i] += secs
+                        base[app_id] += secs
+                        break
+        self._series = series
         self._base = dict(base)
 
-        series = {app_id: [0] * 6 for app_id in self._order}
-        for app_id, day, secs in self.db.query_stats(
-            (today - timedelta(days=6)).isoformat(), yesterday
-        ):
-            delta = (today - date.fromisoformat(day)).days
-            if app_id in series and 1 <= delta <= 6:
-                series[app_id][6 - delta] += secs
-        self._series = series
+        idxs = self._pick_indices(n)
+        self._axis_labels = [axis_full[i] for i in idxs]
+        self._axis_tips = tips_full
+        for card in self._cards.values():
+            card.set_day_names(self._axis_labels)
+            card.set_day_tooltips(self._axis_tips)
 
-        self._day_names = [WEEKDAYS[(today - timedelta(days=6 - i)).weekday()] for i in range(7)]
-        self._day_dates = [ru_date(today - timedelta(days=6 - i)) for i in range(7)]
-        for app_id, card in self._cards.items():
-            card.set_day_names(self._day_names)
-            card.set_day_tooltips(self._day_dates)
+    def _card_series(self, app_id: int, today_live: int) -> list[int]:
+        """Значения мини-графика карточки с учётом «живого» сегодня."""
+        key = PERIOD_KEYS[self._period_idx]
+        if key == "day":
+            hours = list(self.db.get_hours(app_id, self._today.isoformat()))
+            pending = max(0, today_live - sum(hours))
+            if pending:
+                from datetime import datetime
+
+                hours[datetime.now().hour] += pending
+            return hours
+        values = list(self._series.get(app_id, []))
+        if 0 <= self._live_slot < len(values):
+            values[self._live_slot] += today_live
+        return values
 
     def _current_cols(self) -> int:
         width = self.width()
@@ -516,7 +618,7 @@ class MainWindow(QMainWindow):
         for app_id, card in self._cards.items():
             today_live = today_db.get(app_id, 0) + self.tracker.pending_seconds(app_id)
             card.set_period_seconds(self._base.get(app_id, 0) + today_live, animate=True)
-            card.set_chart(self._series.get(app_id, [0] * 6) + [today_live], animate=True)
+            card.set_chart(self._card_series(app_id, today_live), animate=True)
         self._update_values(animate_header=True)
 
     def _on_side_row_clicked(self, app_id: int) -> None:
@@ -1190,7 +1292,7 @@ class MainWindow(QMainWindow):
             row.name,
             row.exe_path,
             row.icon,
-            STATS_PERIOD_MAP.get(self._period_idx, 0),
+            self._period_idx,
             first_day,
         )
         panel.delete_requested.connect(
@@ -1235,12 +1337,12 @@ class MainWindow(QMainWindow):
             header_total += period_total
             card.set_period_seconds(period_total)
             card.set_today_seconds(today_live)
-            card.set_chart(self._series.get(app_id, [0] * 6) + [today_live])
+            card.set_chart(self._card_series(app_id, today_live))
             card.set_running(os.path.normcase(card.exe_path) in self._running)
         self._set_header_total(header_total, animate_header)
 
     def _set_header_total(self, value: int, animate: bool) -> None:
-        gen = PERIODS[self._period_idx][2]
+        gen = PERIOD_GENITIVE[self._period_idx]
         if not animate or abs(value - self._header_value) <= 2:
             self._header_value = value
             self._header_sub.setText(f"АКТИВНОСТЬ ЗА {gen}: {format_compact(value)}")

@@ -384,6 +384,28 @@ QPushButton#periodBtn:checked {
     color: #60a5fa;
     background: rgba(96, 165, 250, 12%);
 }
+QPushButton#navBtn {
+    background: rgba(255, 255, 255, 4%);
+    border: 1px solid #1e293b;
+    border-radius: 16px;
+    padding: 0;
+}
+QPushButton#navBtn:hover {
+    border-color: #33507e;
+    background: rgba(96, 165, 250, 12%);
+}
+QPushButton#navBtn:pressed {
+    background: rgba(96, 165, 250, 18%);
+}
+QPushButton#navBtn:disabled {
+    background: transparent;
+    border-color: #182234;
+}
+QLabel#periodLabel {
+    color: #b6c4d4;
+    font-size: 12px;
+    font-weight: 600;
+}
 QPushButton#profileBtn {
     background: transparent;
     border: none;
