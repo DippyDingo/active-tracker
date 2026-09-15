@@ -99,10 +99,6 @@ QLabel#cardTime {
     font-size: 29px;
     font-weight: 800;
 }
-QLabel#dayLabel {
-    color: #6b7280;
-    font-size: 10px;
-}
 QLabel#cardFooter {
     color: #9ca3af;
     font-size: 11px;

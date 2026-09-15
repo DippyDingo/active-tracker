@@ -169,6 +169,8 @@ class StatsPanel(QFrame):
         self._big = QLabel("0м")
         self._big.setObjectName("statBig")
         self._big.setAlignment(Qt.AlignCenter)
+        # Фиксированная ширина: стрелки ‹ › не съезжают при смене числа (3ч 05м → 0с).
+        self._big.setFixedWidth(220)
 
         big_row.addStretch(1)
         big_row.addWidget(self._prev_btn, 0, Qt.AlignVCenter)
@@ -384,12 +386,17 @@ class StatsPanel(QFrame):
         if self._first_day is not None:
             first = min(first, self._first_day)
         first = min(first, self._today)
-        dates = [first + timedelta(days=i) for i in range((self._today - first).days + 1)]
-        values = [self._day_value(d) for d in dates]
-        if first.year == self._today.year:
-            label = f"{ru_date_short(first)} — {ru_date_short(self._today)} {self._today.year}"
+        # Всегда показываем минимум месяц истории (даже если приложение не использовалось).
+        month_ago = self._today - timedelta(days=30)
+        first = min(first, month_ago)
+        # Добавляем месяц ВПЕРЁД для симметрии (будущие дни будут с нулями).
+        last = self._today + timedelta(days=30)
+        dates = [first + timedelta(days=i) for i in range((last - first).days + 1)]
+        values = [self._day_value(d) if d <= self._today else 0 for d in dates]
+        if first.year == last.year:
+            label = f"{ru_date_short(first)} — {ru_date_short(last)} {last.year}"
         else:
-            label = f"{ru_date_short(first)} {first.year} — {ru_date_short(self._today)} {self._today.year}"
+            label = f"{ru_date_short(first)} {first.year} — {ru_date_short(last)} {last.year}"
         self._all_dates = dates
         return values, [], [], "days", label
 
