@@ -154,6 +154,12 @@ def ui_icon(kind: str, color: str = "#9db2c7", size: int = 16) -> QIcon:
         painter.drawLine(pt(12.0, 4.0), pt(13.2, 5.2))
         painter.drawLine(pt(13.2, 5.2), pt(4.2, 14.2))
         painter.drawLine(pt(3.0, 13.0), pt(4.2, 14.2))
+    elif kind == "chevron_left":
+        painter.drawLine(pt(9.8, 3.6), pt(5.6, 8.0))
+        painter.drawLine(pt(5.6, 8.0), pt(9.8, 12.4))
+    elif kind == "chevron_right":
+        painter.drawLine(pt(6.2, 3.6), pt(10.4, 8.0))
+        painter.drawLine(pt(10.4, 8.0), pt(6.2, 12.4))
     painter.end()
     pm.setDevicePixelRatio(scale)
     return QIcon(pm)
@@ -552,6 +558,8 @@ class RangeChart(QWidget):
         self._drag_moved = False
         self._vis_buckets: list[tuple[int, int, str, str, int]] = []
         self._vis_pts: list[QPointF] = []
+        # Явные подписи (фиксированные периоды: часы/дни/месяцы) — без автобакетов.
+        self._explicit: tuple[list[str], list[str]] | None = None
 
     def set_data(self, values: list[int], dates: list[date]) -> None:
         self.set_days(values, dates)
@@ -559,6 +567,7 @@ class RangeChart(QWidget):
     def set_days(self, values: list[int], dates: list[date]) -> None:
         self._unit = "days"
         self._min_visible = 7.0
+        self._explicit = None
         self._days = [max(0, int(v)) for v in values]
         self._dates = list(dates)
         self._sel = None
@@ -566,13 +575,37 @@ class RangeChart(QWidget):
         self.set_window_days(None)
 
     def set_hours(self, values: list[int]) -> None:
-        self._unit = "hours"
-        self._min_visible = 4.0
+        labels = [f"{i:02d}" for i in range(24)]
+        tips = [f"{i:02d}:00–{(i + 1) % 24:02d}:00" for i in range(24)]
+        self.set_series(values, labels, tips, unit="hours", min_visible=4.0)
+
+    def set_series(
+        self,
+        values: list[int],
+        axis_labels: list[str],
+        tip_labels: list[str],
+        unit: str = "days",
+        min_visible: float = 7.0,
+    ) -> None:
+        """Ряд с готовыми подписями: одна точка = один бакет (час/день/месяц)."""
+        self._unit = unit
+        self._min_visible = float(min_visible)
         self._days = [max(0, int(v)) for v in values]
         self._dates = []
+        n = len(self._days)
+        axis = list(axis_labels)[:n] + [""] * max(0, n - len(axis_labels))
+        tips = list(tip_labels)[:n] + [""] * max(0, n - len(tip_labels))
+        self._explicit = (axis, tips)
         self._sel = None
         self._sel_float = None
         self.set_window_days(None)
+
+    def unit(self) -> str:
+        return self._unit
+
+    def bucket_tips(self) -> list[str]:
+        """Подписи-тултипы всех бакетов (для итогов выделения)."""
+        return [b[3] for b in self._buckets]
 
     def _n(self) -> int:
         return len(self._days)
@@ -630,6 +663,12 @@ class RangeChart(QWidget):
             self._buckets = []
             return
         buckets: list[tuple[int, int, str, str, int]] = []
+        if self._explicit is not None:
+            axis, tips = self._explicit
+            for i, v in enumerate(self._days):
+                buckets.append((i, i + 1, axis[i], tips[i], v))
+            self._buckets = buckets
+            return
         if self._unit == "hours":
             for i, v in enumerate(self._days):
                 label = f"{i:02d}:00"
@@ -756,10 +795,15 @@ class RangeChart(QWidget):
             font.setPointSizeF(7.5)
             painter.setFont(font)
             painter.setPen(QColor("#6b7280"))
-            max_labels = max(2, int(inner_w // 90))
-            step = max(1, ceil(len(vis_buckets) / max_labels))
+            fm = QFontMetrics(font)
+            # Адаптивный шаг: подписи не должны налезать друг на друга.
+            slot_w = inner_w / max(len(vis_buckets), 1)
+            label_w = max((fm.horizontalAdvance(b[2]) for b in vis_buckets), default=20) + 10
+            step = max(1, int(ceil(label_w / max(slot_w, 1.0))))
             for k in range(0, len(vis_buckets), step):
                 bucket = vis_buckets[k]
+                if not bucket[2]:
+                    continue
                 x = self._day_to_x((bucket[0] + bucket[1]) / 2.0)
                 if pad_l - 4 <= x <= pad_l + inner_w + 4:
                     painter.drawText(QRectF(x - 45, h - self.PAD_B + 4, 90, 16), Qt.AlignCenter, bucket[2])
@@ -1063,8 +1107,8 @@ class AppCard(QFrame):
         self._dot.setVisible(running)
 
     def set_day_names(self, names: list[str]) -> None:
-        for label, text in zip(self._day_labels, names):
-            label.setText(text)
+        for i, label in enumerate(self._day_labels):
+            label.setText(names[i] if i < len(names) else "")
 
     def _animate_number(self, attr_shown: str, attr_anim: str, label, value: int, prefix: str = "") -> None:
         current = getattr(self, attr_shown)
