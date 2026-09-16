@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from PySide6.QtCore import QEasingCurve, QSize, Qt, QVariantAnimation, Signal
 from PySide6.QtGui import QFontMetrics
@@ -31,6 +31,145 @@ from ..utils import (
     week_start,
 )
 from .widgets import RangeChart, pixmap_from_png, rounded_pixmap, ui_icon
+
+# Подпись «АКТИВНО ЗА …» для каждой вкладки.
+PERIOD_CAPTIONS = ["ДЕНЬ", "НЕДЕЛЮ", "МЕСЯЦ", "ГОД", "ВСЁ ВРЕМЯ"]
+
+NO_SELECTION_HINT = "Выделение не выбрано — протяните по графику, чтобы посчитать время за период"
+
+HELP_LINES = [
+    "Протяните по графику — выделите период и увидите время в нём.",
+    "Стрелки ‹ › рядом с цифрой листают день / неделю / месяц / год.",
+    "«Всё время»: колесо — зум (вплоть до часов), Shift+колесо или пробел+перетаскивание — перемотка.",
+    "Границы выделения можно двигать мышью. Сброс — Esc, клик мимо или ✕.",
+]
+
+
+class TimelineData:
+    """Хранит почасовые данные приложения с ленивой загрузкой из БД.
+    
+    Координаты в часах от start_date 00:00. Подгружает почасовые данные
+    только для видимого диапазона при глубоком зуме.
+    """
+    
+    def __init__(self, db: Database, app_id: int, start_date: date, end_date: date, 
+                 daily_history: dict[str, int], today_live: int):
+        self._db = db
+        self._app_id = app_id
+        self._start = start_date
+        self._end = end_date
+        self._today = date.today()
+        self._today_live = today_live
+        
+        # Дневные суммы (всегда загружены)
+        self._daily = daily_history
+        
+        # Кэш почасовых данных: {day_str: [24 часа]}
+        self._hours_cache: dict[str, list[int]] = {}
+        
+        # Общая длина в часах
+        self._total_hours = ((end_date - start_date).days + 1) * 24
+    
+    def total_hours(self) -> int:
+        """Общее количество часов в диапазоне."""
+        return self._total_hours
+    
+    def get_value_at_hour(self, hour_idx: int) -> int:
+        """Значение в секундах для hour_idx (0 = start_date 00:00)."""
+        if hour_idx < 0 or hour_idx >= self._total_hours:
+            return 0
+        
+        day_idx = hour_idx // 24
+        hour_of_day = hour_idx % 24
+        day = self._start + timedelta(days=day_idx)
+        
+        # Если это сегодня и час текущий или будущий — используем live
+        if day == self._today:
+            hours = self._get_hours_for_day(day)
+            # pending-секунды трекера ещё не в базе — кладём в текущий час
+            pending = max(0, self._today_live - sum(hours))
+            if pending and hour_of_day == datetime.now().hour:
+                return hours[hour_of_day] + pending
+            return hours[hour_of_day]
+        
+        # Для прошлых дней — из кэша или равномерное распределение
+        hours = self._get_hours_for_day(day)
+        return hours[hour_of_day]
+    
+    def get_day_value(self, day: date) -> int:
+        """Сумма за день (из дневных данных или live)."""
+        if day == self._today:
+            return self._today_live
+        return self._daily.get(day.isoformat(), 0)
+    
+    def _get_hours_for_day(self, day: date) -> list[int]:
+        """Часы за день: из кэша, из БД или равномерное распределение."""
+        key = day.isoformat()
+        
+        # Проверяем кэш
+        if key in self._hours_cache:
+            return self._hours_cache[key]
+        
+        # Если это сегодня — загружаем из БД
+        if day == self._today:
+            hours = list(self._db.get_hours(self._app_id, key))
+            self._hours_cache[key] = hours
+            return hours
+        
+        # Для прошлых дней: если день в истории, но нет почасовки —
+        # равномерно распределяем дневную сумму
+        day_total = self._daily.get(key, 0)
+        if day_total == 0:
+            hours = [0] * 24
+        else:
+            # Пока нет данных из БД — равномерное распределение
+            # (будет заменено реальными данными при первом зуме до часов)
+            hours = [day_total // 24] * 24
+            # Остаток добавляем в средний час (12:00)
+            hours[12] += day_total % 24
+        
+        self._hours_cache[key] = hours
+        return hours
+    
+    def load_hours_range(self, start_hour: int, end_hour: int) -> None:
+        """Подгружает почасовые данные из БД для диапазона часов."""
+        start_day_idx = max(0, start_hour // 24)
+        end_day_idx = min((self._total_hours - 1) // 24, end_hour // 24)
+        
+        start_day = self._start + timedelta(days=start_day_idx)
+        end_day = self._start + timedelta(days=end_day_idx)
+        
+        # Загружаем только те дни, которых нет в кэше
+        days_to_load = []
+        current = start_day
+        while current <= end_day:
+            if current.isoformat() not in self._hours_cache and current < self._today:
+                days_to_load.append(current)
+            current += timedelta(days=1)
+        
+        if not days_to_load:
+            return
+        
+        # Batch-загрузка из БД
+        start_str = days_to_load[0].isoformat()
+        end_str = days_to_load[-1].isoformat()
+        hours_data = self._db.query_hours_range(self._app_id, start_str, end_str)
+        
+        # Раскладываем по дням
+        for day in days_to_load:
+            day_str = day.isoformat()
+            hours = [0] * 24
+            for h in range(24):
+                hours[h] = hours_data.get((day_str, h), 0)
+            
+            # Если нет данных в hours, но есть в daily — распределяем
+            if sum(hours) == 0:
+                day_total = self._daily.get(day_str, 0)
+                if day_total > 0:
+                    hours = [day_total // 24] * 24
+                    hours[12] += day_total % 24
+            
+            self._hours_cache[day_str] = hours
 
 # Подпись «АКТИВНО ЗА …» для каждой вкладки.
 PERIOD_CAPTIONS = ["ДЕНЬ", "НЕДЕЛЮ", "МЕСЯЦ", "ГОД", "ВСЁ ВРЕМЯ"]
@@ -378,9 +517,7 @@ class StatsPanel(QFrame):
             tips = [f"{MONTHS_NOM[m]} {a.year}" for m in range(12)]
             return totals, axis, tips, "months", label_year(a.year)
 
-        # all — дневной ряд от первой активности (или первого запуска) до сегодня.
-        # Бакеты (день / неделя / месяц) RangeChart подбирает сам по масштабу,
-        # поэтому даже при истории в пару дней получается нормальная линия.
+        # all — используем timeline mode с непрерывным зумом от лет до часов
         past = sorted(self._history.keys())
         first = date.fromisoformat(past[0]) if past else self._today
         if self._first_day is not None:
@@ -391,14 +528,14 @@ class StatsPanel(QFrame):
         first = min(first, month_ago)
         # Добавляем месяц ВПЕРЁД для симметрии (будущие дни будут с нулями).
         last = self._today + timedelta(days=30)
-        dates = [first + timedelta(days=i) for i in range((last - first).days + 1)]
-        values = [self._day_value(d) if d <= self._today else 0 for d in dates]
+        
         if first.year == last.year:
             label = f"{ru_date_short(first)} — {ru_date_short(last)} {last.year}"
         else:
             label = f"{ru_date_short(first)} {first.year} — {ru_date_short(last)} {last.year}"
-        self._all_dates = dates
-        return values, [], [], "days", label
+        
+        # Возвращаем метку, timeline будет создан в _set_period
+        return [], [], [], "timeline", label
 
     def _set_period(self, idx: int, animate: bool) -> None:
         self._period_idx = idx
@@ -407,13 +544,37 @@ class StatsPanel(QFrame):
 
         values, axis, tips, unit, period_label = self._series_for()
         self._unit = unit
+        
         if key == "all":
-            self._chart.set_days(values, self._all_dates)
+            # Timeline mode: создаём TimelineData и передаём в chart
+            past = sorted(self._history.keys())
+            first = date.fromisoformat(past[0]) if past else self._today
+            if self._first_day is not None:
+                first = min(first, self._first_day)
+            first = min(first, self._today)
+            month_ago = self._today - timedelta(days=30)
+            first = min(first, month_ago)
+            last = self._today + timedelta(days=30)
+            
+            timeline = TimelineData(
+                self._db, 
+                self._app_id, 
+                first, 
+                last, 
+                self._history, 
+                self._today_live
+            )
+            self._chart.set_timeline(timeline)
+            
+            # Считаем общий итог для большой цифры
+            total = sum(timeline.get_day_value(d) for d in 
+                       [first + timedelta(days=i) for i in range((last - first).days + 1)]
+                       if d <= self._today)
         else:
             min_vis = 4.0 if unit == "hours" else (6.0 if unit == "months" else 7.0)
             self._chart.set_series(values, axis, tips, unit=unit, min_visible=min_vis)
+            total = sum(values)
 
-        total = sum(values)
         self._big_caption.setText(f"АКТИВНО ЗА {PERIOD_CAPTIONS[idx]}")
         self._period_label.setText(period_label)
         if animate:
