@@ -699,6 +699,9 @@ class RangeChart(QWidget):
         self._vis_pts: list[QPointF] = []
         # Явные подписи (фиксированные периоды: часы/дни/месяцы) — без автобакетов.
         self._explicit: tuple[list[str], list[str]] | None = None
+        # Timeline mode: работа с почасовыми данными и непрерывным зумом
+        self._timeline = None  # TimelineData | None
+        self._timeline_mode = False
 
     def set_data(self, values: list[int], dates: list[date]) -> None:
         self.set_days(values, dates)
@@ -738,6 +741,31 @@ class RangeChart(QWidget):
         self._sel = None
         self._sel_float = None
         self.set_window_days(None)
+    
+    def set_timeline(self, timeline) -> None:
+        """Устанавливает timeline mode для непрерывного зума от лет до часов.
+        
+        Args:
+            timeline: экземпляр TimelineData с почасовыми данными
+        """
+        self._timeline = timeline
+        self._timeline_mode = True
+        self._unit = "timeline"
+        self._min_visible = 1.0  # Минимум 1 день
+        self._explicit = None
+        
+        # В timeline mode работаем в координатах ДНЕЙ (для совместимости)
+        # Почасовые данные загружаются динамически при зуме
+        total_days = timeline.total_hours() / 24.0
+        
+        # Начальное окно: показываем всё
+        self._offset = 0.0
+        self._visible = total_days
+        self._sel = None
+        self._sel_float = None
+        
+        self._rebuild_buckets()
+        self.update()
 
     def unit(self) -> str:
         return self._unit
@@ -762,6 +790,9 @@ class RangeChart(QWidget):
         return ""
 
     def _n(self) -> int:
+        if self._timeline_mode and self._timeline is not None:
+            # В timeline mode возвращаем количество дней (для совместимости)
+            return self._timeline.total_hours() // 24
         return len(self._days)
 
     def selection(self) -> tuple[int, int] | None:
@@ -818,6 +849,11 @@ class RangeChart(QWidget):
         self._offset = min(max(self._offset, 0.0), max(0.0, n - self._visible))
 
     def _rebuild_buckets(self) -> None:
+        # Timeline mode: динамическая бакетизация час→день→неделя→месяц
+        if self._timeline_mode and self._timeline is not None:
+            self._rebuild_timeline_buckets()
+            return
+        
         n = self._n()
         if n == 0:
             self._buckets = []
@@ -875,6 +911,139 @@ class RangeChart(QWidget):
                 label = f"{SHORT_MONTHS[month - 1]} {year}"
                 buckets.append((i, j, label, label, sum(self._days[i:j])))
                 i = j
+        self._buckets = buckets
+    
+    def _rebuild_timeline_buckets(self) -> None:
+        """Динамическая бакетизация для timeline mode: час→день→неделя→месяц.
+        
+        Вся логика в координатах ДНЕЙ для совместимости с отрисовкой.
+        При глубоком зуме (<1 день) подгружаем почасовые данные.
+        """
+        from datetime import datetime, timedelta
+        
+        timeline = self._timeline
+        if timeline is None:
+            self._buckets = []
+            return
+        
+        # Определяем уровень детализации по масштабу зума (visible в днях)
+        vis_days = self._visible
+        
+        # Пороги для переключения уровней (в днях):
+        # - час: до 2 дней (для плавного перехода)
+        # - день: 2-60 дней
+        # - неделя: 60-365 дней
+        # - месяц: больше года
+        
+        if vis_days <= 2:
+            level = "hour"
+        elif vis_days <= 60:
+            level = "day"
+        elif vis_days <= 365:
+            level = "week"
+        else:
+            level = "month"
+        
+        # Вычисляем видимый диапазон
+        start_day_idx = int(self._offset)
+        end_day_idx = int(self._offset + self._visible) + 1
+        
+        # Подгружаем почасовые данные для видимого диапазона (если нужны)
+        if level == "hour":
+            start_hour = int(self._offset * 24)
+            end_hour = int((self._offset + self._visible) * 24)
+            timeline.load_hours_range(start_hour, end_hour)
+        
+        buckets = []
+        
+        if level == "hour":
+            # Почасовая разбивка - создаём по 24 бакета на каждый день
+            # Координаты в ДОЛЯХ ДНЯ для плавной отрисовки
+            for day_idx in range(start_day_idx, min(end_day_idx, timeline.total_hours() // 24 + 1)):
+                day = timeline._start + timedelta(days=day_idx)
+                
+                for hour_of_day in range(24):
+                    hour_idx = day_idx * 24 + hour_of_day
+                    if hour_idx >= timeline.total_hours():
+                        break
+                    
+                    value = timeline.get_value_at_hour(hour_idx)
+                    axis_label = f"{hour_of_day:02d}"
+                    tip_label = f"{ru_date(day)}, {hour_of_day:02d}:00"
+                    
+                    # Бакет в координатах дней: день.часть
+                    bucket_start = day_idx + hour_of_day / 24.0
+                    bucket_end = day_idx + (hour_of_day + 1) / 24.0
+                    buckets.append((bucket_start, bucket_end, axis_label, tip_label, value))
+        
+        elif level == "day":
+            # Дневная разбивка
+            start_day_idx = int(self._offset)
+            end_day_idx = int(self._offset + self._visible) + 1
+            
+            for day_idx in range(start_day_idx, min(end_day_idx, timeline.total_hours() // 24 + 1)):
+                day = timeline._start + timedelta(days=day_idx)
+                value = timeline.get_day_value(day)
+                
+                axis_label = f"{day.day} {SHORT_MONTHS[day.month - 1]}"
+                tip_label = ru_date(day)
+                
+                buckets.append((day_idx, day_idx + 1, axis_label, tip_label, value))
+        
+        elif level == "week":
+            # Недельная разбивка
+            start_day_idx = int(self._offset)
+            end_day_idx = int(self._offset + self._visible) + 1
+            
+            # Группируем по 7 дней
+            for week_start_idx in range(start_day_idx, end_day_idx, 7):
+                week_end_idx = min(week_start_idx + 7, timeline.total_hours() // 24 + 1)
+                
+                # Суммируем дни недели
+                week_sum = 0
+                for day_idx in range(week_start_idx, week_end_idx):
+                    day = timeline._start + timedelta(days=day_idx)
+                    week_sum += timeline.get_day_value(day)
+                
+                d0 = timeline._start + timedelta(days=week_start_idx)
+                d1 = timeline._start + timedelta(days=week_end_idx - 1)
+                
+                axis_label = f"{d0.day} {SHORT_MONTHS[d0.month - 1]}"
+                if d0.month == d1.month:
+                    tip_label = f"{d0.day}–{d1.day} {SHORT_MONTHS[d0.month - 1]}"
+                else:
+                    tip_label = f"{d0.day} {SHORT_MONTHS[d0.month - 1]}–{d1.day} {SHORT_MONTHS[d1.month - 1]}"
+                
+                buckets.append((week_start_idx, week_end_idx, axis_label, tip_label, week_sum))
+        
+        else:  # month
+            # Месячная разбивка
+            start_day_idx = int(self._offset)
+            end_day_idx = int(self._offset + self._visible) + 1
+            
+            # Группируем по месяцам
+            current_day_idx = start_day_idx
+            while current_day_idx < end_day_idx:
+                current_date = timeline._start + timedelta(days=current_day_idx)
+                year, month = current_date.year, current_date.month
+                
+                # Находим все дни этого месяца в видимом диапазоне
+                month_start_idx = current_day_idx
+                month_end_idx = current_day_idx
+                month_sum = 0
+                
+                while month_end_idx < end_day_idx:
+                    check_date = timeline._start + timedelta(days=month_end_idx)
+                    if (check_date.year, check_date.month) != (year, month):
+                        break
+                    month_sum += timeline.get_day_value(check_date)
+                    month_end_idx += 1
+                
+                label = f"{SHORT_MONTHS[month - 1]} {year}"
+                buckets.append((month_start_idx, month_end_idx, label, label, month_sum))
+                
+                current_day_idx = month_end_idx
+        
         self._buckets = buckets
 
     def _plot(self) -> tuple[float, float, float, float]:
@@ -1080,6 +1249,14 @@ class RangeChart(QWidget):
         self._visible = new_vis
         self._offset = anchor - ratio * new_vis
         self._clamp_view()
+        
+        # В timeline mode подгружаем данные при глубоком зуме
+        if self._timeline_mode and self._timeline is not None and new_vis <= 3:
+            # Подгружаем почасовые данные для видимого диапазона
+            start_hour = int(self._offset * 24)
+            end_hour = int((self._offset + self._visible) * 24)
+            self._timeline.load_hours_range(start_hour, end_hour)
+        
         self._rebuild_buckets()
         self.update()
 
