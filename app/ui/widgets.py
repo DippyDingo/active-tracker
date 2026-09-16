@@ -24,6 +24,7 @@ from PySide6.QtGui import (
     QPainterPath,
     QPen,
     QPixmap,
+    QPalette,
 )
 from PySide6.QtWidgets import (
     QAbstractButton,
@@ -63,6 +64,34 @@ def rounded_pixmap(src: QPixmap, size: int, radius: int) -> QPixmap:
     painter.drawPixmap(-dx, -dy, scaled)
     painter.end()
     return out
+
+
+def letter_tile(name: str, size: int = 40) -> QPixmap:
+    """Плитка с первой буквой имени — запасной вариант, если иконки нет."""
+    letter = "?"
+    for ch in name.strip():
+        if ch.isalnum():
+            letter = ch.upper()
+            break
+    pm = QPixmap(size, size)
+    pm.fill(Qt.transparent)
+    painter = QPainter(pm)
+    painter.setRenderHint(QPainter.Antialiasing)
+    radius = size * 0.27
+    path = QPainterPath()
+    path.addRoundedRect(QRectF(0.5, 0.5, size - 1.0, size - 1.0), radius, radius)
+    grad = QLinearGradient(0, 0, size, size)
+    grad.setColorAt(0.0, QColor("#3b82f6"))
+    grad.setColorAt(1.0, QColor("#22d3ee"))
+    painter.fillPath(path, QBrush(grad))
+    font = QFont("Segoe UI")
+    font.setPixelSize(int(size * 0.48))
+    font.setBold(True)
+    painter.setFont(font)
+    painter.setPen(QColor("#04121f"))
+    painter.drawText(QRectF(0, 0, size, size), Qt.AlignCenter, letter)
+    painter.end()
+    return pm
 
 
 def magnifier_icon(color: str = "#9db2c7", size: int = 18) -> QIcon:
@@ -154,6 +183,9 @@ def ui_icon(kind: str, color: str = "#9db2c7", size: int = 16) -> QIcon:
         painter.drawLine(pt(12.0, 4.0), pt(13.2, 5.2))
         painter.drawLine(pt(13.2, 5.2), pt(4.2, 14.2))
         painter.drawLine(pt(3.0, 13.0), pt(4.2, 14.2))
+    elif kind == "close":
+        painter.drawLine(pt(4.6, 4.6), pt(11.4, 11.4))
+        painter.drawLine(pt(11.4, 4.6), pt(4.6, 11.4))
     painter.end()
     pm.setDevicePixelRatio(scale)
     return QIcon(pm)
@@ -225,291 +257,191 @@ def _mix(a: QColor, b: QColor, t: float) -> QColor:
     )
 
 
-class MiniChart(QWidget):
-    view_changed = Signal(int, int)
+class ElidedLabel(QLabel):
+    """Лейбл, сам усекающий текст многоточием по текущей ширине."""
 
-    def __init__(self, height: int = 46, parent=None):
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.TextAntialiasing)
+        fm = self.fontMetrics()
+        text = fm.elidedText(self.text(), Qt.ElideRight, self.width())
+        painter.setPen(self.palette().color(QPalette.WindowText))
+        painter.drawText(
+            QRectF(0, 0, self.width(), self.height()),
+            Qt.AlignVCenter | Qt.AlignLeft,
+            text,
+        )
+        painter.end()
+
+
+class SparkChart(QWidget):
+    """Спарклайн активности для карточки приложения.
+
+    Плавная кривая с градиентной заливкой и мягким свечением линии.
+    Анимация «прорисовки» запускается только при смене данных — в простое
+    виджет не перерисовывается вовсе.
+    """
+
+    PAD_L = 4.0
+    PAD_R = 4.0
+    PAD_T = 7.0
+    PAD_B = 8.0
+
+    def __init__(self, height: int = 52, parent=None):
         super().__init__(parent)
         self.setFixedHeight(height)
         self.setMinimumWidth(100)
         self.setMouseTracking(True)
         self._values: list[int] = []
-        self._day_labels: list[str] = []
+        self._labels: list[str] = []
         self._hover = -1
         self._progress = 1.0
-        self._pulse = 1.0
-        self._visible: int | None = None
-        self._offset = 0
-        self._drag_x: float | None = None
-        self._drag_offset = 0
 
-        self._draw_anim = QPropertyAnimation(self, b"progress")
-        self._draw_anim.setDuration(900)
-        self._draw_anim.setEasingCurve(QEasingCurve.OutCubic)
-        self._draw_anim.setStartValue(0.0)
-        self._draw_anim.setEndValue(1.0)
-
-        self._pulse_anim = QVariantAnimation(self)
-        self._pulse_anim.setDuration(3200)
-        self._pulse_anim.setKeyValueAt(0.0, 0.82)
-        self._pulse_anim.setKeyValueAt(0.5, 1.0)
-        self._pulse_anim.setKeyValueAt(1.0, 0.82)
-        self._pulse_anim.setEasingCurve(QEasingCurve.InOutSine)
-        self._pulse_anim.setLoopCount(-1)
-        self._pulse_anim.valueChanged.connect(self._on_pulse)
-        self._pulse_anim.start()
-
-        self._draw_anim.finished.connect(self._on_draw_finished)
-        self._drawn_at_least_once = False
-
-    def _on_pulse(self, value) -> None:
-        self._pulse = float(value)
-        if self._drawn_at_least_once:
-            self.update()
-
-    def _on_draw_finished(self) -> None:
-        self._drawn_at_least_once = True
+        self._anim = QPropertyAnimation(self, b"progress")
+        self._anim.setDuration(750)
+        self._anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._anim.setStartValue(0.0)
+        self._anim.setEndValue(1.0)
 
     def _get_progress(self) -> float:
         return self._progress
 
     def _set_progress(self, value: float) -> None:
-        self._progress = value
+        self._progress = float(value)
         self.update()
 
     progress = Property(float, _get_progress, _set_progress)
 
-    def set_days(self, labels: list[str]) -> None:
-        self._day_labels = labels
+    def set_labels(self, labels: list[str]) -> None:
+        self._labels = list(labels)
 
     def set_values(self, values: list[int], animate: bool = False) -> None:
         self._values = [max(0, int(v)) for v in values]
-        self._hover = -1
-        n = len(self._values)
-        if self._visible is not None:
-            self._visible = max(2, min(self._visible, max(n, 2)))
-            self._offset = max(0, n - self._visible)
-        if animate and n >= 2:
-            self._drawn_at_least_once = False
-            self._draw_anim.stop()
-            self._draw_anim.start()
+        if self._hover >= len(self._values):
+            self._hover = -1
+        if animate and len(self._values) >= 2 and max(self._values) > 0:
+            self._anim.stop()
+            self._progress = 0.0
+            self._anim.start()
         else:
+            self._anim.stop()
             self._progress = 1.0
-            self._drawn_at_least_once = True
         self.update()
-
-    def set_view(self, visible: int | None) -> None:
-        n = len(self._values)
-        self._visible = None if visible is None else max(2, min(int(visible), max(n, 2)))
-        self._offset = max(0, n - self._visible) if self._visible else 0
-        self._hover = -1
-        self._emit_view()
-        self.update()
-
-    def _window(self) -> tuple[int, int]:
-        n = len(self._values)
-        if self._visible is None or n <= self._visible:
-            return 0, n
-        return self._clamp_offset(self._offset), self._visible
-
-    def _clamp_offset(self, off: int) -> int:
-        n = len(self._values)
-        vis = self._visible if self._visible and n > self._visible else n
-        return min(max(int(off), 0), max(0, n - vis))
-
-    def _emit_view(self) -> None:
-        off, vis = self._window()
-        self.view_changed.emit(off, vis)
 
     def _points(self) -> list[QPointF]:
-        off, vis = self._window()
-        vals = self._values[off : off + vis]
+        vals = self._values
+        n = len(vals)
+        if n == 0:
+            return []
         w = max(self.width(), 10)
         h = max(self.height(), 10)
-        n = len(vals)
-        if n < 2:
-            return []
         vmax = max(max(vals), 1)
-        pad_l, pad_r, pad_t, pad_b = 3.0, 3.0, 5.0, 6.0
+        inner_w = w - self.PAD_L - self.PAD_R
+        inner_h = h - self.PAD_T - self.PAD_B
         pts = []
         for i, v in enumerate(vals):
-            x = pad_l + i * (w - pad_l - pad_r) / (n - 1)
-            y = h - pad_b - (v / vmax) * (h - pad_t - pad_b)
+            x = self.PAD_L + (i * inner_w / (n - 1) if n > 1 else inner_w / 2)
+            y = h - self.PAD_B - (v / vmax) * inner_h
             pts.append(QPointF(x, y))
         return pts
 
+    def _paint_empty(self, painter: QPainter, w: int, h: int) -> None:
+        pen = QPen(QColor(255, 255, 255, 26), 1)
+        pen.setDashPattern([3, 5])
+        painter.setPen(pen)
+        painter.drawLine(QPointF(self.PAD_L, h - self.PAD_B), QPointF(w - self.PAD_R, h - self.PAD_B))
+        font = QFont(self.font())
+        font.setPointSizeF(8.5)
+        painter.setFont(font)
+        painter.setPen(QColor("#475569"))
+        painter.drawText(QRectF(0, 0, w, h - 12), Qt.AlignCenter, "пока нет активности")
+
+    def _paint_tooltip(self, painter: QPainter, idx: int, anchor: QPointF, w: int) -> None:
+        value = self._values[idx]
+        day = self._labels[idx] if idx < len(self._labels) else ""
+        text = f"{day} — {format_compact(value)}" if day else format_compact(value)
+        font = QFont(self.font())
+        font.setPointSizeF(8.5)
+        painter.setFont(font)
+        fm = QFontMetrics(font)
+        tw = fm.horizontalAdvance(text) + 16
+        th = 22.0
+        bx = min(max(anchor.x() - tw / 2, 1.0), max(1.0, w - tw - 1))
+        by = anchor.y() - th - 9
+        if by < 1:
+            by = anchor.y() + 11
+        painter.setPen(QPen(QColor("#24344d"), 1))
+        painter.setBrush(QColor(15, 27, 45, 240))
+        painter.drawRoundedRect(QRectF(bx, by, tw, th), 6, 6)
+        painter.setPen(QColor("#e5e7eb"))
+        painter.drawText(QRectF(bx, by, tw, th), Qt.AlignCenter, text)
+
     def paintEvent(self, event) -> None:
-        try:
-            self._paint(event)
-        except Exception:
-            from .. import config
-
-            config.log_error("MiniChart.paintEvent")
-
-    def _paint(self, event) -> None:
-        off, vis = self._window()
-        pts = self._points()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         w = self.width()
         h = self.height()
-        anchor = None
-        anchor_idx = -1
+        vals = self._values
+        if not vals:
+            painter.end()
+            return
+        if max(vals) <= 0:
+            self._paint_empty(painter, w, h)
+            painter.end()
+            return
 
-        if not pts:
-            if vis != 1:
-                painter.end()
-                return
-            v = self._values[off]
-            pad_t, pad_b = 5.0, 6.0
-            bw = min(46.0, w * 0.25)
-            x = (w - bw) / 2
-            bh = (h - pad_t - pad_b) if v > 0 else 3.0
-            y = h - pad_b - bh
-            painter.save()
-            painter.setClipRect(QRectF(0, 0, w * self._progress + 0.5, h))
-            grad = QLinearGradient(0, 0, 0, h)
-            grad.setColorAt(0.0, QColor(96, 165, 250, int(80 * self._pulse)))
-            grad.setColorAt(1.0, QColor(96, 165, 250, 10))
-            painter.setPen(QPen(QColor("#60a5fa"), 2))
-            painter.setBrush(QBrush(grad))
-            painter.drawRoundedRect(QRectF(x, y, bw, bh), 6, 6)
-            painter.restore()
-            anchor = QPointF(x + bw / 2, y)
-            anchor_idx = off
-        else:
-            path = QPainterPath()
-            path.moveTo(pts[0])
-            for i in range(1, len(pts) - 1):
-                mid = QPointF((pts[i].x() + pts[i + 1].x()) / 2, (pts[i].y() + pts[i + 1].y()) / 2)
-                path.quadTo(pts[i], mid)
-            path.lineTo(pts[-1])
+        pts = self._points()
+        path = QPainterPath()
+        path.moveTo(pts[0])
+        for i in range(1, len(pts) - 1):
+            mid = QPointF((pts[i].x() + pts[i + 1].x()) / 2, (pts[i].y() + pts[i + 1].y()) / 2)
+            path.quadTo(pts[i], mid)
+        path.lineTo(pts[-1])
 
-            fill = QPainterPath(path)
-            fill.lineTo(pts[-1].x(), h)
-            fill.lineTo(pts[0].x(), h)
-            fill.closeSubpath()
+        fill = QPainterPath(path)
+        fill.lineTo(pts[-1].x(), h)
+        fill.lineTo(pts[0].x(), h)
+        fill.closeSubpath()
 
-            painter.save()
-            painter.setClipRect(QRectF(0, 0, w * self._progress + 0.5, h))
-            grad = QLinearGradient(0, 0, 0, h)
-            top_alpha = int(70 * self._pulse)
-            grad.setColorAt(0.0, QColor(96, 165, 250, top_alpha))
-            grad.setColorAt(1.0, QColor(96, 165, 250, 6))
-            painter.fillPath(fill, QBrush(grad))
-            painter.setPen(QPen(QColor("#60a5fa"), 2))
-            painter.drawPath(path)
-            painter.restore()
-            if 0 <= self._hover < len(pts):
-                anchor = pts[self._hover]
-                anchor_idx = off + self._hover
+        painter.save()
+        painter.setClipRect(QRectF(0, 0, w * self._progress + 0.5, h))
+        grad = QLinearGradient(0, 0, 0, h)
+        grad.setColorAt(0.0, QColor(96, 165, 250, 84))
+        grad.setColorAt(1.0, QColor(96, 165, 250, 4))
+        painter.setPen(Qt.NoPen)
+        painter.fillPath(fill, QBrush(grad))
+        # Мягкое свечение под основной линией.
+        painter.setPen(QPen(QColor(96, 165, 250, 55), 5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawPath(path)
+        painter.setPen(QPen(QColor("#60a5fa"), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawPath(path)
+        painter.restore()
 
-        n_total = len(self._values)
-        if self._visible is not None and n_total > self._visible:
-            track = QRectF(2, h - 3.5, w - 4, 2.5)
+        if self._progress >= 0.99 and pts:
+            idx = self._hover if 0 <= self._hover < len(pts) else len(pts) - 1
+            p = pts[idx]
             painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(255, 255, 255, 18))
-            painter.drawRoundedRect(track, 1.5, 1.5)
-            x0 = 2 + (w - 4) * off / n_total
-            bw = max(14.0, (w - 4) * vis / n_total)
-            painter.setBrush(QColor("#3b82f6"))
-            painter.drawRoundedRect(QRectF(x0, h - 3.5, bw, 2.5), 1.5, 1.5)
-
-        if anchor is not None and self._progress >= 0.99 and anchor_idx >= 0:
-            p = anchor
+            painter.setBrush(QColor(96, 165, 250, 46))
+            painter.drawEllipse(p, 7.0, 7.0)
             painter.setPen(QPen(QColor(11, 18, 32), 1.5))
             painter.setBrush(QColor("#60a5fa"))
-            painter.drawEllipse(p, 4.2, 4.2)
-
-            value = self._values[anchor_idx] if anchor_idx < len(self._values) else 0
-            day = self._day_labels[anchor_idx] if anchor_idx < len(self._day_labels) else ""
-            text = f"{day} — {format_compact(value)}" if day else format_compact(value)
-            font = QFont(self.font())
-            font.setPointSizeF(8.5)
-            painter.setFont(font)
-            fm = QFontMetrics(font)
-            tw = fm.horizontalAdvance(text) + 16
-            th = 22.0
-            bx = min(max(p.x() - tw / 2, 1.0), max(1.0, w - tw - 1))
-            by = p.y() - th - 8
-            if by < 1:
-                by = p.y() + 10
-            painter.setPen(QPen(QColor("#24344d"), 1))
-            painter.setBrush(QColor(15, 27, 45, 240))
-            painter.drawRoundedRect(QRectF(bx, by, tw, th), 6, 6)
-            painter.setPen(QColor("#e5e7eb"))
-            painter.drawText(QRectF(bx, by, tw, th), Qt.AlignCenter, text)
+            painter.drawEllipse(p, 4.0, 4.0)
+            if 0 <= self._hover < len(pts):
+                self._paint_tooltip(painter, self._hover, p, w)
         painter.end()
 
     def mouseMoveEvent(self, event) -> None:
-        off, vis = self._window()
-        n = len(self._values)
-        if self._drag_x is not None and n > vis:
-            ppp = max(self.width(), 10) / vis
-            delta = int(round((self._drag_x - event.position().x()) / ppp))
-            new_off = self._clamp_offset(self._drag_offset + delta)
-            if new_off != self._offset:
-                self._offset = new_off
-                self._hover = -1
-                self._emit_view()
-                self.update()
-            return
-        if vis == 1:
-            if self._hover != 0 and self._progress >= 0.99:
-                self._hover = 0
-                self.update()
-            return
-        pts = self._points()
-        if not pts or self._progress < 0.99:
+        vals = self._values
+        n = len(vals)
+        if n < 2 or max(vals) <= 0 or self._progress < 0.99:
             return
         w = max(self.width(), 10)
-        ratio = min(max(event.position().x() / w, 0.0), 1.0)
-        idx = int(round(ratio * (len(pts) - 1)))
-        idx = min(max(idx, 0), len(pts) - 1)
+        inner_w = max(w - self.PAD_L - self.PAD_R, 1.0)
+        ratio = min(max((event.position().x() - self.PAD_L) / inner_w, 0.0), 1.0)
+        idx = int(round(ratio * (n - 1)))
         if idx != self._hover:
             self._hover = idx
             self.update()
-
-    def mousePressEvent(self, event) -> None:
-        off, vis = self._window()
-        if event.button() == Qt.LeftButton and len(self._values) > vis:
-            self._drag_x = event.position().x()
-            self._drag_offset = self._offset
-            self.setCursor(Qt.ClosedHandCursor)
-        super().mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event) -> None:
-        self._drag_x = None
-        self.setCursor(Qt.ArrowCursor)
-        super().mouseReleaseEvent(event)
-
-    def wheelEvent(self, event) -> None:
-        off, vis = self._window()
-        n = len(self._values)
-        if self._visible is None or n <= vis:
-            return
-        if event.modifiers() & Qt.ControlModifier:
-            factor = 0.8 if event.angleDelta().y() > 0 else 1.25
-            new_vis = int(round(vis * factor))
-            new_vis = min(max(new_vis, min(7, n)), n)
-            if new_vis != vis:
-                ratio = min(max(event.position().x() / max(self.width(), 10), 0.0), 1.0)
-                anchor_idx = off + ratio * vis
-                new_off = int(round(anchor_idx - ratio * new_vis))
-                self._visible = new_vis
-                self._offset = self._clamp_offset(new_off)
-                self._hover = -1
-                self._emit_view()
-                self.update()
-        else:
-            step = max(1, vis // 8)
-            d = -step if event.angleDelta().y() > 0 else step
-            new_off = self._clamp_offset(off + d)
-            if new_off != self._offset:
-                self._offset = new_off
-                self._hover = -1
-                self._emit_view()
-                self.update()
 
     def leaveEvent(self, event) -> None:
         if self._hover != -1:
@@ -967,8 +899,13 @@ class RangeChart(QWidget):
 
 
 class AppCard(QFrame):
+    """Карточка приложения: иконка, имя, время за период и спарклайн активности."""
+
     clicked = Signal(int)
     delete_requested = Signal(int)
+
+    MARGIN_L = 16
+    MARGIN_R = 14
 
     def __init__(self, app_id: int, name: str, exe_path: str, icon_bytes: bytes | None, parent=None):
         super().__init__(parent)
@@ -977,13 +914,12 @@ class AppCard(QFrame):
         self.exe_path = exe_path
         self.setObjectName("appCard")
         self.setProperty("selected", False)
-        self.setMinimumHeight(206)
+        self.setMinimumHeight(224)
         self.setCursor(Qt.PointingHandCursor)
 
         self._shown_period = -1
         self._shown_today = -1
-        self._period_anim = None
-        self._today_anim = None
+        self._num_anims: dict[str, QVariantAnimation] = {}
 
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(22)
@@ -993,64 +929,91 @@ class AppCard(QFrame):
         self._shadow = shadow
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 14, 12, 12)
-        layout.setSpacing(7)
+        layout.setContentsMargins(self.MARGIN_L, 14, self.MARGIN_R, 13)
+        layout.setSpacing(8)
 
+        # --- Шапка: иконка, имя, индикатор запуска, кнопка удаления ---------
         top = QHBoxLayout()
-        top.setSpacing(9)
+        top.setSpacing(10)
+
         self._icon = QLabel()
-        self._icon.setFixedSize(32, 32)
+        self._icon.setFixedSize(40, 40)
         pm = pixmap_from_png(icon_bytes)
-        if pm is not None:
-            self._icon.setPixmap(rounded_pixmap(pm, 32, 8))
+        if pm is not None and not pm.isNull():
+            self._icon.setPixmap(rounded_pixmap(pm, 40, 11))
+        else:
+            self._icon.setPixmap(letter_tile(name, 40))
         top.addWidget(self._icon)
 
-        name_label = QLabel()
-        name_label.setObjectName("cardName")
-        fm = name_label.fontMetrics()
-        name_label.setText(fm.elidedText(name, Qt.ElideRight, 148))
-        top.addWidget(name_label)
+        self._name_label = ElidedLabel(name)
+        self._name_label.setObjectName("cardName")
+        self._name_label.setToolTip(name)
+        self._name_label.setMinimumWidth(0)
+        top.addWidget(self._name_label, 1)
 
         self._dot = QLabel()
         self._dot.setObjectName("runningDot")
         self._dot.setFixedSize(8, 8)
         self._dot.setVisible(False)
         self._dot.setToolTip("Приложение запущено")
-        top.addWidget(self._dot)
-        top.addStretch(1)
+        top.addWidget(self._dot, 0, Qt.AlignVCenter)
 
-        delete_btn = QPushButton("✕")
-        delete_btn.setObjectName("deleteBtn")
-        delete_btn.setFixedSize(24, 24)
-        delete_btn.setCursor(Qt.PointingHandCursor)
-        delete_btn.setToolTip("Удалить из списка")
-        delete_btn.clicked.connect(lambda: self.delete_requested.emit(self.app_id))
-        top.addWidget(delete_btn)
+        # Кнопка удаления появляется только при наведении на карточку.
+        self._delete_btn = QPushButton()
+        self._delete_btn.setObjectName("deleteBtn")
+        self._delete_btn.setIcon(ui_icon("close", "#64748b", 14))
+        self._delete_btn.setIconSize(QSize(13, 13))
+        self._delete_btn.setFixedSize(26, 26)
+        self._delete_btn.setCursor(Qt.PointingHandCursor)
+        self._delete_btn.setToolTip("Удалить из списка")
+        self._delete_btn.setVisible(False)
+        self._delete_btn.clicked.connect(lambda: self.delete_requested.emit(self.app_id))
+        top.addWidget(self._delete_btn, 0, Qt.AlignVCenter)
         layout.addLayout(top)
 
+        # --- Время за выбранный период + подпись периода ---------------------
+        time_row = QHBoxLayout()
+        time_row.setSpacing(8)
         self._time = QLabel("0м")
         self._time.setObjectName("cardTime")
-        layout.addWidget(self._time)
+        time_row.addWidget(self._time)
+        self._period_caption = QLabel("за неделю")
+        self._period_caption.setObjectName("cardPeriodCaption")
+        time_row.addWidget(self._period_caption, 0, Qt.AlignBottom)
+        time_row.addStretch(1)
+        layout.addLayout(time_row)
 
-        self.chart = MiniChart(46)
+        # --- График активности ------------------------------------------------
+        self.chart = SparkChart(52)
         layout.addWidget(self.chart)
 
-        days = QHBoxLayout()
-        days.setSpacing(0)
+        # Подписи дней недели — видны только для графика на 7 дней.
+        days_row = QHBoxLayout()
+        days_row.setSpacing(0)
         self._day_labels: list[QLabel] = []
         for _ in range(7):
             label = QLabel("")
             label.setObjectName("dayLabel")
             label.setAlignment(Qt.AlignCenter)
             self._day_labels.append(label)
-            days.addWidget(label, 1)
-        layout.addLayout(days)
+            days_row.addWidget(label, 1)
+        layout.addLayout(days_row)
 
+        # --- Подвал: время за сегодня и масштаб графика ----------------------
+        footer = QHBoxLayout()
+        footer.setSpacing(8)
         self._footer = QLabel("СЕГОДНЯ: 0м")
         self._footer.setObjectName("cardFooter")
-        layout.addWidget(self._footer)
+        footer.addWidget(self._footer)
+        footer.addStretch(1)
+        self._span_label = QLabel("")
+        self._span_label.setObjectName("spanLabel")
+        self._span_label.setVisible(False)
+        footer.addWidget(self._span_label)
+        layout.addLayout(footer)
         layout.addStretch(1)
 
+    # ------------------------------------------------------------- состояние ---
     def set_selected(self, selected: bool) -> None:
         if self.property("selected") == selected:
             return
@@ -1062,64 +1025,86 @@ class AppCard(QFrame):
     def set_running(self, running: bool) -> None:
         self._dot.setVisible(running)
 
+    # ----------------------------------------------------------------- данные ---
     def set_day_names(self, names: list[str]) -> None:
         for label, text in zip(self._day_labels, names):
             label.setText(text)
 
-    def _animate_number(self, attr_shown: str, attr_anim: str, label, value: int, prefix: str = "") -> None:
-        current = getattr(self, attr_shown)
-        if current < 0 or abs(value - current) <= 2:
-            setattr(self, attr_shown, value)
+    def set_day_tooltips(self, labels: list[str]) -> None:
+        self.chart.set_labels(labels)
+
+    def set_period_caption(self, caption: str) -> None:
+        self._period_caption.setText(caption)
+        self._period_caption.setVisible(bool(caption))
+
+    def _animate_number(self, key: str, label: QLabel, value: int, prefix: str = "") -> None:
+        shown = getattr(self, key)
+        if shown < 0 or abs(value - shown) <= 2:
+            old = self._num_anims.pop(key, None)
+            if old is not None:
+                old.stop()
+            setattr(self, key, value)
             label.setText(prefix + format_compact(value))
             return
-        old = getattr(self, attr_anim)
+        old = self._num_anims.get(key)
         if old is not None:
             old.stop()
         anim = QVariantAnimation(self)
-        anim.setStartValue(current)
+        anim.setStartValue(shown)
         anim.setEndValue(value)
         anim.setDuration(320)
         anim.setEasingCurve(QEasingCurve.OutCubic)
 
-        def on_value(v, _label=label, _attr=attr_shown, _prefix=prefix):
-            setattr(self, _attr, int(v))
+        def on_value(v, _label=label, _key=key, _prefix=prefix):
+            setattr(self, _key, int(v))
             _label.setText(_prefix + format_compact(v))
 
         anim.valueChanged.connect(on_value)
-        setattr(self, attr_anim, anim)
+        self._num_anims[key] = anim
         anim.start()
 
     def set_period_seconds(self, seconds: int, animate: bool = False) -> None:
         if animate:
-            self._animate_number("_shown_period", "_period_anim", self._time, seconds)
+            self._animate_number("_shown_period", self._time, seconds)
         else:
+            self._num_anims.pop("_shown_period", None)
             self._shown_period = seconds
             self._time.setText(format_compact(seconds))
 
     def set_today_seconds(self, seconds: int, animate: bool = False) -> None:
         if animate:
-            self._animate_number("_shown_today", "_today_anim", self._footer, seconds, "СЕГОДНЯ: ")
+            self._animate_number("_shown_today", self._footer, seconds, "СЕГОДНЯ: ")
         else:
+            self._num_anims.pop("_shown_today", None)
             self._shown_today = seconds
             self._footer.setText(f"СЕГОДНЯ: {format_compact(seconds)}")
 
     def set_chart(self, values: list[int], animate: bool = False) -> None:
+        span = len(values)
+        seven = span == 7
+        for label in self._day_labels:
+            label.setVisible(seven)
+        if seven:
+            self._span_label.setVisible(False)
+        else:
+            self._span_label.setText(f"{span} ДНЕЙ")
+            self._span_label.setVisible(True)
         self.chart.set_values(values, animate)
 
-    def set_day_tooltips(self, labels: list[str]) -> None:
-        self.chart.set_days(labels)
-
+    # ------------------------------------------------------------------ hover ---
     def enterEvent(self, event) -> None:
+        self._delete_btn.setVisible(True)
         self._animate_shadow(QColor(59, 130, 246, 110), 32)
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
+        self._delete_btn.setVisible(False)
         self._animate_shadow(QColor(2, 6, 23, 150), 22)
         super().leaveEvent(event)
 
     def _animate_shadow(self, color: QColor, blur: int) -> None:
-        for attr in ("color", "blurRadius"):
-            old = getattr(self, f"_shadow_{attr}_anim", None)
+        for attr in ("_shadow_color_anim", "_shadow_blur_anim"):
+            old = getattr(self, attr, None)
             if old is not None:
                 old.stop()
         color_anim = QPropertyAnimation(self._shadow, b"color")

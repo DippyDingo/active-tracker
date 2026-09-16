@@ -109,6 +109,19 @@ QLabel#cardFooter {
     font-weight: 600;
     letter-spacing: 0.4px;
 }
+QLabel#cardPeriodCaption {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding-bottom: 7px;
+}
+QLabel#spanLabel {
+    color: #6b7280;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
 QLabel#sideName {
     color: #e5e7eb;
     font-size: 13px;

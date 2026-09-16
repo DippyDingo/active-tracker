@@ -57,10 +57,11 @@ from .widgets import (
 )
 
 PERIODS = [
-    ("День", 0, "СЕГОДНЯ"),
-    ("Неделя", 6, "НЕДЕЛЮ"),
-    ("Месяц", 29, "МЕСЯЦ"),
-    ("Всё время", None, "ВСЁ ВРЕМЯ"),
+    # (кнопка, дней назад для суммы, заголовок, подпись числа, длина графика в днях)
+    ("День", 0, "СЕГОДНЯ", "за сегодня", 7),
+    ("Неделя", 6, "НЕДЕЛЮ", "за неделю", 7),
+    ("Месяц", 29, "МЕСЯЦ", "за месяц", 30),
+    ("Всё время", None, "ВСЁ ВРЕМЯ", "за всё время", 90),
 ]
 
 # индекс периода главного окна -> индекс периода панели статистики
@@ -202,6 +203,7 @@ class MainWindow(QMainWindow):
         self._names: dict[int, str] = {}
         self._base: dict[int, int] = {}
         self._series: dict[int, list[int]] = {}
+        self._chart_span = 7
         self._day_names: list[str] = []
         self._day_dates: list[str] = []
         self._today = date.today()
@@ -300,7 +302,7 @@ class MainWindow(QMainWindow):
         self._period_group.setExclusive(True)
         periods_wrap = QHBoxLayout()
         periods_wrap.setSpacing(2)
-        for idx, (label, _days, _gen) in enumerate(PERIODS):
+        for idx, (label, *_rest) in enumerate(PERIODS):
             btn = QPushButton(label)
             btn.setObjectName("periodBtn")
             btn.setCheckable(True)
@@ -427,20 +429,29 @@ class MainWindow(QMainWindow):
                 base[app_id] += secs
         self._base = dict(base)
 
-        series = {app_id: [0] * 6 for app_id in self._order}
-        for app_id, day, secs in self.db.query_stats(
-            (today - timedelta(days=6)).isoformat(), yesterday
-        ):
+        # Серия для графика: её длина зависит от выбранного периода,
+        # чтобы график соответствовал крупной цифре на карточке.
+        span = PERIODS[self._period_idx][4]
+        self._chart_span = span
+        series = {app_id: [0] * (span - 1) for app_id in self._order}
+        series_start = (today - timedelta(days=span - 1)).isoformat()
+        for app_id, day, secs in self.db.query_stats(series_start, yesterday):
             delta = (today - date.fromisoformat(day)).days
-            if app_id in series and 1 <= delta <= 6:
-                series[app_id][6 - delta] += secs
+            if app_id in series and 1 <= delta <= span - 1:
+                series[app_id][span - 1 - delta] += secs
         self._series = series
 
-        self._day_names = [WEEKDAYS[(today - timedelta(days=6 - i)).weekday()] for i in range(7)]
-        self._day_dates = [ru_date(today - timedelta(days=6 - i)) for i in range(7)]
+        self._day_names = (
+            [WEEKDAYS[(today - timedelta(days=6 - i)).weekday()] for i in range(7)]
+            if span == 7
+            else []
+        )
+        self._day_dates = [ru_date(today - timedelta(days=span - 1 - i)) for i in range(span)]
+        caption = PERIODS[self._period_idx][3]
         for app_id, card in self._cards.items():
             card.set_day_names(self._day_names)
             card.set_day_tooltips(self._day_dates)
+            card.set_period_caption(caption)
 
     def _current_cols(self) -> int:
         width = self.width()
@@ -516,7 +527,10 @@ class MainWindow(QMainWindow):
         for app_id, card in self._cards.items():
             today_live = today_db.get(app_id, 0) + self.tracker.pending_seconds(app_id)
             card.set_period_seconds(self._base.get(app_id, 0) + today_live, animate=True)
-            card.set_chart(self._series.get(app_id, [0] * 6) + [today_live], animate=True)
+            card.set_chart(
+                self._series.get(app_id, [0] * (self._chart_span - 1)) + [today_live],
+                animate=True,
+            )
         self._update_values(animate_header=True)
 
     def _on_side_row_clicked(self, app_id: int) -> None:
@@ -1235,7 +1249,7 @@ class MainWindow(QMainWindow):
             header_total += period_total
             card.set_period_seconds(period_total)
             card.set_today_seconds(today_live)
-            card.set_chart(self._series.get(app_id, [0] * 6) + [today_live])
+            card.set_chart(self._series.get(app_id, [0] * (self._chart_span - 1)) + [today_live])
             card.set_running(os.path.normcase(card.exe_path) in self._running)
         self._set_header_total(header_total, animate_header)
 
