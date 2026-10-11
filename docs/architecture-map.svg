@@ -1,0 +1,261 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1320" viewBox="0 0 1920 1320" role="img" aria-labelledby="title desc">
+  <title id="title">Nodexy — карта потоков кода</title>
+  <desc id="desc">Схема запуска, интерфейса, трекера активности, Windows-интеграции и хранения данных Nodexy.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#101a2c"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.025" stroke-width="1"/>
+    </pattern>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#60a5fa"/>
+    </marker>
+    <marker id="arrow-violet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#a78bfa"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#fbbf24"/>
+    </marker>
+    <style>
+      text { font-family: "DejaVu Sans", "Segoe UI", Arial, sans-serif; }
+      .title { fill: #f3f7fc; font-size: 34px; font-weight: 750; letter-spacing: .2px; }
+      .subtitle { fill: #a8b8ca; font-size: 15px; }
+      .zone { fill: #0e1a2b; fill-opacity: .72; stroke: #24364e; stroke-width: 1.3; }
+      .zone-title { fill: #8297ad; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; }
+      .card { fill: #142238; stroke: #304761; stroke-width: 1.25; }
+      .module { fill: #83a0bd; font-size: 11px; font-weight: 700; letter-spacing: 1.15px; }
+      .name { fill: #f1f5f9; font-size: 21px; font-weight: 700; }
+      .body { fill: #bdcad8; font-size: 14px; }
+      .small { fill: #9aacbf; font-size: 12px; }
+      .line-blue { fill: none; stroke: #60a5fa; stroke-width: 2.5; marker-end: url(#arrow-blue); }
+      .line-signal { fill: none; stroke: #a78bfa; stroke-width: 2.4; stroke-dasharray: 7 6; marker-end: url(#arrow-violet); }
+      .line-store { fill: none; stroke: #fbbf24; stroke-width: 2.6; marker-end: url(#arrow-amber); }
+      .pill { fill: #12243a; stroke: #2a4260; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1920" height="1320" fill="url(#bg)"/>
+  <rect width="1920" height="1320" fill="url(#grid)"/>
+
+  <text x="60" y="61" class="title">Nodexy · карта потоков кода</text>
+  <text x="62" y="94" class="subtitle">Windows desktop · один процесс · PySide6 + SQLite · без backend / HTTP API</text>
+
+  <g transform="translate(1165 45)">
+    <path d="M0 10H44" class="line-blue"/>
+    <text x="56" y="15" class="small">вызов / данные</text>
+    <path d="M218 10H262" class="line-signal"/>
+    <text x="274" y="15" class="small">Qt-сигнал / событие</text>
+    <path d="M493 10H537" class="line-store"/>
+    <text x="550" y="15" class="small">запись на диск</text>
+  </g>
+  <rect x="60" y="116" width="350" height="28" rx="14" class="pill"/>
+  <text x="76" y="135" class="small">Схема показывает основные связи, не каждый импорт.</text>
+
+  <!-- Архитектурные зоны -->
+  <rect x="40" y="175" width="385" height="1080" rx="22" class="zone"/>
+  <rect x="455" y="175" width="660" height="1080" rx="22" class="zone"/>
+  <rect x="1140" y="175" width="365" height="1080" rx="22" class="zone"/>
+  <rect x="1530" y="175" width="350" height="710" rx="22" class="zone"/>
+  <text x="64" y="205" class="zone-title">01 · ЗАПУСК И КОНФИГ</text>
+  <text x="480" y="205" class="zone-title">02 · ПОЛЬЗОВАТЕЛЬСКИЙ ИНТЕРФЕЙС</text>
+  <text x="1165" y="205" class="zone-title">03 · УЧЁТ И ХРАНЕНИЕ</text>
+  <text x="1555" y="205" class="zone-title">04 · WINDOWS И ПОИСК ПРИЛОЖЕНИЙ</text>
+
+  <!-- Связи: рисуются под карточками -->
+  <path d="M400 287H485" class="line-blue"/>
+  <text x="407" y="274" class="small">создаёт UI</text>
+
+  <path d="M232 380V455" class="line-blue"/>
+  <path d="M400 520H414V1007H400" class="line-blue"/>
+
+  <path d="M625 415V495" class="line-blue"/>
+  <path d="M700 495V425" class="line-signal"/>
+  <path d="M935 415V495" class="line-blue"/>
+  <path d="M1000 495V425" class="line-signal"/>
+  <path d="M1085 352H1100V792H1075" class="line-blue"/>
+
+  <path d="M1085 275H1165" class="line-blue"/>
+  <path d="M1165 365H1085" class="line-signal"/>
+  <path d="M1480 285H1555" class="line-blue"/>
+  <path d="M1322 415V710" class="line-store"/>
+  <text x="1337" y="572" class="small">пачка секунд</text>
+  <path d="M1085 390H1120V820H1165" class="line-blue"/>
+  <path d="M1075 800H1165" class="line-blue"/>
+
+  <path d="M625 640V685H1535V585H1555" class="line-blue"/>
+  <text x="1090" y="677" class="small">сканирование</text>
+  <path d="M1705 495V415" class="line-blue"/>
+  <text x="1717" y="462" class="small">иконки / метаданные</text>
+  <path d="M1705 670V725" class="line-blue"/>
+
+  <path d="M780 875V940" class="line-blue"/>
+  <path d="M1322 930V1010" class="line-store"/>
+  <path d="M780 1090V1065" class="line-signal"/>
+
+  <!-- Карточки -->
+  <g>
+    <rect x="65" y="230" width="335" height="150" rx="16" class="card"/>
+    <rect x="65" y="230" width="5" height="150" rx="2.5" fill="#60a5fa"/>
+    <text x="88" y="258" class="module">ENTRY POINT</text>
+    <text x="88" y="288" class="name">main.py</text>
+    <text x="88" y="316" class="body">QLockFile · QApplication · тема</text>
+    <text x="88" y="340" class="body">выбор / проверка базы</text>
+    <text x="88" y="364" class="body">собирает Database, Tracker, MainWindow</text>
+  </g>
+
+  <g>
+    <rect x="65" y="455" width="335" height="135" rx="16" class="card"/>
+    <rect x="65" y="455" width="5" height="135" rx="2.5" fill="#22d3ee"/>
+    <text x="88" y="483" class="module">ПУТИ И ДИАГНОСТИКА</text>
+    <text x="88" y="513" class="name">app/config.py</text>
+    <text x="88" y="541" class="body">APPDATA · config.json · crash.log</text>
+    <text x="88" y="565" class="body">путь к выбранной .db-базе</text>
+  </g>
+
+  <g>
+    <rect x="65" y="650" width="335" height="125" rx="16" class="card"/>
+    <rect x="65" y="650" width="5" height="125" rx="2.5" fill="#22d3ee"/>
+    <text x="88" y="678" class="module">ПЕРВЫЙ ЗАПУСК</text>
+    <text x="88" y="708" class="name">WelcomeDialog</text>
+    <text x="88" y="736" class="body">создать новую или выбрать .db</text>
+    <text x="88" y="760" class="body">показывается, если база невалидна</text>
+  </g>
+
+  <g>
+    <rect x="65" y="955" width="335" height="105" rx="16" class="card"/>
+    <rect x="65" y="955" width="5" height="105" rx="2.5" fill="#22d3ee"/>
+    <text x="88" y="983" class="module">ФАЙЛ НАСТРОЕК ПРИЛОЖЕНИЯ</text>
+    <text x="88" y="1014" class="name">config.json</text>
+    <text x="88" y="1040" class="body">db_path · first_launch</text>
+  </g>
+
+  <g>
+    <rect x="485" y="230" width="600" height="185" rx="16" class="card"/>
+    <rect x="485" y="230" width="5" height="185" rx="2.5" fill="#60a5fa"/>
+    <text x="508" y="258" class="module">UI COORDINATOR</text>
+    <text x="508" y="289" class="name">MainWindow</text>
+    <text x="508" y="318" class="body">главный экран · карточки · поиск · периоды</text>
+    <text x="508" y="342" class="body">категории · трей · экспорт / переключение БД</text>
+    <text x="508" y="366" class="body">tick → live-цифры · ModalOverlay хостит панели</text>
+    <text x="508" y="390" class="small">app/ui/main_window.py</text>
+  </g>
+
+  <g>
+    <rect x="485" y="495" width="280" height="145" rx="16" class="card"/>
+    <rect x="485" y="495" width="5" height="145" rx="2.5" fill="#22d3ee"/>
+    <text x="507" y="523" class="module">ДОБАВЛЕНИЕ</text>
+    <text x="507" y="553" class="name">AddPanel</text>
+    <text x="507" y="581" class="body">сканирование в QThread</text>
+    <text x="507" y="605" class="body">иконки в QThreadPool</text>
+    <text x="507" y="628" class="small">добавляет через сигнал</text>
+  </g>
+
+  <g>
+    <rect x="795" y="495" width="280" height="145" rx="16" class="card"/>
+    <rect x="795" y="495" width="5" height="145" rx="2.5" fill="#22d3ee"/>
+    <text x="817" y="523" class="module">НАСТРОЙКИ</text>
+    <text x="817" y="553" class="name">SettingsPanel</text>
+    <text x="817" y="581" class="body">порог простоя 1–240 мин</text>
+    <text x="817" y="605" class="body">фоновый учёт · подсказка</text>
+    <text x="817" y="628" class="small">saved → MainWindow</text>
+  </g>
+
+  <g>
+    <rect x="485" y="710" width="590" height="165" rx="16" class="card"/>
+    <rect x="485" y="710" width="5" height="165" rx="2.5" fill="#a78bfa"/>
+    <text x="508" y="738" class="module">ДЕТАЛЬНАЯ СТАТИСТИКА</text>
+    <text x="508" y="769" class="name">StatsPanel + TimelineData</text>
+    <text x="508" y="798" class="body">день / неделя / месяц / год / всё время</text>
+    <text x="508" y="822" class="body">история из БД + несохранённые секунды</text>
+    <text x="508" y="846" class="body">в «Всё время» часы подгружаются лениво</text>
+    <text x="508" y="866" class="small">app/ui/stats_panel.py</text>
+  </g>
+
+  <g>
+    <rect x="485" y="940" width="590" height="120" rx="16" class="card"/>
+    <rect x="485" y="940" width="5" height="120" rx="2.5" fill="#60a5fa"/>
+    <text x="508" y="968" class="module">КАРТОЧКИ И ГРАФИКИ</text>
+    <text x="508" y="998" class="name">app/ui/widgets.py</text>
+    <text x="508" y="1026" class="body">AppCard · MiniChart · RangeChart · категории</text>
+    <text x="508" y="1048" class="small">отрисовка, зум, выделение и мышиные жесты</text>
+  </g>
+
+  <g>
+    <rect x="485" y="1090" width="590" height="105" rx="16" class="card"/>
+    <rect x="485" y="1090" width="5" height="105" rx="2.5" fill="#22d3ee"/>
+    <text x="508" y="1118" class="module">ОБЩИЕ UI-РЕСУРСЫ</text>
+    <text x="508" y="1148" class="name">theme.py + utils.py</text>
+    <text x="508" y="1176" class="body">QSS / иконки · даты / подписи · формат секунд</text>
+  </g>
+
+  <g>
+    <rect x="1165" y="230" width="315" height="185" rx="16" class="card"/>
+    <rect x="1165" y="230" width="5" height="185" rx="2.5" fill="#fbbf24"/>
+    <text x="1188" y="258" class="module">RULES + TIMER</text>
+    <text x="1188" y="289" class="name">Tracker</text>
+    <text x="1188" y="318" class="body">QTimer · тик раз в 1 секунду</text>
+    <text x="1188" y="342" class="body">idle / foreground / background</text>
+    <text x="1188" y="366" class="body">буфер (app, день, час) · flush 15 с</text>
+    <text x="1188" y="390" class="small">app/tracker.py</text>
+  </g>
+
+  <g>
+    <rect x="1165" y="710" width="315" height="220" rx="16" class="card"/>
+    <rect x="1165" y="710" width="5" height="220" rx="2.5" fill="#fbbf24"/>
+    <text x="1188" y="738" class="module">PERSISTENCE LAYER</text>
+    <text x="1188" y="769" class="name">Database</text>
+    <text x="1188" y="798" class="body">app/db.py · SQLite · миграции</text>
+    <text x="1188" y="822" class="body">apps · stats · hours · categories</text>
+    <text x="1188" y="846" class="body">settings · запросы · backup/export</text>
+    <text x="1188" y="870" class="body">внешние ключи · пакетная запись</text>
+    <text x="1188" y="904" class="small">создаётся при запуске из main.py</text>
+  </g>
+
+  <g>
+    <rect x="1165" y="1010" width="315" height="100" rx="16" class="card"/>
+    <rect x="1165" y="1010" width="5" height="100" rx="2.5" fill="#fbbf24"/>
+    <text x="1188" y="1038" class="module">ЛОКАЛЬНЫЙ ФАЙЛ</text>
+    <text x="1188" y="1068" class="name">tracker.db</text>
+    <text x="1188" y="1094" class="body">SQLite · WAL · пользовательские данные</text>
+  </g>
+
+  <g>
+    <rect x="1555" y="230" width="300" height="185" rx="16" class="card"/>
+    <rect x="1555" y="230" width="5" height="185" rx="2.5" fill="#fb7185"/>
+    <text x="1578" y="258" class="module">WINDOWS BOUNDARY</text>
+    <text x="1578" y="289" class="name">win32_utils.py</text>
+    <text x="1578" y="318" class="body">idle · активный PID / exe</text>
+    <text x="1578" y="342" class="body">psutil · работающие процессы</text>
+    <text x="1578" y="366" class="body">описания файлов · PNG-иконки</text>
+    <text x="1578" y="390" class="small">ctypes · pywin32 · Pillow</text>
+  </g>
+
+  <g>
+    <rect x="1555" y="495" width="300" height="175" rx="16" class="card"/>
+    <rect x="1555" y="495" width="5" height="175" rx="2.5" fill="#fb7185"/>
+    <text x="1578" y="523" class="module">DISCOVERY</text>
+    <text x="1578" y="553" class="name">installed_apps.py</text>
+    <text x="1578" y="582" class="body">реестр · Start Menu · Steam</text>
+    <text x="1578" y="606" class="body">запущенные процессы</text>
+    <text x="1578" y="630" class="body">фильтрация и дедупликация exe</text>
+    <text x="1578" y="654" class="small">результат отображает AddPanel</text>
+  </g>
+
+  <g>
+    <rect x="1555" y="725" width="300" height="135" rx="16" class="card"/>
+    <rect x="1555" y="725" width="5" height="135" rx="2.5" fill="#fb7185"/>
+    <text x="1578" y="753" class="module">ИСТОЧНИКИ СИСТЕМЫ</text>
+    <text x="1578" y="783" class="body">Windows Registry · .lnk</text>
+    <text x="1578" y="807" class="body">Steam manifests · psutil</text>
+    <text x="1578" y="831" class="small">сканирование не отправляет данные наружу</text>
+  </g>
+
+  <!-- Пояснение связи UI ↔ трекер -->
+  <text x="1089" y="258" class="small">paths / settings</text>
+  <text x="1089" y="359" class="small">tick</text>
+  <text x="1491" y="274" class="small">Win32</text>
+
+  <text x="60" y="1295" class="small">Полный разбор потоков, таблиц БД, сценариев и найденных ограничений — docs/architecture.md</text>
+</svg>
