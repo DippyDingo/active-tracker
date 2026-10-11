@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from math import ceil, floor
 
 from PySide6.QtCore import (
@@ -97,10 +97,10 @@ def menu_icon(color: str = "#c3d0dd", size: int = 18) -> QIcon:
 
 
 def smooth_path(pts: list[QPointF]) -> QPainterPath:
-    """Гладкая кривая, проходящая ТОЧНО через все точки (Catmull-Rom → кубические Безье).
+    """Гладкая монотонная кривая, проходящая ТОЧНО через все точки.
 
-    В отличие от квадратичного сглаживания «через середины», здесь точки данных
-    лежат на самой линии — маркер наведения всегда сидит на графике.
+    Использует монотонную кубическую интерполяцию с ограничением касательных
+    для предотвращения overshoot (искусственных впадин/выбросов перед пиками).
     """
     path = QPainterPath()
     n = len(pts)
@@ -112,14 +112,40 @@ def smooth_path(pts: list[QPointF]) -> QPainterPath:
     if n == 2:
         path.lineTo(pts[1])
         return path
+    
+    # Вычисляем наклоны между соседними точками
+    slopes = []
     for i in range(n - 1):
-        p0 = pts[i - 1] if i > 0 else pts[i]
+        dx = pts[i + 1].x() - pts[i].x()
+        dy = pts[i + 1].y() - pts[i].y()
+        slopes.append(dy / dx if dx != 0 else 0)
+    
+    # Вычисляем монотонные касательные для каждой точки
+    tangents = [0.0] * n
+    tangents[0] = slopes[0]
+    tangents[n - 1] = slopes[n - 2]
+    
+    for i in range(1, n - 1):
+        # Если наклоны по обе стороны имеют разные знаки или один равен нулю,
+        # устанавливаем касательную в ноль (локальный экстремум)
+        if slopes[i - 1] * slopes[i] <= 0:
+            tangents[i] = 0
+        else:
+            # Используем среднее гармоническое для предотвращения overshoot
+            tangents[i] = 2.0 / (1.0 / slopes[i - 1] + 1.0 / slopes[i])
+    
+    # Строим кубические кривые Безье с монотонными касательными
+    for i in range(n - 1):
         p1 = pts[i]
         p2 = pts[i + 1]
-        p3 = pts[i + 2] if i + 2 < n else pts[i + 1]
-        c1 = QPointF(p1.x() + (p2.x() - p0.x()) / 6.0, p1.y() + (p2.y() - p0.y()) / 6.0)
-        c2 = QPointF(p2.x() - (p3.x() - p1.x()) / 6.0, p2.y() - (p3.y() - p1.y()) / 6.0)
+        dx = (p2.x() - p1.x()) / 3.0
+        
+        # Контрольные точки на основе монотонных касательных
+        c1 = QPointF(p1.x() + dx, p1.y() + dx * tangents[i])
+        c2 = QPointF(p2.x() - dx, p2.y() - dx * tangents[i + 1])
+        
         path.cubicTo(c1, c2, p2)
+    
     return path
 
 
@@ -707,6 +733,7 @@ class RangeChart(QWidget):
         self.set_days(values, dates)
 
     def set_days(self, values: list[int], dates: list[date]) -> None:
+        self._leave_timeline()
         self._unit = "days"
         self._min_visible = 14.0  # Увеличен с 7 до 14, чтобы избежать "дёрганья" при глубоком зуме
         self._explicit = None
@@ -730,6 +757,9 @@ class RangeChart(QWidget):
         min_visible: float = 7.0,
     ) -> None:
         """Ряд с готовыми подписями: одна точка = один бакет (час/день/месяц)."""
+        # Возврат из режима «Всё время»: иначе бакеты продолжают строиться
+        # по timeline и фиксированный период рисует чужие данные.
+        self._leave_timeline()
         self._unit = unit
         self._min_visible = float(min_visible)
         self._days = [max(0, int(v)) for v in values]
@@ -742,6 +772,11 @@ class RangeChart(QWidget):
         self._sel_float = None
         self.set_window_days(None)
     
+    def _leave_timeline(self) -> None:
+        """Выход из режима «Всё время» при переходе к фиксированному ряду."""
+        self._timeline = None
+        self._timeline_mode = False
+
     def set_timeline(self, timeline) -> None:
         """Устанавливает timeline mode для непрерывного зума от лет до часов.
         
@@ -753,6 +788,7 @@ class RangeChart(QWidget):
         self._unit = "timeline"
         self._min_visible = 1.0  # Минимум 1 день
         self._explicit = None
+        self._hover = -1
         
         # В timeline mode работаем в координатах ДНЕЙ (для совместимости)
         # Почасовые данные загружаются динамически при зуме
@@ -779,6 +815,12 @@ class RangeChart(QWidget):
         if self._explicit is not None:
             tips = self._explicit[1]
             return tips[i] if 0 <= i < len(tips) else ""
+        if self._timeline_mode and self._timeline is not None:
+            start = getattr(self._timeline, "_start", None)
+            if start is not None:
+                d = start + timedelta(days=int(i))
+                return f"{WEEKDAYS[d.weekday()]}, {ru_date(d)}"
+            return ""
         if self._unit == "hours":
             return f"{i:02d}:00–{(i + 1) % 24:02d}:00"
         if 0 <= i < len(self._dates):
@@ -797,6 +839,27 @@ class RangeChart(QWidget):
 
     def selection(self) -> tuple[int, int] | None:
         return self._sel
+
+    def series_value(self, i: int) -> int:
+        """Значение ряда для индекса точки (час/день/месяц) в текущем режиме.
+
+        В режиме «Всё время» значения берутся из timeline, а не из self._days
+        (там их нет) — иначе итоги по выделению всегда равны нулю.
+        """
+        if self._timeline_mode and self._timeline is not None:
+            start = getattr(self._timeline, "_start", None)
+            if start is None:
+                return 0
+            return int(self._timeline.get_day_value(start + timedelta(days=int(i))))
+        if 0 <= i < len(self._days):
+            return int(self._days[i])
+        return 0
+
+    def series_total(self, start: int, end: int) -> int:
+        """Сумма значений ряда по индексам [start, end] включительно."""
+        if end < start:
+            return 0
+        return sum(self.series_value(i) for i in range(int(start), int(end) + 1))
 
     def clear_selection(self) -> None:
         if self._sel is not None or self._sel_float is not None:
@@ -944,9 +1007,11 @@ class RangeChart(QWidget):
         else:
             level = "month"
         
-        # Вычисляем видимый диапазон
+        # Вычисляем видимый диапазон (не выходя за последний день данных:
+        # прежний «+1» без ограничения добавлял лишний пустой бакет).
+        total_days = timeline.total_hours() // 24
         start_day_idx = int(self._offset)
-        end_day_idx = int(self._offset + self._visible) + 1
+        end_day_idx = min(int(self._offset + self._visible) + 1, total_days)
         
         # Подгружаем почасовые данные для видимого диапазона (если нужны)
         if level == "hour":
@@ -959,7 +1024,7 @@ class RangeChart(QWidget):
         if level == "hour":
             # Почасовая разбивка - создаём по 24 бакета на каждый день
             # Координаты в ДОЛЯХ ДНЯ для плавной отрисовки
-            for day_idx in range(start_day_idx, min(end_day_idx, timeline.total_hours() // 24 + 1)):
+            for day_idx in range(start_day_idx, end_day_idx):
                 day = timeline._start + timedelta(days=day_idx)
                 
                 for hour_of_day in range(24):
@@ -979,9 +1044,9 @@ class RangeChart(QWidget):
         elif level == "day":
             # Дневная разбивка
             start_day_idx = int(self._offset)
-            end_day_idx = int(self._offset + self._visible) + 1
+            end_day_idx = min(int(self._offset + self._visible) + 1, total_days)
             
-            for day_idx in range(start_day_idx, min(end_day_idx, timeline.total_hours() // 24 + 1)):
+            for day_idx in range(start_day_idx, end_day_idx):
                 day = timeline._start + timedelta(days=day_idx)
                 value = timeline.get_day_value(day)
                 
@@ -993,11 +1058,11 @@ class RangeChart(QWidget):
         elif level == "week":
             # Недельная разбивка
             start_day_idx = int(self._offset)
-            end_day_idx = int(self._offset + self._visible) + 1
+            end_day_idx = min(int(self._offset + self._visible) + 1, total_days)
             
             # Группируем по 7 дней
             for week_start_idx in range(start_day_idx, end_day_idx, 7):
-                week_end_idx = min(week_start_idx + 7, timeline.total_hours() // 24 + 1)
+                week_end_idx = min(week_start_idx + 7, total_days)
                 
                 # Суммируем дни недели
                 week_sum = 0
@@ -1019,7 +1084,7 @@ class RangeChart(QWidget):
         else:  # month
             # Месячная разбивка
             start_day_idx = int(self._offset)
-            end_day_idx = int(self._offset + self._visible) + 1
+            end_day_idx = min(int(self._offset + self._visible) + 1, total_days)
             
             # Группируем по месяцам
             current_day_idx = start_day_idx
@@ -1552,9 +1617,6 @@ class AppCard(QFrame):
         self._shadow_blur_anim = blur_anim
         color_anim.start()
         blur_anim.start()
-
-    def mousePressEvent(self, event) -> None:
-        super().mousePressEvent(event)
 
 
 class CardHost(QWidget):
