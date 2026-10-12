@@ -1258,15 +1258,34 @@ class MainWindow(QMainWindow):
             self.tracker.threshold_minutes(),
             self.tracker.background_counting(),
             bool(self.db.get_int("show_chart_help", 1)),
+            bool(self.db.get_int("autostart", 0)),
             self,
         )
         panel.saved.connect(self._apply_settings)
         self._show_modal(panel)
 
-    def _apply_settings(self, threshold: int, background: bool, show_help: bool = True) -> None:
+    def _apply_settings(self, threshold: int, background: bool, show_help: bool = True, autostart: bool = False) -> None:
+        from app import win32_utils
+        from app import config
+        
         self.tracker.set_threshold_minutes(threshold)
         self.tracker.set_background_counting(background)
         self.db.set_int("show_chart_help", 1 if show_help else 0)
+        
+        # Обработка автозапуска
+        old_autostart = bool(self.db.get_int("autostart", 0))
+        if autostart != old_autostart:
+            if win32_utils.set_autostart(autostart):
+                self.db.set_int("autostart", 1 if autostart else 0)
+            else:
+                # Ошибка записи в реестр
+                config.log_error(f"Не удалось {'включить' if autostart else 'выключить'} автозапуск")
+                QMessageBox.warning(
+                    self,
+                    "Ошибка",
+                    f"Не удалось {'включить' if autostart else 'выключить'} автозапуск.\nПроверьте права доступа к реестру Windows."
+                )
+        
         self._update_status_right()
 
     def _export_database(self) -> None:

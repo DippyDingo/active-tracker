@@ -80,6 +80,9 @@ def main() -> int:
         except Exception:
             pass
 
+    # Проверка флага --minimized
+    start_minimized = "--minimized" in sys.argv
+
     lock = QLockFile(str(config.app_dir() / "nodexy.lock"))
     if not lock.tryLock(100):
         app = QApplication(sys.argv)
@@ -102,9 +105,28 @@ def main() -> int:
     db = Database(db_path)
     _ensure_first_launch(db)
     _backfill_today_hours(db)
+    
+    # Синхронизировать реестр с настройками при старте
+    from app import win32_utils
+    autostart_setting = db.get_int("autostart", 0)
+    if autostart_setting == 1:
+        # Если автозапуск включён в настройках, убедиться что путь в реестре актуален
+        if not win32_utils.autostart_enabled():
+            # Реестр был изменён вручную — восстановить
+            win32_utils.set_autostart(True)
+        # Проверить, что путь в реестре совпадает с текущим
+        # (на случай переноса exe или смены venv)
+        win32_utils.set_autostart(True)
+    
     tracker = Tracker(db)
     window = MainWindow(db, tracker)
-    window.show()
+    
+    if start_minimized:
+        # Не показывать окно, только иконка в трее
+        pass
+    else:
+        window.show()
+    
     tracker.start()
     qt.aboutToQuit.connect(tracker.stop)
     return qt.exec()

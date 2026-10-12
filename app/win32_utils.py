@@ -225,3 +225,144 @@ def _hicon_to_png(hicon: int, size: int) -> bytes | None:
             win32gui.ReleaseDC(0, hdc_screen)
         except Exception:
             pass
+
+
+def autostart_command(exe_path: str, script_path: str | None, minimized: bool = True, frozen: bool | None = None) -> str:
+    """
+    Формирует командную строку для автозапуска.
+    
+    Args:
+        exe_path: путь к исполняемому файлу (sys.executable или собранный .exe)
+        script_path: путь к main.py (только для незамороженного приложения)
+        minimized: добавить флаг --minimized
+        frozen: явно указать, собранное ли это приложение (для тестирования)
+    
+    Returns:
+        Командная строка для записи в реестр
+    """
+    import sys
+    from pathlib import Path
+    
+    if frozen is None:
+        frozen = getattr(sys, "frozen", False)
+    
+    if frozen:
+        # Собранный exe
+        cmd = f'"{exe_path}"'
+    else:
+        # Запуск из исходников
+        if script_path is None:
+            raise ValueError("script_path required for non-frozen application")
+        
+        # Проверить pythonw.exe
+        exe_dir = Path(exe_path).parent
+        pythonw = exe_dir / "pythonw.exe"
+        if pythonw.exists():
+            cmd = f'"{pythonw}" "{script_path}"'
+        else:
+            # Fallback на python.exe
+            cmd = f'"{exe_path}" "{script_path}"'
+    
+    if minimized:
+        cmd += " --minimized"
+    
+    return cmd
+
+
+def set_autostart(enabled: bool) -> bool:
+    """
+    Включает или выключает автозапуск через реестр Windows.
+    
+    Args:
+        enabled: True — включить, False — выключить
+    
+    Returns:
+        True если операция успешна, False при ошибке
+    """
+    import sys
+    from pathlib import Path
+    
+    if sys.platform != "win32":
+        return False
+    
+    try:
+        import winreg
+    except ImportError:
+        return False
+    
+    key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    value_name = "Nodexy"
+    
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            key_path,
+            0,
+            winreg.KEY_SET_VALUE | winreg.KEY_QUERY_VALUE
+        )
+        
+        if enabled:
+            # Формируем командную строку
+            exe_path = sys.executable
+            script_path = None
+            if not getattr(sys, "frozen", False):
+                # Запуск из исходников
+                import __main__
+                if hasattr(__main__, "__file__"):
+                    script_path = Path(__main__.__file__).resolve()
+            
+            cmd = autostart_command(str(exe_path), str(script_path) if script_path else None, minimized=True)
+            winreg.SetValueEx(key, value_name, 0, winreg.REG_SZ, cmd)
+        else:
+            # Удаляем значение
+            try:
+                winreg.DeleteValue(key, value_name)
+            except FileNotFoundError:
+                # Значения уже нет
+                pass
+        
+        winreg.CloseKey(key)
+        return True
+    
+    except Exception:
+        return False
+
+
+def autostart_enabled() -> bool:
+    """
+    Проверяет, включён ли автозапуск в реестре.
+    
+    Returns:
+        True если значение "Nodexy" существует в реестре
+    """
+    import sys
+    
+    if sys.platform != "win32":
+        return False
+    
+    try:
+        import winreg
+    except ImportError:
+        return False
+    
+    key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    value_name = "Nodexy"
+    
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            key_path,
+            0,
+            winreg.KEY_QUERY_VALUE
+        )
+        
+        try:
+            winreg.QueryValueEx(key, value_name)
+            winreg.CloseKey(key)
+            return True
+        except FileNotFoundError:
+            winreg.CloseKey(key)
+            return False
+    
+    except Exception:
+        return False

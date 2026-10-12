@@ -12,7 +12,7 @@ from .widgets import ToggleSwitch
 
 
 class SettingsPanel(QFrame):
-    saved = Signal(int, bool, bool)
+    saved = Signal(int, bool, bool, bool)
     close_requested = Signal()
 
     def __init__(
@@ -20,6 +20,7 @@ class SettingsPanel(QFrame):
         threshold_minutes: int,
         background_enabled: bool,
         show_chart_help: bool = True,
+        autostart_enabled: bool = False,
         parent=None,
     ):
         super().__init__(parent)
@@ -82,6 +83,20 @@ class SettingsPanel(QFrame):
         row3.addWidget(self._help_toggle, 0, Qt.AlignVCenter)
         layout.addLayout(row3)
 
+        row4 = QHBoxLayout()
+        texts4 = QVBoxLayout()
+        texts4.setSpacing(2)
+        autostart_title = QLabel("Запускать при входе в Windows")
+        autostart_note = QLabel("Приложение будет автоматически запускаться при входе в систему")
+        autostart_note.setObjectName("subtleLabel")
+        texts4.addWidget(autostart_title)
+        texts4.addWidget(autostart_note)
+        row4.addLayout(texts4)
+        row4.addStretch(1)
+        self._autostart_toggle = ToggleSwitch(autostart_enabled)
+        row4.addWidget(self._autostart_toggle, 0, Qt.AlignVCenter)
+        layout.addLayout(row4)
+
         note = QLabel(
             "Если активности нет дольше порога простоя — весь период\nпростоя не засчитывается."
         )
@@ -103,7 +118,10 @@ class SettingsPanel(QFrame):
 
     def _save(self) -> None:
         self.saved.emit(
-            self._spin.value(), self._toggle.isChecked(), self._help_toggle.isChecked()
+            self._spin.value(), 
+            self._toggle.isChecked(), 
+            self._help_toggle.isChecked(),
+            self._autostart_toggle.isChecked()
         )
         self.close_requested.emit()
 

@@ -1179,13 +1179,6 @@ class RangeChart(QWidget):
         painter.setClipRect(QRectF(pad_l - 3, 0, inner_w + 6, h))
 
         band = self._sel_band_px()
-        if band is not None:
-            xs = max(band[0], pad_l)
-            xe = min(band[1], pad_l + inner_w)
-            if xe > xs:
-                painter.setPen(Qt.NoPen)
-                painter.setBrush(QColor(96, 165, 250, 40))
-                painter.drawRect(QRectF(xs, pad_t, xe - xs, inner_h))
 
         if len(pts) >= 2:
             path = smooth_path(pts)
@@ -1214,6 +1207,13 @@ class RangeChart(QWidget):
         if band is not None:
             xs = max(band[0], pad_l)
             xe = min(band[1], pad_l + inner_w)
+            # Затемняем невыделенные области вместо подсветки выделенной
+            dim_color = QColor(11, 18, 32, 100)
+            if xs > pad_l:
+                painter.fillRect(QRectF(pad_l, pad_t, xs - pad_l, inner_h), dim_color)
+            if xe < pad_l + inner_w:
+                painter.fillRect(QRectF(xe, pad_t, pad_l + inner_w - xe, inner_h), dim_color)
+            # Вертикальные линии и ручки выделения
             painter.setPen(QPen(QColor("#60a5fa"), 1.5))
             painter.drawLine(QPointF(xs, pad_t), QPointF(xs, pad_t + inner_h))
             painter.drawLine(QPointF(xe, pad_t), QPointF(xe, pad_t + inner_h))
