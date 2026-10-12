@@ -547,20 +547,18 @@ class MiniChart(QWidget):
                 slot_w = (w - self.PAD_L - self.PAD_R) / max(vis, 1)
                 label_w = max((fm.horizontalAdvance(t) for _i, t in visible_axis), default=20) + 8
                 step = max(1, int(ceil(label_w / max(slot_w, 1.0))))
-                last = len(visible_axis) - 1
-                for k in range(0, len(visible_axis), step):
+                # Собираем индексы видимых подписей с учётом прореживания
+                visible_indices = list(range(0, len(visible_axis), step))
+                for enum_k, k in enumerate(visible_indices):
                     idx, text = visible_axis[k]
                     local = idx - off
                     x = self._x_at(local, vis) if vis > 1 else w / 2.0
-                    rect = QRectF(x - 30, h, 60, self.AXIS_H)
-                    align = Qt.AlignHCenter
-                    if k == 0:
-                        rect = QRectF(self.PAD_L - 2, h, 60, self.AXIS_H)
-                        align = Qt.AlignLeft
-                    elif k == last:
-                        rect = QRectF(w - self.PAD_R - 58, h, 60, self.AXIS_H)
-                        align = Qt.AlignRight
-                    painter.drawText(rect, align | Qt.AlignVCenter, text)
+                    # Используем RangeChart._axis_label_rect для правильного размещения
+                    rect, align = RangeChart._axis_label_rect(
+                        enum_k, len(visible_indices), x, w,
+                        self.PAD_L, self.PAD_R, 60.0, self.AXIS_H, h
+                    )
+                    painter.drawText(rect, align, text)
 
         if anchor is not None and self._progress >= 0.99 and anchor_idx >= 0:
             p = anchor
@@ -692,8 +690,8 @@ class MiniChart(QWidget):
 class RangeChart(QWidget):
     selection_changed = Signal(object)
 
-    PAD_L = 6.0
-    PAD_R = 6.0
+    PAD_L = 12.0  # Половина самой широкой подписи оси (~22px) помещается в поле
+    PAD_R = 12.0
     PAD_T = 16.0  # Увеличен отступ сверху, чтобы график не обрезался
     PAD_B = 24.0
     MIN_VISIBLE = 7.0
@@ -1150,6 +1148,51 @@ class RangeChart(QWidget):
             return self._offset + self._visible / 2.0
         return self._offset + lh + (x - pad_l) / max(inner_w, 1.0) * span
 
+    @staticmethod
+    def _axis_label_rect(k: int, count: int, x: float, widget_w: float, 
+                         pad_l: float, pad_r: float, label_w: float = 90.0, 
+                         label_h: float = 16.0, y_offset: float = 0.0) -> tuple[QRectF, int]:
+        """Вычисляет прямоугольник и alignment для подписи оси.
+        
+        Крайние подписи (первая и последняя видимые) прижимаются внутрь области графика,
+        чтобы текст не обрезался у границы виджета. Средние подписи центрируются по своей
+        x-координате.
+        
+        Args:
+            k: индекс подписи в списке видимых подписей (0-based)
+            count: общее количество видимых подписей
+            x: x-координата центра точки данных
+            widget_w: ширина виджета
+            pad_l: левый отступ графика
+            pad_r: правый отступ графика
+            label_w: ширина прямоугольника подписи (по умолчанию 90)
+            label_h: высота прямоугольника подписи (по умолчанию 16)
+            y_offset: y-координата верхнего края подписи
+            
+        Returns:
+            tuple[QRectF, Qt.Alignment]: прямоугольник и флаг выравнивания
+        """
+        if count == 0:
+            return QRectF(0, y_offset, label_w, label_h), Qt.AlignCenter
+        
+        # Первая подпись: прижать к левому краю
+        if k == 0:
+            rect = QRectF(pad_l - 2, y_offset, label_w, label_h)
+            align = Qt.AlignLeft | Qt.AlignVCenter
+        # Последняя подпись: прижать к правому краю
+        elif k == count - 1:
+            rect = QRectF(widget_w - pad_r - label_w + 2, y_offset, label_w, label_h)
+            align = Qt.AlignRight | Qt.AlignVCenter
+        # Средние подписи: центрировать, но не выходить за границы виджета
+        else:
+            left = x - label_w / 2
+            # Ограничиваем, чтобы не выйти за границы виджета
+            left = max(0, min(left, widget_w - label_w))
+            rect = QRectF(left, y_offset, label_w, label_h)
+            align = Qt.AlignCenter
+        
+        return rect, align
+
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -1230,17 +1273,53 @@ class RangeChart(QWidget):
             painter.setFont(font)
             painter.setPen(QColor("#6b7280"))
             fm = QFontMetrics(font)
-            # Адаптивный шаг: подписи не должны налезать друг на друга.
-            slot_w = inner_w / max(len(vis_buckets), 1)
-            label_w = max((fm.horizontalAdvance(b[2]) for b in vis_buckets), default=20) + 10
-            step = max(1, int(ceil(label_w / max(slot_w, 1.0))))
-            for k in range(0, len(vis_buckets), step):
-                bucket = vis_buckets[k]
-                if not bucket[2]:
+            label_gap = 2.0
+            label_y = h - self.PAD_B + 4
+            # Кандидаты: реальные прямоугольники подписей по центрам точек.
+            cands: list[tuple[int, QRectF]] = []
+            for k, bucket in enumerate(vis_buckets):
+                text = bucket[2]
+                if not text:
                     continue
                 x = self._day_to_x((bucket[0] + bucket[1]) / 2.0)
-                if pad_l - 4 <= x <= pad_l + inner_w + 4:
-                    painter.drawText(QRectF(x - 45, h - self.PAD_B + 4, 90, 16), Qt.AlignCenter, bucket[2])
+                if not (pad_l - 4 <= x <= pad_l + inner_w + 4):
+                    continue
+                lw = float(fm.horizontalAdvance(text)) + 2.0
+                left = max(0.0, min(x - lw / 2.0, w - lw))
+                cands.append((k, QRectF(left, label_y, lw, 16.0)))
+            if cands:
+                n_c = len(cands)
+                if n_c == 1:
+                    sel = [0]
+                else:
+                    # Равномерный шаг по фактическому расстоянию между точками,
+                    # первая и последняя подписи включаются всегда.
+                    slot = (cands[-1][1].center().x() - cands[0][1].center().x()) / (n_c - 1)
+                    max_w = max(r.width() for _, r in cands)
+                    step = max(1, int(ceil((max_w + label_gap) / max(slot, 1.0))))
+                    sel = sorted(set(list(range(0, n_c, step)) + [0, n_c - 1]))
+                drawn: list[int] = []
+                for i in sel:
+                    rect = cands[i][1]
+                    if drawn and rect.left() < cands[drawn[-1]][1].right() + label_gap:
+                        # Последняя подпись важнее соседней средней: уступаем ей место.
+                        if i == sel[-1] and len(drawn) > 1:
+                            drawn.pop()
+                        else:
+                            continue
+                    drawn.append(i)
+                # Страховочный проход: гарантируем отсутствие пересечений.
+                final: list[int] = []
+                for i in drawn:
+                    rect = cands[i][1]
+                    if final and rect.left() < cands[final[-1]][1].right() + label_gap:
+                        if i == drawn[-1] and len(final) > 1:
+                            final.pop()
+                        else:
+                            continue
+                    final.append(i)
+                for i in final:
+                    painter.drawText(cands[i][1], Qt.AlignCenter, vis_buckets[cands[i][0]][2])
 
         if 0 <= self._hover < len(vis_buckets):
             p = pts[self._hover]

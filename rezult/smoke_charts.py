@@ -7,6 +7,7 @@ os.environ["QT_QPA_PLATFORM"] = "offscreen"
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from PySide6.QtWidgets import QApplication  # noqa: E402
+from PySide6.QtCore import Qt  # noqa: E402
 
 app = QApplication([])
 
@@ -106,6 +107,103 @@ card.set_day_tooltips([f"d{i}" for i in range(7)])
 card.set_chart([1, 2, 3, 4, 5, 6, 7])
 check(not hasattr(card, "_day_labels"), "у AppCard остались QLabel подписей")
 render(card)
+
+# --- Проверка _axis_label_rect: границы подписей не выходят за виджет -----------
+print("Проверка _axis_label_rect...")
+# Тест для разных ширин виджета
+for widget_w in [300, 620, 1200]:
+    for count in [3, 12, 24]:  # 3 точки, 12 месяцев, 24 часа
+        pad_l, pad_r = 6.0, 6.0
+        for k in range(count):
+            # Позиции x равномерно распределены
+            x = pad_l + (widget_w - pad_l - pad_r) * k / max(count - 1, 1)
+            rect, align = RangeChart._axis_label_rect(k, count, x, widget_w, pad_l, pad_r, 90.0, 16.0, 0.0)
+            check(rect.left() >= -1.0, f"w={widget_w}, count={count}, k={k}: rect.left()={rect.left():.1f} < 0")
+            check(rect.right() <= widget_w + 1.0, f"w={widget_w}, count={count}, k={k}: rect.right()={rect.right():.1f} > {widget_w}")
+            # Первая подпись должна быть прижата к левому краю
+            if k == 0:
+                check(abs(rect.left() - (pad_l - 2)) < 1e-6, f"w={widget_w}, count={count}: первая подпись не прижата к левому краю")
+                check(align & Qt.AlignLeft, f"w={widget_w}, count={count}: первая подпись не AlignLeft")
+            # Последняя подпись должна быть прижата к правому краю
+            elif k == count - 1:
+                check(abs(rect.right() - (widget_w - pad_r + 2)) < 1e-6, f"w={widget_w}, count={count}: последняя подпись не прижата к правому краю")
+                check(align & Qt.AlignRight, f"w={widget_w}, count={count}: последняя подпись не AlignRight")
+            # Средние подписи должны быть центрированы
+            else:
+                check(align & Qt.AlignCenter or align & Qt.AlignHCenter, f"w={widget_w}, count={count}, k={k}: средняя подпись не центрирована")
+
+# --- RangeChart: проверка подписей на разных ширинах ---------------------------
+print("Проверка подписей RangeChart на разных ширинах...")
+for width in [300, 620, 1200]:
+    # Тест с 12 месяцами (год)
+    rc_test = RangeChart(170)
+    rc_test.resize(width, 170)
+    dates_year = [today - timedelta(days=365 - i) for i in range(365)]
+    rc_test.set_days([i % 30 for i in range(365)], dates_year)
+    render(rc_test)
+    # Проверяем, что есть видимые бакеты
+    check(len(rc_test._buckets) > 0, f"width={width}: нет бакетов в годовом графике")
+    
+    # Тест с 24 часами (сегодня)
+    rc_hours = RangeChart(170)
+    rc_hours.resize(width, 170)
+    rc_hours.set_hours([i for i in range(24)])
+    render(rc_hours)
+    check(len(rc_hours._buckets) == 24, f"width={width}: ожидалось 24 часовых бакета, получено {len(rc_hours._buckets)}")
+
+# --- MiniChart: проверка подписей на узких карточках ---------------------------
+print("Проверка подписей MiniChart на узких карточках...")
+for width in [180, 240, 300]:
+    mc_test = MiniChart(46)
+    mc_test.resize(width, 60)
+    mc_test.set_values([1, 2, 3, 4, 5, 6, 7])
+    mc_test.set_axis([0, 3, 6], ["Пн", "Чт", "Вс"])
+    mc_test._progress = 1.0
+    render(mc_test)
+    check(mc_test._values == [1, 2, 3, 4, 5, 6, 7], f"width={width}: значения не установлены")
+
+# Проверяем именно прямоугольники drawText, включая дробный зум и панорамирование.
+import app.ui.widgets as widgets
+from PySide6.QtGui import QPainter
+
+axis_rects = []
+
+
+class RecordingPainter(QPainter):
+    def drawText(self, *args):
+        if len(args) == 3 and isinstance(args[2], str):
+            axis_rects.append((args[0], args[2]))
+        return super().drawText(*args)
+
+
+widgets.QPainter = RecordingPainter
+try:
+    for width in [200, 240, 300, 400, 620, 1200]:
+        rc.resize(width, 170)
+        for count in [24, 7, 31]:
+            labels = [f"{i:02d}" if count == 24 else f"{i + 1} окт" for i in range(count)]
+            rc.set_series(list(range(count)), labels, labels, min_visible=4)
+            for visible in [float(count), 6.5, 4.0]:
+                for fraction in [0, 0.13, 0.5, 1]:
+                    rc._visible = visible
+                    rc._offset = (count - visible) * fraction
+                    rc._clamp_view()
+                    rc._rebuild_buckets()
+                    axis_rects.clear()
+                    render(rc)
+                    context = f"w={width}, n={count}, zoom={visible}, pan={fraction}"
+                    if count == 24 and visible == 24:
+                        drawn = [text for _, text in axis_rects]
+                        check(drawn[0] == "00" and drawn[-1] == "23", f"missing endpoint hours: {context}")
+                        if width >= 620:
+                            check(drawn == labels, f"missing hours in full view: {context}: {drawn}")
+                    check(len(axis_rects) >= 2, f"too few labels: {context}")
+                    for rect, text in axis_rects:
+                        check(rect.left() >= 0 and rect.right() <= width, f"clipped {text}: {context}")
+                    for (a, _), (b, _) in zip(axis_rects, axis_rects[1:]):
+                        check(b.left() >= a.right() + 1.9, f"overlapping labels: {context}: {a} {b}")
+finally:
+    widgets.QPainter = QPainter
 
 if errors:
     print("FAIL")
