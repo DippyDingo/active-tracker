@@ -1,5 +1,6 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -8,11 +9,13 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from . import theme
 from .widgets import ToggleSwitch
 
 
 class SettingsPanel(QFrame):
-    saved = Signal(int, bool, bool, bool)
+    saved = Signal(int, bool, bool, bool, str)
+    theme_changed = Signal(str)
     close_requested = Signal()
 
     def __init__(
@@ -21,11 +24,16 @@ class SettingsPanel(QFrame):
         background_enabled: bool,
         show_chart_help: bool = True,
         autostart_enabled: bool = False,
+        theme_key: str = theme.DEFAULT_THEME,
         parent=None,
     ):
         super().__init__(parent)
         self.setObjectName("modalPanel")
         self.setFixedWidth(480)
+        self._theme_choice = theme_key if theme_key in theme.PALETTES else theme.DEFAULT_THEME
+        self._theme_initial = self._theme_choice
+        self._committed = False
+        self.close_requested.connect(self._revert_if_cancelled)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 18)
@@ -97,6 +105,25 @@ class SettingsPanel(QFrame):
         row4.addWidget(self._autostart_toggle, 0, Qt.AlignVCenter)
         layout.addLayout(row4)
 
+        row5 = QHBoxLayout()
+        texts5 = QVBoxLayout()
+        texts5.setSpacing(2)
+        theme_title = QLabel("Тема")
+        theme_note = QLabel("Применяется сразу во всём приложении")
+        theme_note.setObjectName("subtleLabel")
+        texts5.addWidget(theme_title)
+        texts5.addWidget(theme_note)
+        row5.addLayout(texts5)
+        row5.addStretch(1)
+        self._theme_samples: dict[str, QFrame] = {}
+        samples = QHBoxLayout()
+        samples.setSpacing(6)
+        for key, p in theme.PALETTES.items():
+            samples.addWidget(self._theme_sample(key, p))
+        row5.addLayout(samples)
+        layout.addLayout(row5)
+        self._mark_theme_active()
+
         note = QLabel(
             "Если активности нет дольше порога простоя — весь период\nпростоя не засчитывается."
         )
@@ -116,12 +143,56 @@ class SettingsPanel(QFrame):
         bottom.addWidget(save_btn)
         layout.addLayout(bottom)
 
+    def _theme_sample(self, key: str, p: "theme.Palette") -> QFrame:
+        sample = QFrame()
+        sample.setObjectName("themeSample")
+        sample.setProperty("active", False)
+        sample.setCursor(Qt.PointingHandCursor)
+        lay = QHBoxLayout(sample)
+        lay.setContentsMargins(8, 6, 10, 6)
+        lay.setSpacing(6)
+        dot = QLabel()
+        dot.setFixedSize(16, 16)
+        dot.setStyleSheet(
+            f"background: {p.bg}; border: 3px solid {p.accent}; border-radius: 8px;"
+        )
+        lay.addWidget(dot, 0, Qt.AlignVCenter)
+        name = QLabel(p.title)
+        name.setObjectName("themeName")
+        lay.addWidget(name, 0, Qt.AlignVCenter)
+        sample.mouseReleaseEvent = lambda _e, k=key: self._pick_theme(k)
+        self._theme_samples[key] = sample
+        return sample
+
+    def _mark_theme_active(self) -> None:
+        for key, sample in self._theme_samples.items():
+            active = key == self._theme_choice
+            if sample.property("active") != active:
+                sample.setProperty("active", active)
+                sample.style().unpolish(sample)
+                sample.style().polish(sample)
+                sample.update()
+
+    def _pick_theme(self, key: str) -> None:
+        if key == self._theme_choice:
+            return
+        self._theme_choice = key
+        self._mark_theme_active()
+        self.theme_changed.emit(key)
+
+    def _revert_if_cancelled(self) -> None:
+        if self._committed or self._theme_choice == self._theme_initial:
+            return
+        self.theme_changed.emit(self._theme_initial)
+
     def _save(self) -> None:
+        self._committed = True
         self.saved.emit(
-            self._spin.value(), 
-            self._toggle.isChecked(), 
+            self._spin.value(),
+            self._toggle.isChecked(),
             self._help_toggle.isChecked(),
-            self._autostart_toggle.isChecked()
+            self._autostart_toggle.isChecked(),
+            self._theme_choice,
         )
         self.close_requested.emit()
 

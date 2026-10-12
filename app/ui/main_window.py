@@ -81,8 +81,11 @@ class SearchEdit(QLineEdit):
         self.setFixedWidth(220)
         self.setAttribute(Qt.WA_InputMethodEnabled, False)
         self.setInputMethodHints(Qt.ImhNoAutoUppercase)
-        self.addAction(magnifier_icon(), QLineEdit.LeadingPosition)
+        self._icon_action = self.addAction(magnifier_icon(), QLineEdit.LeadingPosition)
         self.setTextMargins(14, 0, 0, 0)
+
+    def retheme(self) -> None:
+        self._icon_action.setIcon(magnifier_icon())
 
 
 class _PopupItem(QFrame):
@@ -105,6 +108,10 @@ class _PopupItem(QFrame):
         lb = QLabel(text)
         lb.setObjectName("popupItemText")
         lay.addWidget(lb, 1, Qt.AlignVCenter)
+        self._icon_box = icon_box
+
+    def set_icon(self, icon) -> None:
+        self._icon_box.setPixmap(icon.pixmap(QSize(18, 18)))
 
     def mouseReleaseEvent(self, event) -> None:
         if event.button() == Qt.LeftButton:
@@ -140,20 +147,26 @@ class AppMenuPopup(QFrame):
 
         sep = QFrame()
         sep.setFixedHeight(1)
-        sep.setStyleSheet("background: #1e293b; border: none;")
+        self._sep = sep
         layout.addWidget(sep)
 
-        quit_item = _PopupItem(ui_icon("power", "#f87171"), "Выход")
-        quit_item.clicked.connect(self.quit_requested)
-        layout.addWidget(quit_item)
+        self._quit_item = _PopupItem(ui_icon("power", theme.pal().danger), "Выход")
+        self._quit_item.clicked.connect(self.quit_requested)
+        layout.addWidget(self._quit_item)
+        self.retheme()
+
+    def retheme(self) -> None:
+        self._sep.setStyleSheet(f"background: {theme.pal().card}; border: none;")
+        self._quit_item.set_icon(ui_icon("power", theme.pal().danger))
+        self.update()
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         path = QPainterPath()
         path.addRoundedRect(0.5, 0.5, self.width() - 1.0, self.height() - 1.0, 12, 12)
-        painter.fillPath(path, QColor("#101a2c"))
-        painter.setPen(QColor("#24344d"))
+        painter.fillPath(path, theme.color("popup_bg"))
+        painter.setPen(theme.color("popup_border"))
         painter.drawPath(path)
         painter.end()
 
@@ -841,7 +854,7 @@ class MainWindow(QMainWindow):
         add_here_action = menu.addAction(ui_icon("plus"), "Добавить приложение сюда")
         add_here_action.triggered.connect(lambda: self._open_add(cat_id))
         rename_action = menu.addAction(ui_icon("pen"), "Переименовать")
-        delete_action = menu.addAction(ui_icon("trash", "#f87171"), "Удалить")
+        delete_action = menu.addAction(ui_icon("trash", theme.pal().danger), "Удалить")
         rename_action.triggered.connect(lambda: self._start_inline_rename(cat_id, cat_name))
         delete_action.triggered.connect(lambda: self._delete_category(cat_id, cat_name))
         return menu
@@ -1217,7 +1230,9 @@ class MainWindow(QMainWindow):
             widget.style().unpolish(widget)
             widget.style().polish(widget)
         elif widget is not None:
-            widget.setStyleSheet("background: rgba(96, 165, 250, 10%); border-radius: 8px;")
+            widget.setStyleSheet(
+                f"background: rgba({theme._rgb_str(theme.pal().accent)}, 10%); border-radius: 8px;"
+            )
 
     def _show_modal(self, panel, on_closed=None) -> ModalOverlay | None:
         if self._overlay is not None:
@@ -1259,18 +1274,28 @@ class MainWindow(QMainWindow):
             self.tracker.background_counting(),
             bool(self.db.get_int("show_chart_help", 1)),
             bool(self.db.get_int("autostart", 0)),
+            self.db.get_text("theme", theme.DEFAULT_THEME),
             self,
         )
         panel.saved.connect(self._apply_settings)
+        panel.theme_changed.connect(self._preview_theme)
         self._show_modal(panel)
 
-    def _apply_settings(self, threshold: int, background: bool, show_help: bool = True, autostart: bool = False) -> None:
+    def _apply_settings(
+        self,
+        threshold: int,
+        background: bool,
+        show_help: bool = True,
+        autostart: bool = False,
+        theme_key: str = theme.DEFAULT_THEME,
+    ) -> None:
         from app import win32_utils
         from app import config
-        
+
         self.tracker.set_threshold_minutes(threshold)
         self.tracker.set_background_counting(background)
         self.db.set_int("show_chart_help", 1 if show_help else 0)
+        self.db.set_text("theme", theme_key)
         
         # Обработка автозапуска
         old_autostart = bool(self.db.get_int("autostart", 0))
@@ -1287,6 +1312,25 @@ class MainWindow(QMainWindow):
                 )
         
         self._update_status_right()
+
+    def _preview_theme(self, key: str) -> None:
+        theme.apply_theme(QApplication.instance(), key)
+        self._retheme()
+
+    def _retheme(self) -> None:
+        self._search.retheme()
+        self._profile_btn.setIcon(menu_icon())
+        self._popup.retheme()
+        for card in self._cards.values():
+            card._shadow.setColor(theme.color("shadow"))
+            card.update()
+            card.chart.update()
+        if self._overlay is not None:
+            panel = getattr(self._overlay, "_panel", None)
+            if panel is not None and hasattr(panel, "retheme"):
+                panel.retheme()
+            self._overlay.update()
+        self.update()
 
     def _export_database(self) -> None:
         self._popup.hide()

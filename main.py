@@ -103,6 +103,7 @@ def main() -> int:
         config.log_error("Не удалось сохранить путь к базе данных в config.json")
 
     db = Database(db_path)
+    theme.apply_theme(qt, db.get_text("theme", theme.DEFAULT_THEME))
     _ensure_first_launch(db)
     _backfill_today_hours(db)
     

@@ -38,6 +38,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..utils import SHORT_MONTHS, WEEKDAYS, format_compact, ru_date
+from . import theme
 
 
 def pixmap_from_png(data: bytes | None) -> QPixmap | None:
@@ -65,7 +66,9 @@ def rounded_pixmap(src: QPixmap, size: int, radius: int) -> QPixmap:
     return out
 
 
-def magnifier_icon(color: str = "#9db2c7", size: int = 18) -> QIcon:
+def magnifier_icon(color: str | None = None, size: int = 18) -> QIcon:
+    if color is None:
+        color = theme.pal().text2
     scale = 3
     px = size * scale
     pm = QPixmap(px, px)
@@ -81,7 +84,9 @@ def magnifier_icon(color: str = "#9db2c7", size: int = 18) -> QIcon:
     return QIcon(pm)
 
 
-def menu_icon(color: str = "#c3d0dd", size: int = 18) -> QIcon:
+def menu_icon(color: str | None = None, size: int = 18) -> QIcon:
+    if color is None:
+        color = theme.pal().text2
     scale = 3
     px = size * scale
     pm = QPixmap(px, px)
@@ -149,7 +154,9 @@ def smooth_path(pts: list[QPointF]) -> QPainterPath:
     return path
 
 
-def ui_icon(kind: str, color: str = "#9db2c7", size: int = 16) -> QIcon:
+def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
+    if color is None:
+        color = theme.pal().text2
     scale = 3
     px = size * scale
     pm = QPixmap(px, px)
@@ -500,9 +507,9 @@ class MiniChart(QWidget):
             painter.save()
             painter.setClipRect(QRectF(0, 0, w * self._progress + 0.5, h))
             grad = QLinearGradient(0, 0, 0, h)
-            grad.setColorAt(0.0, QColor(96, 165, 250, int(80 * self._pulse)))
-            grad.setColorAt(1.0, QColor(96, 165, 250, 10))
-            painter.setPen(QPen(QColor("#60a5fa"), 2))
+            grad.setColorAt(0.0, theme.accent_alpha(int(min(255, theme.pal().chart_fill_top + 15) * self._pulse)))
+            grad.setColorAt(1.0, theme.color("chart_fill_bottom"))
+            painter.setPen(QPen(theme.color("chart_line"), 2))
             painter.setBrush(QBrush(grad))
             painter.drawRoundedRect(QRectF(x, y, bw, bh), 6, 6)
             painter.restore()
@@ -519,11 +526,11 @@ class MiniChart(QWidget):
             painter.save()
             painter.setClipRect(QRectF(0, 0, w * self._progress + 0.5, h))
             grad = QLinearGradient(0, 0, 0, h)
-            top_alpha = int(70 * self._pulse)
-            grad.setColorAt(0.0, QColor(96, 165, 250, top_alpha))
-            grad.setColorAt(1.0, QColor(96, 165, 250, 6))
+            top_alpha = int(theme.pal().chart_fill_top * self._pulse)
+            grad.setColorAt(0.0, theme.accent_alpha(top_alpha))
+            grad.setColorAt(1.0, theme.color("chart_fill_bottom"))
             painter.fillPath(fill, QBrush(grad))
-            painter.setPen(QPen(QColor("#60a5fa"), 2))
+            painter.setPen(QPen(theme.color("chart_line"), 2))
             painter.drawPath(path)
             painter.restore()
             if 0 <= self._hover < len(pts):
@@ -540,7 +547,7 @@ class MiniChart(QWidget):
             font = QFont(self.font())
             font.setPointSizeF(7.5)
             painter.setFont(font)
-            painter.setPen(QColor("#6b7280"))
+            painter.setPen(theme.color("chart_dim"))
             fm = QFontMetrics(font)
             visible_axis = [(idx, text) for idx, text in self._axis if 0 <= idx - off < vis and text]
             if visible_axis:
@@ -562,8 +569,8 @@ class MiniChart(QWidget):
 
         if anchor is not None and self._progress >= 0.99 and anchor_idx >= 0:
             p = anchor
-            painter.setPen(QPen(QColor(11, 18, 32), 1.5))
-            painter.setBrush(QColor("#60a5fa"))
+            painter.setPen(QPen(theme.color("point_ring"), 1.5))
+            painter.setBrush(theme.color("chart_line"))
             painter.drawEllipse(p, 4.2, 4.2)
 
             value = self._values[anchor_idx] if anchor_idx < len(self._values) else 0
@@ -579,10 +586,10 @@ class MiniChart(QWidget):
             by = p.y() - th - 8
             if by < 1:
                 by = p.y() + 10
-            painter.setPen(QPen(QColor("#24344d"), 1))
-            painter.setBrush(QColor(15, 27, 45, 240))
+            painter.setPen(QPen(theme.color("tooltip_border"), 1))
+            painter.setBrush(theme.color("tooltip_bg"))
             painter.drawRoundedRect(QRectF(bx, by, tw, th), 6, 6)
-            painter.setPen(QColor("#e5e7eb"))
+            painter.setPen(theme.color("tooltip_text"))
             painter.drawText(QRectF(bx, by, tw, th), Qt.AlignCenter, text)
         painter.end()
 
@@ -1230,10 +1237,10 @@ class RangeChart(QWidget):
             fill.lineTo(pts[0].x(), pad_t + inner_h)
             fill.closeSubpath()
             grad = QLinearGradient(0, pad_t, 0, pad_t + inner_h)
-            grad.setColorAt(0.0, QColor(96, 165, 250, 70))
-            grad.setColorAt(1.0, QColor(96, 165, 250, 6))
+            grad.setColorAt(0.0, theme.color("chart_fill_top"))
+            grad.setColorAt(1.0, theme.color("chart_fill_bottom"))
             painter.fillPath(fill, QBrush(grad))
-            painter.setPen(QPen(QColor("#60a5fa"), 2))
+            painter.setPen(QPen(theme.color("chart_line"), 2))
             painter.drawPath(path)
         elif len(pts) == 1:
             # Одна точка — рисуем её как столбик по центру, чтобы график не выглядел пустым.
@@ -1241,9 +1248,9 @@ class RangeChart(QWidget):
             bw = min(46.0, inner_w * 0.25)
             top = p.y() if vis_buckets[0][4] > 0 else pad_t + inner_h - 3.0
             grad = QLinearGradient(0, pad_t, 0, pad_t + inner_h)
-            grad.setColorAt(0.0, QColor(96, 165, 250, 80))
-            grad.setColorAt(1.0, QColor(96, 165, 250, 10))
-            painter.setPen(QPen(QColor("#60a5fa"), 2))
+            grad.setColorAt(0.0, theme.accent_alpha(min(255, theme.pal().chart_fill_top + 15)))
+            grad.setColorAt(1.0, theme.color("chart_fill_bottom"))
+            painter.setPen(QPen(theme.color("chart_line"), 2))
             painter.setBrush(QBrush(grad))
             painter.drawRoundedRect(QRectF(p.x() - bw / 2, top, bw, pad_t + inner_h - top), 6, 6)
 
@@ -1251,18 +1258,18 @@ class RangeChart(QWidget):
             xs = max(band[0], pad_l)
             xe = min(band[1], pad_l + inner_w)
             # Затемняем невыделенные области вместо подсветки выделенной
-            dim_color = QColor(11, 18, 32, 100)
+            dim_color = theme.color("dim")
             if xs > pad_l:
                 painter.fillRect(QRectF(pad_l, pad_t, xs - pad_l, inner_h), dim_color)
             if xe < pad_l + inner_w:
                 painter.fillRect(QRectF(xe, pad_t, pad_l + inner_w - xe, inner_h), dim_color)
             # Вертикальные линии и ручки выделения
-            painter.setPen(QPen(QColor("#60a5fa"), 1.5))
+            painter.setPen(QPen(theme.color("chart_line"), 1.5))
             painter.drawLine(QPointF(xs, pad_t), QPointF(xs, pad_t + inner_h))
             painter.drawLine(QPointF(xe, pad_t), QPointF(xe, pad_t + inner_h))
             mid_y = pad_t + inner_h / 2
-            painter.setPen(QPen(QColor(11, 18, 32), 1))
-            painter.setBrush(QColor("#60a5fa"))
+            painter.setPen(QPen(theme.color("point_ring"), 1))
+            painter.setBrush(theme.color("chart_line"))
             painter.drawRoundedRect(QRectF(xs - 3, mid_y - 9, 6, 18), 3, 3)
             painter.drawRoundedRect(QRectF(xe - 3, mid_y - 9, 6, 18), 3, 3)
         painter.restore()
@@ -1271,7 +1278,7 @@ class RangeChart(QWidget):
             font = QFont(self.font())
             font.setPointSizeF(7.5)
             painter.setFont(font)
-            painter.setPen(QColor("#6b7280"))
+            painter.setPen(theme.color("chart_dim"))
             fm = QFontMetrics(font)
             label_gap = 2.0
             label_y = h - self.PAD_B + 4
@@ -1323,8 +1330,8 @@ class RangeChart(QWidget):
 
         if 0 <= self._hover < len(vis_buckets):
             p = pts[self._hover]
-            painter.setPen(QPen(QColor(11, 18, 32), 1.5))
-            painter.setBrush(QColor("#60a5fa"))
+            painter.setPen(QPen(theme.color("point_ring"), 1.5))
+            painter.setBrush(theme.color("chart_line"))
             painter.drawEllipse(p, 4.2, 4.2)
             bucket = vis_buckets[self._hover]
             text = f"{bucket[3]} — {format_compact(bucket[4])}"
@@ -1338,10 +1345,10 @@ class RangeChart(QWidget):
             by = p.y() - th - 8
             if by < 1:
                 by = p.y() + 10
-            painter.setPen(QPen(QColor("#24344d"), 1))
-            painter.setBrush(QColor(15, 27, 45, 240))
+            painter.setPen(QPen(theme.color("tooltip_border"), 1))
+            painter.setBrush(theme.color("tooltip_bg"))
             painter.drawRoundedRect(QRectF(bx, by, tw, th), 6, 6)
-            painter.setPen(QColor("#e5e7eb"))
+            painter.setPen(theme.color("tooltip_text"))
             painter.drawText(QRectF(bx, by, tw, th), Qt.AlignCenter, text)
         painter.end()
 
@@ -1554,7 +1561,7 @@ class AppCard(QFrame):
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(22)
         shadow.setOffset(0, 8)
-        shadow.setColor(QColor(2, 6, 23, 150))
+        shadow.setColor(theme.color("shadow"))
         self.setGraphicsEffect(shadow)
         self._shadow = shadow
 
@@ -1672,11 +1679,11 @@ class AppCard(QFrame):
         self.chart.set_days(labels)
 
     def enterEvent(self, event) -> None:
-        self._animate_shadow(QColor(59, 130, 246, 110), 32)
+        self._animate_shadow(theme.color("shadow_hover"), 32)
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
-        self._animate_shadow(QColor(2, 6, 23, 150), 22)
+        self._animate_shadow(theme.color("shadow"), 22)
         super().leaveEvent(event)
 
     def _animate_shadow(self, color: QColor, blur: int) -> None:
@@ -1780,12 +1787,12 @@ class ToggleSwitch(QAbstractButton):
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        track = _mix(QColor("#2b3a52"), QColor("#3b82f6"), self._t)
+        track = _mix(theme.color("toggle_off"), theme.color("accent"), self._t)
         painter.setPen(Qt.NoPen)
         painter.setBrush(track)
         painter.drawRoundedRect(QRectF(0.5, 0.5, 45, 25), 12.5, 12.5)
         knob_x = 3.0 + self._t * 20.0
-        painter.setBrush(QColor("#e8eef6"))
+        painter.setBrush(theme.color("knob"))
         painter.drawEllipse(QRectF(knob_x, 3.0, 20, 20))
         painter.end()
 
@@ -1898,7 +1905,7 @@ class CategoryHeader(QFrame):
 
         icon_label = QLabel()
         icon_label.setFixedSize(16, 16)
-        icon_label.setPixmap(ui_icon("folder", "#8fa3b8", 16).pixmap(QSize(16, 16)))
+        icon_label.setPixmap(ui_icon("folder", None, 16).pixmap(QSize(16, 16)))
         layout.addWidget(icon_label)
 
         name_label = QLabel()

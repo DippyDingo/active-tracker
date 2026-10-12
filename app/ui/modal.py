@@ -10,8 +10,10 @@ from PySide6.QtCore import (
     Qt,
     Signal,
 )
-from PySide6.QtGui import QColor, QPainter
+from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
+
+from . import theme
 
 
 class ModalOverlay(QWidget):
@@ -134,5 +136,5 @@ class ModalOverlay(QWidget):
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor(4, 9, 20, 150))
+        painter.fillRect(self.rect(), theme.color("overlay"))
         painter.end()

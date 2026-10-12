@@ -321,3 +321,15 @@ class Database:
                    ON CONFLICT(key) DO UPDATE SET value=excluded.value""",
                 (key, str(int(value))),
             )
+
+    def get_text(self, key: str, default: str = "") -> str:
+        row = self._conn.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+        return row["value"] if row is not None else default
+
+    def set_text(self, key: str, value: str) -> None:
+        with self._conn:
+            self._conn.execute(
+                """INSERT INTO settings(key, value) VALUES(?,?)
+                   ON CONFLICT(key) DO UPDATE SET value=excluded.value""",
+                (key, str(value)),
+            )

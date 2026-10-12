@@ -30,6 +30,7 @@ from ..utils import (
     ru_date_short,
     week_start,
 )
+from . import theme
 from .widgets import RangeChart, pixmap_from_png, rounded_pixmap, ui_icon
 
 # Подпись «АКТИВНО ЗА …» для каждой вкладки.
@@ -291,7 +292,7 @@ class StatsPanel(QFrame):
         self._prev_btn.setObjectName("navBtn")
         self._prev_btn.setFixedSize(32, 32)
         self._prev_btn.setCursor(Qt.PointingHandCursor)
-        self._prev_btn.setIcon(ui_icon("chevron_left", "#9db2c7", 18))
+        self._prev_btn.setIcon(ui_icon("chevron_left", None, 18))
         self._prev_btn.setIconSize(QSize(18, 18))
         self._prev_btn.setToolTip("Предыдущий период")
         self._prev_btn.clicked.connect(lambda: self._shift_anchor(-1))
@@ -300,7 +301,7 @@ class StatsPanel(QFrame):
         self._next_btn.setObjectName("navBtn")
         self._next_btn.setFixedSize(32, 32)
         self._next_btn.setCursor(Qt.PointingHandCursor)
-        self._next_btn.setIcon(ui_icon("chevron_right", "#9db2c7", 18))
+        self._next_btn.setIcon(ui_icon("chevron_right", None, 18))
         self._next_btn.setIconSize(QSize(18, 18))
         self._next_btn.setToolTip("Следующий период")
         self._next_btn.clicked.connect(lambda: self._shift_anchor(1))
@@ -369,13 +370,13 @@ class StatsPanel(QFrame):
 
         # --- низ -------------------------------------------------------------
         bottom = QHBoxLayout()
-        delete_btn = QPushButton("Удалить приложение")
-        delete_btn.setObjectName("danger")
-        delete_btn.setCursor(Qt.PointingHandCursor)
-        delete_btn.setIcon(ui_icon("trash", "#f87171"))
-        delete_btn.setIconSize(QSize(16, 16))
-        delete_btn.clicked.connect(lambda: self.delete_requested.emit(app_id))
-        bottom.addWidget(delete_btn)
+        self._delete_btn = QPushButton("Удалить приложение")
+        self._delete_btn.setObjectName("danger")
+        self._delete_btn.setCursor(Qt.PointingHandCursor)
+        self._delete_btn.setIcon(ui_icon("trash", theme.pal().danger))
+        self._delete_btn.setIconSize(QSize(16, 16))
+        self._delete_btn.clicked.connect(lambda: self.delete_requested.emit(app_id))
+        bottom.addWidget(self._delete_btn)
         bottom.addStretch(1)
         ok_btn = QPushButton("Закрыть")
         ok_btn.setObjectName("primary")
@@ -385,6 +386,12 @@ class StatsPanel(QFrame):
         layout.addLayout(bottom)
 
         self._set_period(self._period_idx, animate=False)
+
+    def retheme(self) -> None:
+        self._prev_btn.setIcon(ui_icon("chevron_left", None, 18))
+        self._next_btn.setIcon(ui_icon("chevron_right", None, 18))
+        self._delete_btn.setIcon(ui_icon("trash", theme.pal().danger))
+        self._chart.update()
 
     # ------------------------------------------------------------------ help
     def _build_help_box(self) -> QFrame:
