@@ -1,6 +1,6 @@
 import os
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from PySide6.QtCore import (
     QEasingCurve,
@@ -34,11 +34,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtGui import QColor, QPainter, QPainterPath
+from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPixmap
 
-from .. import config, win32_utils
+from .. import config, updater, win32_utils
 from ..db import Database
 from ..tracker import GRACE_SECONDS, Tracker
+from ..version import APP_VERSION
 from ..utils import (
     MONTHS_NOM,
     PERIOD_KEYS,
@@ -57,6 +58,7 @@ from .add_dialog import AddPanel
 from .modal import ModalOverlay
 from .settings_dialog import SettingsPanel
 from .stats_panel import StatsPanel
+from .update_dialog import UpdatePanel, WhatsNewPanel
 from .widgets import (
     AppCard,
     CardHost,
@@ -109,9 +111,13 @@ class _PopupItem(QFrame):
         lb.setObjectName("popupItemText")
         lay.addWidget(lb, 1, Qt.AlignVCenter)
         self._icon_box = icon_box
+        self._text_label = lb
 
     def set_icon(self, icon) -> None:
         self._icon_box.setPixmap(icon.pixmap(QSize(18, 18)))
+
+    def set_text(self, text: str) -> None:
+        self._text_label.setText(text)
 
     def mouseReleaseEvent(self, event) -> None:
         if event.button() == Qt.LeftButton:
@@ -124,6 +130,8 @@ class AppMenuPopup(QFrame):
     export_requested = Signal()
     load_requested = Signal()
     quit_requested = Signal()
+    update_requested = Signal()
+    whatsnew_requested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Popup | Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint)
@@ -136,6 +144,10 @@ class AppMenuPopup(QFrame):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(4)
 
+        self._version_label = QLabel(f"Nodexy v{APP_VERSION}")
+        self._version_label.setObjectName("popupVersion")
+        layout.addWidget(self._version_label)
+
         for text, signal, icon_kind in (
             ("Настройки", self.settings_requested, "settings"),
             ("Экспорт базы данных", self.export_requested, "upload"),
@@ -144,6 +156,16 @@ class AppMenuPopup(QFrame):
             item = _PopupItem(ui_icon(icon_kind), text)
             item.clicked.connect(signal.emit)
             layout.addWidget(item)
+
+        self._update_item = _PopupItem(ui_icon("download"), "Доступно обновление")
+        self._update_item.clicked.connect(self.update_requested)
+        self._update_item.setVisible(False)
+        layout.addWidget(self._update_item)
+
+        self._whatsnew_item = _PopupItem(ui_icon("info"), "Что нового")
+        self._whatsnew_item.clicked.connect(self.whatsnew_requested)
+        self._whatsnew_item.setVisible(False)
+        layout.addWidget(self._whatsnew_item)
 
         sep = QFrame()
         sep.setFixedHeight(1)
@@ -158,7 +180,19 @@ class AppMenuPopup(QFrame):
     def retheme(self) -> None:
         self._sep.setStyleSheet(f"background: {theme.pal().card}; border: none;")
         self._quit_item.set_icon(ui_icon("power", theme.pal().danger))
+        self._update_item.set_icon(ui_icon("download"))
+        self._whatsnew_item.set_icon(ui_icon("info"))
         self.update()
+
+    def set_update_available(self, version: str | None) -> None:
+        if version:
+            self._update_item.set_text(f"Доступно обновление {version}")
+            self._update_item.setVisible(True)
+        else:
+            self._update_item.setVisible(False)
+
+    def set_whatsnew(self, visible: bool) -> None:
+        self._whatsnew_item.setVisible(visible)
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
@@ -198,7 +232,7 @@ class AppMenuPopup(QFrame):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, db: Database, tracker: Tracker):
+    def __init__(self, db: Database, tracker: Tracker, boot: dict | None = None):
         super().__init__()
         self.db = db
         self.tracker = tracker
@@ -241,6 +275,20 @@ class MainWindow(QMainWindow):
         self._tray = None
         self._tray_hint_shown = False
 
+        self._boot = boot or {}
+        self._pending_plate = None
+        if self._boot.get("plate"):
+            self._pending_plate = (self._boot["plate"], self._boot.get("notes") or "")
+        self._update_available = None
+        self._update_notes = ""
+        self._checking = False
+        self._check_task = None
+        self._silent_task = None
+        self._updater_launched = False
+        self._banner_session_hidden = False
+        self._tray_update_hint_shown = False
+        self._tray_progress_cache: dict[int, QIcon] = {}
+
         self.setWindowTitle("Nodexy")
         self.setWindowIcon(theme.load_app_icon())
         self.resize(1210, 780)
@@ -265,6 +313,20 @@ class MainWindow(QMainWindow):
         self.tracker.tick.connect(self._on_tick)
         self.refresh_apps()
         self._on_tick()
+
+        self._popup.update_requested.connect(self._open_update_panel)
+        self._popup.whatsnew_requested.connect(self._open_whats_new)
+        if updater.get_last_update():
+            self._popup.set_whatsnew(True)
+        if self._boot.get("failed_url"):
+            self._update_failed_url = self._boot["failed_url"]
+        QApplication.instance().aboutToQuit.connect(self._apply_pending_on_exit)
+        self._apply_rollback_safe_mode()
+        QTimer.singleShot(updater.CHECK_DELAY_MS, self._auto_check)
+        self._update_timer = QTimer(self)
+        self._update_timer.setInterval(updater.CHECK_INTERVAL_MS)
+        self._update_timer.timeout.connect(self._auto_check)
+        self._update_timer.start()
 
     def _build_sidebar(self, root_layout) -> None:
         sidebar = QFrame()
@@ -302,6 +364,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(content)
         layout.setContentsMargins(26, 18, 26, 8)
         layout.setSpacing(16)
+        self._content_layout = layout
 
         header = QHBoxLayout()
         header.setSpacing(12)
@@ -346,7 +409,43 @@ class MainWindow(QMainWindow):
         self._profile_btn.clicked.connect(self._show_app_menu)
         header.addWidget(self._profile_btn)
 
+        self._badge = QLabel(self._profile_btn)
+        self._badge.setFixedSize(9, 9)
+        self._badge.setStyleSheet(
+            f"background: {theme.pal().accent}; border-radius: 4px;"
+        )
+        self._badge.move(25, 3)
+        self._badge.hide()
+
         layout.addLayout(header)
+
+        self._banner = QFrame()
+        self._banner.setObjectName("updateBanner")
+        self._banner.setVisible(False)
+        banner_layout = QHBoxLayout(self._banner)
+        banner_layout.setContentsMargins(14, 8, 10, 8)
+        banner_layout.setSpacing(10)
+        self._banner_text = QLabel()
+        self._banner_text.setObjectName("updateBannerTitle")
+        self._banner_text.setCursor(Qt.PointingHandCursor)
+        self._banner_text.mouseReleaseEvent = lambda _e: self._open_update_panel()
+        banner_layout.addWidget(self._banner_text, 1)
+        banner_update = QPushButton("Обновить")
+        banner_update.setObjectName("primary")
+        banner_update.setCursor(Qt.PointingHandCursor)
+        banner_update.clicked.connect(self._open_update_panel)
+        banner_layout.addWidget(banner_update)
+        banner_later = QPushButton("Позже")
+        banner_later.setCursor(Qt.PointingHandCursor)
+        banner_later.clicked.connect(self._snooze_update)
+        banner_layout.addWidget(banner_later)
+        banner_close = QPushButton("✕")
+        banner_close.setObjectName("deleteBtn")
+        banner_close.setFixedSize(22, 22)
+        banner_close.setCursor(Qt.PointingHandCursor)
+        banner_close.clicked.connect(self._hide_banner_session)
+        banner_layout.addWidget(banner_close)
+        layout.addWidget(self._banner)
 
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
@@ -1275,10 +1374,18 @@ class MainWindow(QMainWindow):
             bool(self.db.get_int("show_chart_help", 1)),
             bool(self.db.get_int("autostart", 0)),
             self.db.get_text("theme", theme.DEFAULT_THEME),
+            self._autoupdate_on(),
             self,
         )
         panel.saved.connect(self._apply_settings)
         panel.theme_changed.connect(self._preview_theme)
+        panel.check_now.connect(lambda: self._check_updates(manual=True))
+        panel.set_update_status(self._settings_status_text())
+        can, reason = updater.can_self_update()
+        if not can:
+            panel.set_autoupdate_note(
+                f"{reason}. Обновления будут предлагаться с подтверждением."
+            )
         self._show_modal(panel)
 
     def _apply_settings(
@@ -1287,6 +1394,7 @@ class MainWindow(QMainWindow):
         background: bool,
         show_help: bool = True,
         autostart: bool = False,
+        autoupdate: bool = True,
         theme_key: str = theme.DEFAULT_THEME,
     ) -> None:
         from app import win32_utils
@@ -1296,6 +1404,15 @@ class MainWindow(QMainWindow):
         self.tracker.set_background_counting(background)
         self.db.set_int("show_chart_help", 1 if show_help else 0)
         self.db.set_text("theme", theme_key)
+
+        old_autoupdate = self._autoupdate_on()
+        self.db.set_int("auto_update", 1 if autoupdate else 0)
+        if old_autoupdate and not autoupdate:
+            # Тумблер выключили при скачанном/ожидающем обновлении — ожидание отменяется.
+            updater.cancel_pending()
+            self._banner.setVisible(False)
+        elif not old_autoupdate and autoupdate and self._update_available is not None:
+            self._apply_update_state()
         
         # Обработка автозапуска
         old_autostart = bool(self.db.get_int("autostart", 0))
@@ -1320,6 +1437,9 @@ class MainWindow(QMainWindow):
     def _retheme(self) -> None:
         self._search.retheme()
         self._profile_btn.setIcon(menu_icon())
+        self._badge.setStyleSheet(
+            f"background: {theme.pal().accent}; border-radius: 4px;"
+        )
         self._popup.retheme()
         for card in self._cards.values():
             card._shadow.setColor(theme.color("shadow"))
@@ -1331,6 +1451,241 @@ class MainWindow(QMainWindow):
                 panel.retheme()
             self._overlay.update()
         self.update()
+
+    # ------------------------------------------------------------- updates
+    def _autoupdate_on(self) -> bool:
+        return bool(self.db.get_int("auto_update", 1))
+
+    def _apply_rollback_safe_mode(self) -> None:
+        cfg = config.read_config()
+        if cfg.get("rollback_safe_mode"):
+            cfg.pop("rollback_safe_mode", None)
+            config.write_config(cfg)
+            self.db.set_int("auto_update", 0)
+
+    def _auto_check(self) -> None:
+        self._check_updates(manual=False)
+
+    def _check_updates(self, manual: bool) -> None:
+        if self._checking:
+            if manual:
+                self._settings_status("Проверка уже выполняется…")
+            return
+        self._checking = True
+        if manual:
+            self._settings_status("Проверяем…")
+        task = updater.CheckTask(self)
+        task.ok.connect(lambda releases: self._on_check_ok(releases, manual))
+        task.error.connect(lambda msg: self._on_check_error(msg, manual))
+        self._check_task = task
+        task.start()
+
+    def _on_check_ok(self, releases, manual: bool) -> None:
+        self._checking = False
+        self.db.set_text(
+            "update_last_check", datetime.now().strftime("%Y-%m-%d %H:%M")
+        )
+        release, notes = updater.select_update(releases)
+        if release is None:
+            if manual:
+                self._settings_status("Обновлений нет")
+            return
+        self._update_available = release
+        self._update_notes = notes
+        if manual:
+            self._settings_status(f"Доступна {release.tag}")
+        self._apply_update_state()
+
+    def _on_check_error(self, _msg: str, manual: bool) -> None:
+        self._checking = False
+        # Автоцикл при ошибках молчит; показываем только ответ ручной проверки.
+        if manual:
+            self._settings_status("Ошибка сети — не удалось проверить обновления")
+
+    def _apply_update_state(self) -> None:
+        release = self._update_available
+        if release is None:
+            return
+        self._popup.set_update_available(release.tag)
+        can, _reason = updater.can_self_update()
+        if self._autoupdate_on() and can:
+            self._start_silent_download()
+            return
+        # Ручной режим или деградация тихого: бейдж + баннер.
+        self._badge.show()
+        snoozed = updater.snooze_active(
+            self.db.get_text("update_snooze"), release.tag
+        )
+        if not snoozed and not self._banner_session_hidden:
+            self._banner_text.setText(f"Вышла версия {release.tag}")
+            self._banner.setVisible(True)
+        if self._tray is not None and not self._tray_update_hint_shown:
+            self._tray.showMessage(
+                "Nodexy",
+                f"Доступно обновление {release.tag}. Подробности — в меню.",
+                QSystemTrayIcon.Information,
+                4000,
+            )
+            self._tray_update_hint_shown = True
+
+    def _start_silent_download(self) -> None:
+        release = self._update_available
+        if release is None or not release.asset_url or self._silent_task is not None:
+            return
+        pending = updater.get_pending()
+        if pending and pending.get("version") == release.tag:
+            return
+        dest = str(updater.updates_dir() / f"Nodexy-{release.tag}.exe")
+        task = updater.DownloadTask(release.asset_url, dest, self)
+        task.progress.connect(self._on_silent_progress)
+        task.ok.connect(self._on_silent_downloaded)
+        task.error.connect(self._on_silent_error)
+        self._silent_task = task
+        task.start()
+
+    def _on_silent_progress(self, got: int, total: int) -> None:
+        if total > 0:
+            self._set_tray_progress(min(1.0, got / total))
+
+    def _on_silent_downloaded(self, path: str) -> None:
+        self._silent_task = None
+        self._set_tray_progress(None)
+        release = self._update_available
+        if release is None:
+            updater._remove_quiet(path)
+            return
+        ok, _reason = updater.verify_file(path, release.asset_size, release.sha256)
+        if not ok:
+            # Повреждённый файл не устанавливается; повтор — на следующей проверке.
+            updater._remove_quiet(path)
+            return
+        updater.set_pending(
+            {
+                "version": release.tag,
+                "notes": release.body,
+                "file": path,
+                "page": release.html_url,
+                "attempts": 0,
+            }
+        )
+        self._settings_status(f"Доступна {release.tag} — установится при выходе")
+
+    def _on_silent_error(self, _msg: str) -> None:
+        self._silent_task = None
+        self._set_tray_progress(None)
+
+    def _set_tray_progress(self, fraction: float | None) -> None:
+        if self._tray is None:
+            return
+        if fraction is None:
+            self._tray.setIcon(theme.load_app_icon())
+            self._tray.setToolTip("Nodexy — учёт времени идёт")
+            return
+        step = max(0, min(10, int(fraction * 10)))
+        icon = self._tray_progress_cache.get(step)
+        if icon is None:
+            icon = self._progress_icon(step / 10)
+            self._tray_progress_cache[step] = icon
+        self._tray.setIcon(icon)
+        self._tray.setToolTip(f"Nodexy — скачивание обновления {int(fraction * 100)}%")
+
+    def _progress_icon(self, fraction: float) -> QIcon:
+        base = theme.load_app_icon().pixmap(QSize(64, 64))
+        pm = QPixmap(base.toImage())
+        painter = QPainter(pm)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(11, 18, 32, 170))
+        painter.drawRoundedRect(6, 52, 52, 8, 4, 4)
+        painter.setBrush(QColor(theme.pal().accent))
+        painter.drawRoundedRect(6, 52, max(8.0, 52 * fraction), 8, 4, 4)
+        painter.end()
+        return QIcon(pm)
+
+    def _hide_banner_session(self) -> None:
+        self._banner_session_hidden = True
+        self._banner.setVisible(False)
+
+    def _snooze_update(self) -> None:
+        if self._update_available is not None:
+            self.db.set_text(
+                "update_snooze", updater.make_snooze(self._update_available.tag)
+            )
+        self._banner.setVisible(False)
+
+    def _open_update_panel(self) -> None:
+        release = self._update_available
+        if release is None:
+            return
+        self._popup.hide()
+        can, reason = updater.can_self_update()
+        panel = UpdatePanel(release, self._update_notes, can, reason, self)
+        panel.install_requested.connect(lambda: self._install_and_restart(panel))
+        panel.later_requested.connect(self._snooze_update)
+        panel.later_requested.connect(panel.close_requested)
+        self._show_modal(panel, on_closed=panel.shutdown)
+
+    def _install_and_restart(self, panel: UpdatePanel) -> None:
+        if self._updater_launched:
+            return
+        if updater.schedule_apply(restart=True):
+            self._updater_launched = True
+            QApplication.quit()
+        else:
+            panel.set_status("Не удалось запустить установку. Откройте страницу релиза.")
+
+    def _open_whats_new(self) -> None:
+        self._popup.hide()
+        info = updater.get_last_update()
+        if not info:
+            return
+        panel = WhatsNewPanel(str(info.get("version", "")), str(info.get("notes", "")), self)
+        self._show_modal(panel)
+
+    def _apply_pending_on_exit(self) -> None:
+        if self._updater_launched:
+            return
+        if updater.get_pending() is None:
+            return
+        if updater.schedule_apply(restart=False):
+            self._updater_launched = True
+
+    def _settings_panel(self):
+        if self._overlay is None:
+            return None
+        panel = getattr(self._overlay, "_panel", None)
+        return panel if isinstance(panel, SettingsPanel) else None
+
+    def _settings_status(self, text: str) -> None:
+        panel = self._settings_panel()
+        if panel is not None:
+            panel.set_update_status(text)
+
+    def _settings_status_text(self) -> str:
+        last = self.db.get_text("update_last_check")
+        text = f"Последняя проверка: {last}" if last else "Ещё не проверялось"
+        if self._update_available is not None:
+            text += f" · Доступна {self._update_available.tag}"
+        elif getattr(self, "_update_failed_url", ""):
+            text += " · Установка не удалась: исчерпаны попытки"
+        return text
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if self._pending_plate is not None:
+            version, _notes = self._pending_plate
+            self._pending_plate = None
+            plate = QFrame(self)
+            plate.setObjectName("updatePlate")
+            lay = QHBoxLayout(plate)
+            lay.setContentsMargins(14, 8, 14, 8)
+            text = QLabel(f"Обновлено до {version}")
+            text.setObjectName("updatePlateText")
+            lay.addWidget(text)
+            plate.setCursor(Qt.PointingHandCursor)
+            plate.mouseReleaseEvent = lambda _e: self._open_whats_new()
+            self._content_layout.insertWidget(1, plate)
+            QTimer.singleShot(8000, plate.deleteLater)
 
     def _export_database(self) -> None:
         self._popup.hide()

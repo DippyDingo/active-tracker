@@ -666,6 +666,46 @@ QLabel#themeName {
 QFrame#themeSample[active="true"] QLabel#themeName {
     color: $text;
 }
+
+QProgressBar {
+    background: $soft5;
+    border: 1px solid $card_border;
+    border-radius: 6px;
+    text-align: center;
+    color: transparent;
+    font-size: 1px;
+}
+QProgressBar::chunk {
+    background: $accent;
+    border-radius: 5px;
+}
+
+QFrame#updateBanner {
+    border-radius: 12px;
+    border: 1px solid rgba($accent_rgb, 40%);
+    background: rgba($accent_rgb, 10%);
+}
+QLabel#updateBannerTitle {
+    color: $text;
+    font-size: 13px;
+    font-weight: 700;
+}
+QFrame#updatePlate {
+    border-radius: 12px;
+    border: 1px solid rgba($accent_rgb, 35%);
+    background: rgba($accent_rgb, 12%);
+}
+QLabel#updatePlateText {
+    color: $text;
+    font-size: 13px;
+    font-weight: 700;
+}
+QLabel#popupVersion {
+    color: $text3;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+}
 """)
 
 

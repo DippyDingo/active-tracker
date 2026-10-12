@@ -5,10 +5,10 @@ import sys
 import traceback
 from datetime import date
 
-from PySide6.QtCore import QLockFile
+from PySide6.QtCore import QLockFile, QTimer
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
-from app import config
+from app import config, updater
 from app.db import Database
 from app.tracker import Tracker
 from app.ui import theme
@@ -82,6 +82,14 @@ def main() -> int:
 
     # Проверка флага --minimized
     start_minimized = "--minimized" in sys.argv
+    # Стоп-кран: --skip-update пропускает ожидающее обновление (аварийный вход).
+    skip_update = "--skip-update" in sys.argv
+
+    # Бут-контроль и применение ожидающего обновления — до появления окна.
+    boot = updater.startup_processing(skip_update)
+    if boot.get("rollback"):
+        # Внешний апдейтер вернёт старую версию и перезапустит её.
+        return 0
 
     lock = QLockFile(str(config.app_dir() / "nodexy.lock"))
     if not lock.tryLock(100):
@@ -120,14 +128,18 @@ def main() -> int:
         win32_utils.set_autostart(True)
     
     tracker = Tracker(db)
-    window = MainWindow(db, tracker)
-    
+    window = MainWindow(db, tracker, boot)
+
     if start_minimized:
         # Не показывать окно, только иконка в трее
         pass
     else:
         window.show()
-    
+
+    # Если окно стабильно работает ~10 секунд — старт успешен:
+    # сбрасываем счётчик запусков и убираем резервную копию .old.
+    QTimer.singleShot(10_000, updater.boot_success)
+
     tracker.start()
     qt.aboutToQuit.connect(tracker.stop)
     return qt.exec()

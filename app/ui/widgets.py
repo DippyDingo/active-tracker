@@ -220,6 +220,10 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
     elif kind == "chevron_right":
         painter.drawLine(pt(6.2, 3.6), pt(10.4, 8.0))
         painter.drawLine(pt(10.4, 8.0), pt(6.2, 12.4))
+    elif kind == "info":
+        painter.drawEllipse(pt(8, 8), 5.6 * scale, 5.6 * scale)
+        painter.drawLine(pt(8, 7.4), pt(8, 11.4))
+        painter.drawPoint(pt(8, 5.0))
     painter.end()
     pm.setDevicePixelRatio(scale)
     return QIcon(pm)

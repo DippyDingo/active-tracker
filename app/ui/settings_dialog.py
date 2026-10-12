@@ -10,12 +10,14 @@ from PySide6.QtWidgets import (
 )
 
 from . import theme
+from ..version import APP_VERSION
 from .widgets import ToggleSwitch
 
 
 class SettingsPanel(QFrame):
-    saved = Signal(int, bool, bool, bool, str)
+    saved = Signal(int, bool, bool, bool, bool, str)
     theme_changed = Signal(str)
+    check_now = Signal()
     close_requested = Signal()
 
     def __init__(
@@ -25,6 +27,7 @@ class SettingsPanel(QFrame):
         show_chart_help: bool = True,
         autostart_enabled: bool = False,
         theme_key: str = theme.DEFAULT_THEME,
+        autoupdate_enabled: bool = True,
         parent=None,
     ):
         super().__init__(parent)
@@ -124,6 +127,39 @@ class SettingsPanel(QFrame):
         layout.addLayout(row5)
         self._mark_theme_active()
 
+        row6 = QHBoxLayout()
+        texts6 = QVBoxLayout()
+        texts6.setSpacing(2)
+        autoupdate_title = QLabel("Автообновление")
+        self._autoupdate_note = QLabel(
+            "Новые версии скачиваются и устанавливаются автоматически"
+        )
+        self._autoupdate_note.setObjectName("subtleLabel")
+        self._autoupdate_note.setWordWrap(True)
+        texts6.addWidget(autoupdate_title)
+        texts6.addWidget(self._autoupdate_note)
+        row6.addLayout(texts6)
+        row6.addStretch(1)
+        self._autoupdate_toggle = ToggleSwitch(autoupdate_enabled)
+        row6.addWidget(self._autoupdate_toggle, 0, Qt.AlignVCenter)
+        layout.addLayout(row6)
+
+        row7 = QHBoxLayout()
+        check_btn = QPushButton("Проверить сейчас")
+        check_btn.setCursor(Qt.PointingHandCursor)
+        check_btn.clicked.connect(self.check_now)
+        row7.addWidget(check_btn)
+        row7.addSpacing(10)
+        self._update_status = QLabel("")
+        self._update_status.setObjectName("subtleLabel")
+        self._update_status.setWordWrap(True)
+        row7.addWidget(self._update_status, 1)
+        layout.addLayout(row7)
+
+        version_label = QLabel(f"Nodexy v{APP_VERSION}")
+        version_label.setObjectName("mutedLabel")
+        layout.addWidget(version_label)
+
         note = QLabel(
             "Если активности нет дольше порога простоя — весь период\nпростоя не засчитывается."
         )
@@ -192,9 +228,16 @@ class SettingsPanel(QFrame):
             self._toggle.isChecked(),
             self._help_toggle.isChecked(),
             self._autostart_toggle.isChecked(),
+            self._autoupdate_toggle.isChecked(),
             self._theme_choice,
         )
         self.close_requested.emit()
+
+    def set_update_status(self, text: str) -> None:
+        self._update_status.setText(text)
+
+    def set_autoupdate_note(self, text: str) -> None:
+        self._autoupdate_note.setText(text)
 
     def value(self) -> int:
         return self._spin.value()
