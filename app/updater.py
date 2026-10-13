@@ -45,6 +45,15 @@ def is_newer(candidate: str, current: str = APP_VERSION) -> bool:
     return a > b
 
 
+def same_version(a: str, b: str) -> bool:
+    """Версии равны с учётом префикса 'v' и разной длины ('v1.2' == '1.2.0')."""
+    pa, pb = parse_version(a), parse_version(b)
+    if not pa or not pb:
+        return False
+    pa, pb = _norm(pa, pb)
+    return pa == pb
+
+
 def format_size(size: int | None) -> str:
     if not size or size <= 0:
         return ""
@@ -641,7 +650,7 @@ def startup_processing(skip_update: bool = False) -> dict:
     pending = get_pending()
     if pending and not skip_update:
         version = str(pending.get("version") or "")
-        if version == APP_VERSION:
+        if same_version(version, APP_VERSION):
             set_last_update(version, str(pending.get("notes") or ""))
             set_pending(None)
             result["plate"] = version
@@ -661,6 +670,9 @@ def startup_processing(skip_update: bool = False) -> dict:
             cancel_pending()
 
     if getattr(sys, "frozen", False):
+        # Перечитываем конфиг: логика выше могла его изменить, а запись
+        # устаревшего снимка воскресила бы update_pending (залипшее состояние).
+        cfg = config.read_config()
         boot, need_rollback = boot_step(cfg.get("boot_check"), APP_VERSION)
         cfg["boot_check"] = boot
         config.write_config(cfg)

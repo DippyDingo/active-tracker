@@ -151,12 +151,26 @@ with tempfile.TemporaryDirectory() as tmp:
     try:
         updater.APP_VERSION = "1.0.0"
 
-        # Успех: ожидающая версия совпала с запущенной
-        updater.set_pending({"version": "1.0.0", "notes": "заметки", "file": "x", "page": "p", "attempts": 1})
+        # Успех: ожидающая версия совпала с запущенной (тег с префиксом v!)
+        updater.set_pending({"version": "v1.0.0", "notes": "заметки", "file": "x", "page": "p", "attempts": 1})
         res = updater.startup_processing()
-        check(res["plate"] == "1.0.0", "плашка после успешного обновления")
+        check(res["plate"] == "v1.0.0", "плашка после успешного обновления (v-префикс)")
         check(updater.get_pending() is None, "pending очищен после успеха")
         check(updater.get_last_update()["notes"] == "заметки", "заметки сохранены для «Что нового»")
+
+        # Регрессия: в frozen-режиме запись boot_check не должна воскрешать pending
+        sys.frozen = True
+        try:
+            updater.set_pending({"version": "v1.0.0", "notes": "n", "file": "x", "page": "p", "attempts": 0})
+            updater.startup_processing()
+            check(updater.get_pending() is None, "frozen: pending не воскрешён записью boot_check")
+            check(updater.get_last_update() is not None, "frozen: last_update сохранён")
+            check(config.read_config().get("boot_check") is not None, "frozen: boot_check записан")
+            updater.boot_success()
+            check(config.read_config().get("boot_check") is None, "boot_success чистит счётчик")
+        finally:
+            del sys.frozen
+        updater.clear_last_update()
 
         # Провал: версия новее, счётчик попыток растёт
         updater.set_pending({"version": "2.0.0", "notes": "", "file": "нет-файла", "page": "url", "attempts": 0})
