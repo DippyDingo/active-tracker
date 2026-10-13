@@ -323,24 +323,29 @@ def backup_path() -> Path | None:
 # ---------------------------------------------------------------- updater script
 _UPDATER_VBS = r"""On Error Resume Next
 Set args = WScript.Arguments
-If args.Count < 5 Then WScript.Quit 1
+If args.Count < 6 Then WScript.Quit 1
 pid = CLng(args(0))
-oldExe = args(1)
-newExe = args(2)
-mode = args(3)
-logPath = args(4)
+parentPid = CLng(args(1))
+oldExe = args(2)
+newExe = args(3)
+mode = args(4)
+logPath = args(5)
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set oShell = CreateObject("WScript.Shell")
+' Wait for BOTH the app process and its PyInstaller bootloader parent:
+' the parent wipes the _MEI extraction dir while exiting.
 elapsed = 0
 Do While elapsed < 60
-    If Not ProcessExists(pid) Then Exit Do
-    WScript.Sleep 1000
+    If Not ProcessExists(pid) And Not ProcessExists(parentPid) Then Exit Do
+    WScript.Sleep 500
     elapsed = elapsed + 1
 Loop
-If ProcessExists(pid) Then
-    Log "timeout waiting for pid " & pid & "; aborted, nothing changed"
+If ProcessExists(pid) Or ProcessExists(parentPid) Then
+    Log "timeout waiting for pid " & pid & " / parent " & parentPid & "; aborted, nothing changed"
     WScript.Quit 0
 End If
+' Grace pause: let the file lock release fully.
+WScript.Sleep 2000
 bak = oldExe & ".old"
 ok = False
 For attempt = 1 To 8
@@ -369,7 +374,10 @@ If Not ok Then
     Log "swap failed after retries; aborted"
     WScript.Quit 1
 End If
+' Pause before relaunch: avoid racing the _MEI cleanup.
+WScript.Sleep 1000
 If LCase(mode) = "restart" Then
+    oShell.CurrentDirectory = fso.GetParentFolderName(oldExe)
     oShell.Run Chr(34) & oldExe & Chr(34), 1, False
 End If
 Log "update applied: " & oldExe
@@ -377,6 +385,7 @@ WScript.Quit 0
 Function ProcessExists(p)
     On Error Resume Next
     ProcessExists = False
+    If p = 0 Then Exit Function
     Set wmi = GetObject("winmgmts:\\.\root\cimv2")
     If Err.Number <> 0 Then
         Err.Clear
@@ -399,20 +408,22 @@ End Sub
 
 _ROLLBACK_VBS = r"""On Error Resume Next
 Set args = WScript.Arguments
-If args.Count < 3 Then WScript.Quit 1
+If args.Count < 4 Then WScript.Quit 1
 pid = CLng(args(0))
-exe = args(1)
-logPath = args(2)
+parentPid = CLng(args(1))
+exe = args(2)
+logPath = args(3)
 bak = exe & ".old"
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set oShell = CreateObject("WScript.Shell")
 elapsed = 0
 Do While elapsed < 60
-    If Not ProcessExists(pid) Then Exit Do
-    WScript.Sleep 1000
+    If Not ProcessExists(pid) And Not ProcessExists(parentPid) Then Exit Do
+    WScript.Sleep 500
     elapsed = elapsed + 1
 Loop
-If ProcessExists(pid) Then WScript.Quit 0
+If ProcessExists(pid) Or ProcessExists(parentPid) Then WScript.Quit 0
+WScript.Sleep 2000
 If Not fso.FileExists(bak) Then
     Log "rollback: no backup found"
     WScript.Quit 1
@@ -433,12 +444,15 @@ If Not ok Then
     Log "rollback failed after retries"
     WScript.Quit 1
 End If
+WScript.Sleep 1000
+oShell.CurrentDirectory = fso.GetParentFolderName(exe)
 oShell.Run Chr(34) & exe & Chr(34), 1, False
 Log "rollback applied: " & exe
 WScript.Quit 0
 Function ProcessExists(p)
     On Error Resume Next
     ProcessExists = False
+    If p = 0 Then Exit Function
     Set wmi = GetObject("winmgmts:\\.\root\cimv2")
     If Err.Number <> 0 Then
         Err.Clear
@@ -558,6 +572,16 @@ def cleanup_orphan_helpers() -> int:
 _APPLY_SCHEDULED = False
 
 
+def _parent_pid() -> int:
+    """PID PyInstaller-bootloader-родителя (onefile: процессов всегда два)."""
+    try:
+        import psutil
+
+        return psutil.Process(os.getpid()).ppid()
+    except Exception:
+        return 0
+
+
 def schedule_apply(restart: bool) -> bool:
     """Запускает скрытый помощник: дождётся завершения процесса и заменит exe."""
     global _APPLY_SCHEDULED
@@ -578,7 +602,15 @@ def schedule_apply(restart: bool) -> bool:
         return False
     mode = "restart" if restart else "once"
     ok = launch_script(
-        script, [str(os.getpid()), str(exe), str(new_exe), mode, str(update_log_path())]
+        script,
+        [
+            str(os.getpid()),
+            str(_parent_pid()),
+            str(exe),
+            str(new_exe),
+            mode,
+            str(update_log_path()),
+        ],
     )
     if ok:
         _APPLY_SCHEDULED = True
@@ -638,7 +670,10 @@ def startup_processing(skip_update: bool = False) -> dict:
             if exe and bak and bak.is_file():
                 try:
                     script = write_rollback_script()
-                    if launch_script(script, [str(os.getpid()), str(exe), str(update_log_path())]):
+                    if launch_script(
+                        script,
+                        [str(os.getpid()), str(_parent_pid()), str(exe), str(update_log_path())],
+                    ):
                         cfg = config.read_config()
                         cfg.pop("boot_check", None)
                         cfg["rollback_safe_mode"] = 1
