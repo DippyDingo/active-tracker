@@ -454,9 +454,10 @@ class MainWindow(QMainWindow):
         self._grid = QGridLayout(container)
         self._grid.setContentsMargins(4, 4, 4, 4)
         self._grid.setSpacing(18)
-        self._empty_label = QLabel(
+        self._empty_text = (
             "Здесь пока пусто.\nДобавьте приложение — и увидите честную статистику активности."
         )
+        self._empty_label = QLabel(self._empty_text)
         self._empty_label.setObjectName("emptyLabel")
         self._empty_label.setAlignment(Qt.AlignCenter)
         self._scroll.setWidget(container)
@@ -521,7 +522,6 @@ class MainWindow(QMainWindow):
 
         self._build_side_sections(apps)
         self._recompute_base()
-        self._relayout_grid()
         self._apply_filter(self._filter)
 
         if self._selected_id in self._cards:
@@ -722,19 +722,57 @@ class MainWindow(QMainWindow):
             return 2
         return 1
 
+    def _match_rank(self, app_id: int, q: str) -> int | None:
+        """Ранг совпадения (чем меньше, тем лучше) или None."""
+        name = self._names.get(app_id, "").lower()
+        if name == q:
+            return 0
+        if name.startswith(q):
+            return 1
+        if any(word.startswith(q) for word in name.split()):
+            return 2
+        if q in name:
+            return 3
+        if q in self._rows_meta[app_id].exe_path.lower():
+            return 4
+        return None
+
+    def _current_grid_order(self) -> list[int]:
+        """Порядок карточек в сетке: при поиске — совпавшие по релевантности."""
+        base = [i for i in self._order if i in self._hosts]
+        if not self._filter:
+            return base
+        ranked = []
+        for pos, app_id in enumerate(base):
+            rank = self._match_rank(app_id, self._filter)
+            if rank is not None:
+                ranked.append((rank, pos, app_id))
+        ranked.sort(key=lambda t: (t[0], t[1]))
+        return [app_id for _rank, _pos, app_id in ranked]
+
     def _relayout_grid(self) -> None:
+        order = self._current_grid_order()
         self._cols = self._current_cols()
         for c in range(self._cols):
             self._grid.setColumnStretch(c, 1)
-        visible_order = [i for i in self._order if i in self._hosts]
-        for idx, app_id in enumerate(visible_order):
+        for host in self._hosts.values():
+            self._grid.removeWidget(host)
+        self._grid.removeWidget(self._empty_label)
+        matched = set(order)
+        for app_id, host in self._hosts.items():
+            host.setVisible(app_id in matched)
+        for idx, app_id in enumerate(order):
             self._grid.addWidget(self._hosts[app_id], idx // self._cols, idx % self._cols)
-        if not visible_order:
+        if not order:
+            if self._filter:
+                self._empty_label.setText(f"Ничего не найдено по запросу «{self._filter}»")
+            else:
+                self._empty_label.setText(self._empty_text)
             self._grid.addWidget(self._empty_label, 0, 0, 1, max(self._cols, 1), Qt.AlignCenter)
             self._empty_label.setVisible(True)
         else:
-            self._grid.removeWidget(self._empty_label)
-        self._grid.setRowStretch((max(len(visible_order), 1) - 1) // self._cols + 1, 1)
+            self._empty_label.setVisible(False)
+        self._grid.setRowStretch((max(len(order), 1) - 1) // self._cols + 1, 1)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -747,12 +785,10 @@ class MainWindow(QMainWindow):
         uncat_visible = 0
         for app_id in self._order:
             match = (
-                not self._filter
-                or self._filter in self._names.get(app_id, "").lower()
-                or self._filter in self._rows_meta[app_id].exe_path.lower()
+                True
+                if not self._filter
+                else self._match_rank(app_id, self._filter) is not None
             )
-            if app_id in self._hosts:
-                self._hosts[app_id].setVisible(match)
             cat_id = self._rows_meta[app_id].category_id
             collapsed = (cat_id in self._collapsed) if cat_id is not None else False
             row_visible = match and ((not collapsed) or bool(self._filter))
@@ -774,6 +810,7 @@ class MainWindow(QMainWindow):
                 header.setVisible(True)
             if self._uncat_header is not None:
                 self._uncat_header.setVisible(True)
+        self._relayout_grid()
 
     def _on_filter_changed(self, text: str) -> None:
         self._apply_filter(text)
@@ -1086,7 +1123,12 @@ class MainWindow(QMainWindow):
                 ):
                     pos = event.globalPosition().toPoint()
                     if not self._drag["dragging"]:
-                        if (pos - self._drag["start"]).manhattanLength() > 14:
+                        # Во время поиска порядок карточек диктует релевантность —
+                        # перетаскивание отключено, чтобы не конфликтовать с выдачей.
+                        if (
+                            not self._filter
+                            and (pos - self._drag["start"]).manhattanLength() > 14
+                        ):
                             self._drag["dragging"] = True
                             self.setCursor(Qt.ClosedHandCursor)
                             obj.grabMouse()
