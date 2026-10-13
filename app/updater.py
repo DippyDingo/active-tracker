@@ -383,11 +383,42 @@ If Not ok Then
     Log "swap failed after retries; aborted"
     WScript.Quit 1
 End If
-' Pause before relaunch: avoid racing the _MEI cleanup.
-WScript.Sleep 1000
+' Wait until the freshly moved exe is readable (file lock / AV scan released),
+' then give it a grace period before relaunching.
+If Not WaitFileReadable(oldExe, 15000) Then
+    Log "new exe not readable in time; still trying to launch"
+End If
+' Size sanity check (7th arg): the file must be fully in place.
+If args.Count >= 7 Then
+    expectedSize = CLng(args(6))
+    sizeTries = 0
+    Do While sizeTries < 10
+        If fso.GetFile(oldExe).Size = expectedSize Then Exit Do
+        Log "size mismatch, waiting (" & fso.GetFile(oldExe).Size & " <> " & expectedSize & ")"
+        WScript.Sleep 500
+        sizeTries = sizeTries + 1
+    Loop
+End If
+WScript.Sleep 2000
 If LCase(mode) = "restart" Then
     oShell.CurrentDirectory = fso.GetParentFolderName(oldExe)
-    oShell.Run Chr(34) & oldExe & Chr(34), 1, False
+    launched = False
+    For launchAttempt = 1 To 3
+        oShell.Run Chr(34) & oldExe & Chr(34), 1, False
+        WScript.Sleep 4000
+        If ProcessRunningByPath(oldExe) Then
+            WScript.Sleep 4000
+            If ProcessRunningByPath(oldExe) Then
+                launched = True
+                Exit For
+            End If
+        End If
+        Log "restart attempt " & launchAttempt & " did not stay alive; retrying"
+        WScript.Sleep 3000
+    Next
+    If Not launched Then
+        Log "restart gave up after retries; user can launch manually"
+    End If
 End If
 Log "update applied: " & oldExe
 WScript.Quit 0
@@ -402,6 +433,38 @@ Function ProcessExists(p)
     End If
     Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ProcessId=" & p)
     ProcessExists = (procs.Count > 0)
+End Function
+Function ProcessRunningByPath(exePath)
+    On Error Resume Next
+    ProcessRunningByPath = False
+    Set wmi2 = GetObject("winmgmts:\\.\root\cimv2")
+    If Err.Number <> 0 Then
+        Err.Clear
+        Exit Function
+    End If
+    Dim escaped
+    escaped = Replace(exePath, "\", "\\")
+    Set procs2 = wmi2.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ExecutablePath='" & escaped & "'")
+    ProcessRunningByPath = (procs2.Count > 0)
+End Function
+Function WaitFileReadable(exePath, maxMs)
+    On Error Resume Next
+    Dim waited
+    waited = 0
+    Do While waited < maxMs
+        Err.Clear
+        Dim chk
+        Set chk = CreateObject("Scripting.FileSystemObject").OpenTextFile(exePath, 1, False)
+        If Err.Number = 0 Then
+            chk.Close
+            WaitFileReadable = True
+            Exit Function
+        End If
+        Err.Clear
+        WScript.Sleep 500
+        waited = waited + 500
+    Loop
+    WaitFileReadable = False
 End Function
 Sub Log(msg)
     On Error Resume Next
@@ -522,14 +585,22 @@ def update_log_path() -> Path:
 
 
 def cleanup_orphan_helpers() -> int:
-    """Гасит осиротевшие процессы помощников старых версий (только свои)."""
+    """Гасит осиротевшие процессы помощников старых версий (только свои).
+
+    Щадим текущий процесс и помощник, который его только что запустил
+    (создан незадолго до нас): его убийство оборвало финальный лог/ретраи.
+    Убиваем только старые сироты (созданные заметно раньше нашего старта).
+    """
     try:
         import psutil
     except Exception:
         return 0
-    app_dir_str = str(config.app_dir()).lower()
     markers = ("nodexy_update", "nodexy_rollback")
     my_pid = os.getpid()
+    try:
+        my_create = psutil.Process(my_pid).create_time()
+    except Exception:
+        my_create = None
     killed = 0
 
     def _kill(proc) -> None:
@@ -540,38 +611,30 @@ def cleanup_orphan_helpers() -> int:
         except Exception:
             pass
 
-    roots = []
-    finds = []
-    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+    for proc in psutil.process_iter(["pid", "name", "cmdline", "create_time"]):
         try:
-            if proc.info["pid"] == my_pid:
+            pid = proc.info["pid"]
+            if pid == my_pid:
                 continue
+            name = (proc.info["name"] or "").lower()
             cmdline_list = proc.info["cmdline"] or []
             cmdline = " ".join(cmdline_list).lower()
-            if cmdline and (app_dir_str in cmdline or any(m in cmdline for m in markers)):
-                roots.append(proc)
-                continue
-            # Осиротевший `find "<pid>"` от старой связки tasklist|find:
-            # имя совпадает, единственный аргумент — число.
-            name = (proc.info["name"] or "").lower()
+            # Осиротевший `find "<число>"` от старой связки tasklist|find.
             if name in ("find.exe", "find") and len(cmdline_list) == 2:
                 if cmdline_list[1].strip().strip('"').isdigit():
-                    finds.append(proc)
+                    _kill(proc)
+                    continue
+            # cmd/wscript, исполняющие наши скрипты.
+            if cmdline and any(m in cmdline for m in markers):
+                created = proc.info.get("create_time")
+                # Помощник, созданный менее 120 с до нас, — наш лаунчер: не трогаем.
+                if my_create is not None and created and created > my_create - 120:
+                    continue
+                _kill(proc)
         except Exception:
             continue
 
-    for proc in roots:
-        try:
-            children = proc.children(recursive=True)
-        except Exception:
-            children = []
-        _kill(proc)
-        for child in children:
-            _kill(child)
-    for proc in finds:
-        _kill(proc)
-
-    # Старые скрипты больше не нужны.
+    # Старые скрипты больше не нужны (рабочий помощник уже загрузил свой в память).
     for name in ("nodexy_update.bat", "nodexy_rollback.bat",
                  "nodexy_update.vbs", "nodexy_rollback.vbs"):
         _remove_quiet(config.app_dir() / name)
@@ -619,6 +682,7 @@ def schedule_apply(restart: bool) -> bool:
             str(new_exe),
             mode,
             str(update_log_path()),
+            str(pending.get("size") or new_exe.stat().st_size),
         ],
     )
     if ok:
