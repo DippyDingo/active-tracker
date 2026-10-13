@@ -177,22 +177,37 @@ with tempfile.TemporaryDirectory() as tmp:
     finally:
         updater.APP_VERSION = old_version
 
-# --- 10. Скрипт апдейтера -------------------------------------------------------------
+# --- 10. Скрипт апдейтера (VBS, без консоли) -------------------------------------
 with tempfile.TemporaryDirectory() as tmp:
     config.APP_DIR = Path(tmp)
-    old_exe = Path(tmp) / "Nodexy.exe"
-    new_exe = Path(tmp) / "new" / "Nodexy.exe"
-    new_exe.parent.mkdir()
-    old_exe.write_text("old")
-    new_exe.write_text("new")
-    script = updater.write_updater_script(old_exe, new_exe, 1234, restart=False)
+    script = updater.write_updater_script()
+    check(script.suffix == ".vbs", "помощник — VBS (GUI-подсистема, без консоли)")
     text = script.read_text(encoding="ascii")
-    check('set "PID=1234"' in text, "pid в скрипте")
-    check(str(old_exe) in text and str(new_exe) in text, "пути в скрипте")
-    check("%OLD%.old" in text, "резервная копия .old")
-    check("restart" not in text.split("MODE")[1].split("\n")[0] or "once" in text, "режим без перезапуска")
-    script2 = updater.write_updater_script(old_exe, new_exe, 1234, restart=True)
-    check("restart" in script2.read_text(encoding="ascii").split("MODE=")[1].split("\n")[0], "режим с перезапуском")
+    check("WScript.Arguments" in text, "параметры передаются аргументами")
+    check("Win32_Process" in text, "ожидание процесса через WMI")
+    check("WScript.Sleep" in text, "пауза без внешних команд")
+    check("tasklist" not in text and "find" not in text.lower().replace("findexe", ""),
+          "никакого текстового поиска процессов")
+    check("timeout" not in text.lower(), "нет команды timeout")
+    rollback = updater.write_rollback_script()
+    rtext = rollback.read_text(encoding="ascii")
+    check("Win32_Process" in rtext, "откат тоже через WMI")
+
+# --- 10б. Очистка осиротевших помощников -----------------------------------------
+killed = updater.cleanup_orphan_helpers()
+check(isinstance(killed, int) and killed >= 0, "cleanup_orphan_helpers не падает")
+
+# --- 10в. Устаревшее ожидание (версия не новее) сбрасывается ----------------------
+with tempfile.TemporaryDirectory() as tmp:
+    config.APP_DIR = Path(tmp)
+    old_version = updater.APP_VERSION
+    try:
+        updater.APP_VERSION = "1.2.1"
+        updater.set_pending({"version": "1.1.0", "notes": "", "file": "f", "page": "", "attempts": 0})
+        updater.startup_processing()
+        check(updater.get_pending() is None, "устаревшее ожидание сброшено")
+    finally:
+        updater.APP_VERSION = old_version
 
 # --- 11. Режим запуска из исходников -----------------------------------------------------
 can, reason = updater.can_self_update()

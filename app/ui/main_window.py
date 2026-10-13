@@ -274,6 +274,7 @@ class MainWindow(QMainWindow):
         self._header_anim = None
         self._tray = None
         self._tray_hint_shown = False
+        self._force_quit = False
 
         self._boot = boot or {}
         self._pending_plate = None
@@ -467,7 +468,7 @@ class MainWindow(QMainWindow):
         self._popup.settings_requested.connect(self._open_settings)
         self._popup.export_requested.connect(self._export_database)
         self._popup.load_requested.connect(self._load_database)
-        self._popup.quit_requested.connect(QApplication.quit)
+        self._popup.quit_requested.connect(self._quit_app)
 
         root_layout.addWidget(content, 1)
 
@@ -1670,11 +1671,31 @@ class MainWindow(QMainWindow):
     def _install_and_restart(self, panel: UpdatePanel) -> None:
         if self._updater_launched:
             return
+        path = panel._downloaded_path
+        if not path:
+            panel.set_status("Файл не скачан — повторите загрузку.")
+            return
+        updater.set_pending(
+            {
+                "version": panel._release.tag,
+                "notes": panel._release.body,
+                "file": path,
+                "page": panel._release.html_url,
+                "attempts": 0,
+            }
+        )
         if updater.schedule_apply(restart=True):
             self._updater_launched = True
-            QApplication.quit()
+            self._quit_app()
         else:
+            updater.set_pending(None)
             panel.set_status("Не удалось запустить установку. Откройте страницу релиза.")
+
+    def _quit_app(self) -> None:
+        # Полный выход (не в трей): обязателен для применения обновления
+        # и чтобы в диспетчере не оставалось процесса.
+        self._force_quit = True
+        QApplication.quit()
 
     def _open_whats_new(self) -> None:
         self._popup.hide()
@@ -1686,6 +1707,9 @@ class MainWindow(QMainWindow):
 
     def _apply_pending_on_exit(self) -> None:
         if self._updater_launched:
+            return
+        # Тихая установка при выходе — только в режиме автообновления.
+        if not self._autoupdate_on():
             return
         if updater.get_pending() is None:
             return
@@ -1916,7 +1940,7 @@ class MainWindow(QMainWindow):
         show_action.triggered.connect(self._show_window)
         self._tray_menu.addSeparator()
         quit_action = self._tray_menu.addAction("Выход")
-        quit_action.triggered.connect(QApplication.quit)
+        quit_action.triggered.connect(self._quit_app)
         self._tray.setContextMenu(self._tray_menu)
         self._tray.activated.connect(
             lambda reason: self._show_window()
@@ -1931,6 +1955,9 @@ class MainWindow(QMainWindow):
         self.activateWindow()
 
     def closeEvent(self, event) -> None:
+        if self._force_quit:
+            event.accept()
+            return
         if self._tray is not None:
             self.hide()
             if not self._tray_hint_shown:

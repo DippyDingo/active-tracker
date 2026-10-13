@@ -34,6 +34,7 @@ class UpdatePanel(QFrame):
         self.setFixedWidth(480)
         self._release = release
         self._task = None
+        self._downloaded_path: str | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 20, 24, 18)
@@ -193,15 +194,9 @@ class UpdatePanel(QFrame):
             self._status.setText(f"Файл повреждён ({reason}) — установка отменена.")
             self._set_state("error")
             return
-        updater.set_pending(
-            {
-                "version": self._release.tag,
-                "notes": self._release.body,
-                "file": path,
-                "page": self._release.html_url,
-                "attempts": 0,
-            }
-        )
+        # Ожидание установки не фиксируем до клика «Установить»: в режиме
+        # с подтверждением выход из приложения не должен ставить обновление.
+        self._downloaded_path = path
         self._status.setText("Файл проверен и готов к установке.")
         self._set_state("ready")
 
