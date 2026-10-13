@@ -125,7 +125,6 @@ def png_bytes(master: Image.Image, size: int) -> bytes:
 
 def build(src: Path, ico: Path, png: Path) -> Image.Image:
     master = fit_square(cut_tile(src), 1024)
-    master.save(png.with_suffix(".master.png"))
     render(master, 512).save(png, optimize=True)
     frames = [Image.open(BytesIO(png_bytes(master, s))) for s in ICO_SIZES]
     frames[0].save(ico, format="ICO", sizes=[(s, s) for s in ICO_SIZES], append_images=frames[1:])

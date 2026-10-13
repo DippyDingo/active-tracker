@@ -53,3 +53,6 @@ chat_context.txt
 
 image_generate/
 media-output/
+
+# Промежуточные файлы сборки иконок
+assets/*.master.png
