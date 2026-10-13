@@ -321,53 +321,91 @@ def backup_path() -> Path | None:
 
 
 # ---------------------------------------------------------------- updater script
-_UPDATER_VBS = r"""Set args = WScript.Arguments
-If args.Count < 4 Then WScript.Quit 1
+_UPDATER_VBS = r"""On Error Resume Next
+Set args = WScript.Arguments
+If args.Count < 5 Then WScript.Quit 1
 pid = CLng(args(0))
 oldExe = args(1)
 newExe = args(2)
 mode = args(3)
+logPath = args(4)
 Set fso = CreateObject("Scripting.FileSystemObject")
-Set wsh = CreateObject("WScript.Shell")
+Set oShell = CreateObject("WScript.Shell")
 elapsed = 0
 Do While elapsed < 60
     If Not ProcessExists(pid) Then Exit Do
     WScript.Sleep 1000
     elapsed = elapsed + 1
 Loop
-If ProcessExists(pid) Then WScript.Quit 0
+If ProcessExists(pid) Then
+    Log "timeout waiting for pid " & pid & "; aborted, nothing changed"
+    WScript.Quit 0
+End If
 bak = oldExe & ".old"
-On Error Resume Next
-If fso.FileExists(bak) Then fso.DeleteFile bak, True
-Err.Clear
-fso.MoveFile oldExe, bak
-If Err.Number <> 0 Then WScript.Quit 1
-fso.MoveFile newExe, oldExe
-If Err.Number <> 0 Then
-    fso.MoveFile bak, oldExe
+ok = False
+For attempt = 1 To 8
+    Err.Clear
+    If fso.FileExists(bak) Then fso.DeleteFile bak, True
+    If Err.Number = 0 Then
+        fso.MoveFile oldExe, bak
+        If Err.Number = 0 Then
+            fso.MoveFile newExe, oldExe
+            If Err.Number = 0 Then
+                ok = True
+                Exit For
+            Else
+                Log "move new->old failed: " & Err.Description
+                fso.MoveFile bak, oldExe
+            End If
+        Else
+            Log "move old->backup failed: " & Err.Description
+        End If
+    Else
+        Log "remove old backup failed: " & Err.Description
+    End If
+    WScript.Sleep 1000
+Next
+If Not ok Then
+    Log "swap failed after retries; aborted"
     WScript.Quit 1
 End If
-On Error Goto 0
 If LCase(mode) = "restart" Then
-    wsh.Run Chr(34) & oldExe & Chr(34), 1, False
+    oShell.Run Chr(34) & oldExe & Chr(34), 1, False
 End If
+Log "update applied: " & oldExe
 WScript.Quit 0
 Function ProcessExists(p)
     On Error Resume Next
     ProcessExists = False
     Set wmi = GetObject("winmgmts:\\.\root\cimv2")
-    If Err.Number <> 0 Then Exit Function
+    If Err.Number <> 0 Then
+        Err.Clear
+        Exit Function
+    End If
     Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ProcessId=" & p)
     ProcessExists = (procs.Count > 0)
 End Function
+Sub Log(msg)
+    On Error Resume Next
+    Dim lf
+    Set lf = CreateObject("Scripting.FileSystemObject").OpenTextFile(logPath, 8, True)
+    If Err.Number = 0 Then
+        lf.WriteLine Now & " | " & msg
+        lf.Close
+    End If
+    Err.Clear
+End Sub
 """
 
-_ROLLBACK_VBS = r"""Set args = WScript.Arguments
-If args.Count < 2 Then WScript.Quit 1
+_ROLLBACK_VBS = r"""On Error Resume Next
+Set args = WScript.Arguments
+If args.Count < 3 Then WScript.Quit 1
 pid = CLng(args(0))
 exe = args(1)
+logPath = args(2)
 bak = exe & ".old"
 Set fso = CreateObject("Scripting.FileSystemObject")
+Set oShell = CreateObject("WScript.Shell")
 elapsed = 0
 Do While elapsed < 60
     If Not ProcessExists(pid) Then Exit Do
@@ -375,22 +413,50 @@ Do While elapsed < 60
     elapsed = elapsed + 1
 Loop
 If ProcessExists(pid) Then WScript.Quit 0
-If Not fso.FileExists(bak) Then WScript.Quit 1
-On Error Resume Next
-fso.DeleteFile exe, True
-fso.MoveFile bak, exe
-If Err.Number <> 0 Then WScript.Quit 1
-On Error Goto 0
-CreateObject("WScript.Shell").Run Chr(34) & exe & Chr(34), 1, False
+If Not fso.FileExists(bak) Then
+    Log "rollback: no backup found"
+    WScript.Quit 1
+End If
+ok = False
+For attempt = 1 To 8
+    Err.Clear
+    fso.DeleteFile exe, True
+    fso.MoveFile bak, exe
+    If Err.Number = 0 Then
+        ok = True
+        Exit For
+    End If
+    Log "rollback attempt failed: " & Err.Description
+    WScript.Sleep 1000
+Next
+If Not ok Then
+    Log "rollback failed after retries"
+    WScript.Quit 1
+End If
+oShell.Run Chr(34) & exe & Chr(34), 1, False
+Log "rollback applied: " & exe
 WScript.Quit 0
 Function ProcessExists(p)
     On Error Resume Next
     ProcessExists = False
     Set wmi = GetObject("winmgmts:\\.\root\cimv2")
-    If Err.Number <> 0 Then Exit Function
+    If Err.Number <> 0 Then
+        Err.Clear
+        Exit Function
+    End If
     Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ProcessId=" & p)
     ProcessExists = (procs.Count > 0)
 End Function
+Sub Log(msg)
+    On Error Resume Next
+    Dim lf
+    Set lf = CreateObject("Scripting.FileSystemObject").OpenTextFile(logPath, 8, True)
+    If Err.Number = 0 Then
+        lf.WriteLine Now & " | " & msg
+        lf.Close
+    End If
+    Err.Clear
+End Sub
 """
 
 
@@ -408,10 +474,14 @@ def write_rollback_script() -> Path:
 
 
 def launch_script(script: Path, args: list[str]) -> bool:
-    """Полностью скрытый запуск помощника: без консоли, с заглушёнными потоками."""
+    """Полностью скрытый запуск помощника.
+
+    //B — батч-режим WScript: запрещены ЛЮБЫЕ окна (ошибки, запросы).
+    //nologo — без баннера. Потоки заглушены. CREATE_NO_WINDOW на всякий случай.
+    """
     try:
         subprocess.Popen(
-            ["wscript.exe", "//nologo", str(script), *args],
+            ["wscript.exe", "//B", "//nologo", str(script), *args],
             creationflags=0x08000000,  # CREATE_NO_WINDOW
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
@@ -422,6 +492,10 @@ def launch_script(script: Path, args: list[str]) -> bool:
     except Exception:
         config.log_error("updater.launch_script")
         return False
+
+
+def update_log_path() -> Path:
+    return config.app_dir() / "nodexy_update.log"
 
 
 def cleanup_orphan_helpers() -> int:
@@ -503,7 +577,9 @@ def schedule_apply(restart: bool) -> bool:
         config.log_error("updater.write_updater_script")
         return False
     mode = "restart" if restart else "once"
-    ok = launch_script(script, [str(os.getpid()), str(exe), str(new_exe), mode])
+    ok = launch_script(
+        script, [str(os.getpid()), str(exe), str(new_exe), mode, str(update_log_path())]
+    )
     if ok:
         _APPLY_SCHEDULED = True
     return ok
@@ -562,7 +638,7 @@ def startup_processing(skip_update: bool = False) -> dict:
             if exe and bak and bak.is_file():
                 try:
                     script = write_rollback_script()
-                    if launch_script(script, [str(os.getpid()), str(exe)]):
+                    if launch_script(script, [str(os.getpid()), str(exe), str(update_log_path())]):
                         cfg = config.read_config()
                         cfg.pop("boot_check", None)
                         cfg["rollback_safe_mode"] = 1

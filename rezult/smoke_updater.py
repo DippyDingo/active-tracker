@@ -184,14 +184,19 @@ with tempfile.TemporaryDirectory() as tmp:
     check(script.suffix == ".vbs", "помощник — VBS (GUI-подсистема, без консоли)")
     text = script.read_text(encoding="ascii")
     check("WScript.Arguments" in text, "параметры передаются аргументами")
+    check("args.Count < 5" in text, "полный набор аргументов: pid, пути, режим, лог")
     check("Win32_Process" in text, "ожидание процесса через WMI")
     check("WScript.Sleep" in text, "пауза без внешних команд")
-    check("tasklist" not in text and "find" not in text.lower().replace("findexe", ""),
-          "никакого текстового поиска процессов")
-    check("timeout" not in text.lower(), "нет команды timeout")
+    check("tasklist" not in text and "timeout /" not in text.lower()
+          and "ping -n" not in text, "нет внешних консольных команд")
+    check("Set wsh" not in text, "зарезервированное имя wsh не используется")
+    check("oShell" in text, "объект Shell под безопасным именем")
+    check("Sub Log(" in text, "ошибки пишутся в лог, а не в системное окно")
+    check("For attempt" in text, "замена с повторными попытками")
     rollback = updater.write_rollback_script()
     rtext = rollback.read_text(encoding="ascii")
-    check("Win32_Process" in rtext, "откат тоже через WMI")
+    check("Win32_Process" in rtext and "Sub Log(" in rtext, "откат тоже с логом и WMI")
+    check("wsh" not in rtext.replace("oShell", ""), "в откате нет зарезервированного имени")
 
 # --- 10б. Очистка осиротевших помощников -----------------------------------------
 killed = updater.cleanup_orphan_helpers()
