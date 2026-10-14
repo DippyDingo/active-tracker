@@ -12,7 +12,9 @@ from pathlib import Path
 from PySide6.QtCore import QThread, Signal
 
 from . import config
-from .version import APP_VERSION, RELEASES_URL
+from .version import APP_VERSION, GITHUB_REPO, RELEASES_URL
+
+RELEASES_PAGE_URL = f"https://github.com/{GITHUB_REPO}/releases"
 
 CHECK_DELAY_MS = 20_000
 CHECK_INTERVAL_MS = 12 * 3600 * 1000
@@ -85,7 +87,49 @@ def parse_sha256(text: str) -> str | None:
     return m.group(1).lower() if m else None
 
 
-def parse_release(data: dict) -> ReleaseInfo | None:
+def is_installer_asset(name: str) -> bool:
+    """Признаки ассета-установщика (в отличие от «голого» exe приложения)."""
+    n = (name or "").lower()
+    return any(
+        marker in n for marker in ("-setup", "_setup", "setup-", "-installer", "installer")
+    )
+
+
+# Какую .exe-ассетку предпочитать при выборе из релиза.
+# Стратегия B: скачиваем установщик и ставим его тихо; голый exe больше
+# не скачивается (если установщика в релизе нет — обновления нет).
+PREFER_INSTALLER_ASSET = True
+
+
+def _pick_asset(assets: list[dict], prefer_installer: bool):
+    """Выбирает ассет по признакам имени (порядок ассетов в API не гарантирован).
+
+    При prefer_installer=True запасного варианта НЕТ: без установщика релиз
+    считается непригодным для автообновления (иначе апдейтер скачал бы голый
+    exe и попытался «обновиться» им поверх установленной копии).
+    При prefer_installer=False (устаревший механизм) голый exe в приоритете,
+    установщик — только если exe нет.
+    """
+    exes = [a for a in (assets or []) if (a.get("name") or "").lower().endswith(".exe")]
+    if not exes:
+        return None, None, None
+    installers = [a for a in exes if is_installer_asset(a.get("name") or "")]
+    plain = [a for a in exes if not is_installer_asset(a.get("name") or "")]
+    if prefer_installer:
+        candidates = installers
+    else:
+        candidates = plain or installers
+    if not candidates:
+        return None, None, None
+    chosen = candidates[0]
+    return (
+        chosen.get("name"),
+        chosen.get("browser_download_url"),
+        chosen.get("size"),
+    )
+
+
+def parse_release(data: dict, prefer_installer: bool | None = None) -> ReleaseInfo | None:
     if not isinstance(data, dict):
         return None
     if data.get("draft") or data.get("prerelease"):
@@ -93,15 +137,11 @@ def parse_release(data: dict) -> ReleaseInfo | None:
     tag = data.get("tag_name") or ""
     if parse_version(tag) is None:
         return None
-    asset_name = asset_url = None
-    asset_size = None
-    for asset in data.get("assets") or []:
-        name = asset.get("name") or ""
-        if name.lower().endswith(".exe"):
-            asset_name = name
-            asset_url = asset.get("browser_download_url")
-            asset_size = asset.get("size")
-            break
+    if prefer_installer is None:
+        prefer_installer = PREFER_INSTALLER_ASSET
+    asset_name, asset_url, asset_size = _pick_asset(
+        data.get("assets") or [], prefer_installer
+    )
     body = data.get("body") or ""
     return ReleaseInfo(
         tag=tag,
@@ -117,11 +157,13 @@ def parse_release(data: dict) -> ReleaseInfo | None:
 
 
 def select_update(releases: list[dict], current: str = APP_VERSION) -> tuple[ReleaseInfo | None, str]:
-    """Последний опубликованный релиз с exe + суммарные заметки всех версий новее текущей."""
+    """Последний опубликованный релиз с пригодным ассетом + суммарные заметки."""
     parsed: list[ReleaseInfo] = []
     for data in releases or []:
         info = parse_release(data)
-        if info is not None:
+        # Стратегия B: релиз без установщика не предлагает ничего — голый exe
+        # больше не скачивается.
+        if info is not None and info.asset_url is not None:
             parsed.append(info)
     if not parsed:
         return None, ""
@@ -267,9 +309,12 @@ def get_last_update() -> dict | None:
     return data if isinstance(data, dict) and data.get("version") else None
 
 
-def set_last_update(version: str, notes: str) -> None:
+def set_last_update(version: str, notes: str, file: str | None = None) -> None:
     cfg = config.read_config()
-    cfg["last_update"] = {"version": version, "notes": notes}
+    data = {"version": version, "notes": notes}
+    if file:
+        data["file"] = str(file)
+    cfg["last_update"] = data
     config.write_config(cfg)
 
 
@@ -277,6 +322,48 @@ def clear_last_update() -> None:
     cfg = config.read_config()
     cfg.pop("last_update", None)
     config.write_config(cfg)
+
+
+# ---------------------------------------------------------------- prev cache (откат)
+def prev_dir() -> Path:
+    d = updates_dir() / "prev"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def store_prev_installer(src: Path | str, version: str) -> Path | None:
+    """Кладёт установщик успешно применённой версии в кэш отката."""
+    import shutil
+
+    try:
+        src = Path(src)
+        if not src.is_file():
+            return None
+        dest = prev_dir() / f"Nodexy-Setup-{version}.exe"
+        for old in prev_dir().glob("*.exe"):
+            _remove_quiet(old)
+        shutil.move(str(src), str(dest))
+        return dest
+    except Exception:
+        config.log_error("updater.store_prev_installer")
+        return None
+
+
+def prev_installer() -> Path | None:
+    """Кэш предыдущего установщика (точка отката) или None."""
+    try:
+        candidates = sorted(updates_dir().joinpath("prev").glob("*.exe"))
+        return candidates[-1] if candidates else None
+    except Exception:
+        return None
+
+
+def rollback_possible() -> tuple[bool, str]:
+    """Чистое решение «откат возможен/нет» от текущего состояния файловой системы."""
+    prev = prev_installer()
+    if prev is not None and prev.is_file():
+        return True, str(prev)
+    return False, ""
 
 
 # ---------------------------------------------------------------- snooze (чистые функции)
@@ -305,9 +392,18 @@ def current_exe() -> Path | None:
 
 
 def can_self_update() -> tuple[bool, str]:
+    """Возможность тихого самообновления через установщик.
+
+    Требует, чтобы приложение было установлено через setup (рядом лежит
+    unins000.exe) — тогда Inno при апгрейде возьмёт путь установки из реестра
+    и заменит файлы корректно. Для портативного запуска тихая установка
+    поверх себя не делается: только предложение скачать установщик.
+    """
     exe = current_exe()
     if exe is None:
-        return False, "Запуск из исходников — фоновая замена недоступна"
+        return False, "Запуск из исходников — обновление через установщик недоступно"
+    if not (exe.parent / "unins000.exe").is_file():
+        return False, "Портативная версия: скачайте установщик и установите вручную"
     folder = exe.parent
     probe = folder / ".nodexy_write_test"
     try:
@@ -330,19 +426,24 @@ def backup_path() -> Path | None:
 
 
 # ---------------------------------------------------------------- updater script
-_UPDATER_VBS = r"""On Error Resume Next
+# Помощник (стратегия B): дожидается полного выхода приложения и запускает
+# установщик Inno Setup тихо. Никакого переноса файлов — файлы заменяет сам
+# установщик, он же правит версию в «Приложениях и компонентах» и (с
+# /RESTARTAPP) перезапускает приложение. Тот же шаблон служит для отката:
+# вместо нового пакета подставляется кэш предыдущего (updates\prev).
+_SETUP_VBS = r"""On Error Resume Next
 Set args = WScript.Arguments
-If args.Count < 6 Then WScript.Quit 1
+If args.Count < 5 Then WScript.Quit 1
 pid = CLng(args(0))
 parentPid = CLng(args(1))
-oldExe = args(2)
-newExe = args(3)
-mode = args(4)
-logPath = args(5)
+setupPath = args(2)
+setupFlags = args(3)
+logPath = args(4)
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set oShell = CreateObject("WScript.Shell")
 ' Wait for BOTH the app process and its PyInstaller bootloader parent:
-' the parent wipes the _MEI extraction dir while exiting.
+' while the parent is alive the files are locked and Inno (AppMutex)
+' refuses to install.
 elapsed = 0
 Do While elapsed < 60
     If Not ProcessExists(pid) And Not ProcessExists(parentPid) Then Exit Do
@@ -353,74 +454,24 @@ If ProcessExists(pid) Or ProcessExists(parentPid) Then
     Log "timeout waiting for pid " & pid & " / parent " & parentPid & "; aborted, nothing changed"
     WScript.Quit 0
 End If
-' Grace pause: let the file lock release fully.
+' Grace pause: let file handles and the _MEI cleanup settle.
 WScript.Sleep 2000
-bak = oldExe & ".old"
-ok = False
-For attempt = 1 To 8
-    Err.Clear
-    If fso.FileExists(bak) Then fso.DeleteFile bak, True
-    If Err.Number = 0 Then
-        fso.MoveFile oldExe, bak
-        If Err.Number = 0 Then
-            fso.MoveFile newExe, oldExe
-            If Err.Number = 0 Then
-                ok = True
-                Exit For
-            Else
-                Log "move new->old failed: " & Err.Description
-                fso.MoveFile bak, oldExe
-            End If
-        Else
-            Log "move old->backup failed: " & Err.Description
-        End If
-    Else
-        Log "remove old backup failed: " & Err.Description
-    End If
-    WScript.Sleep 1000
-Next
-If Not ok Then
-    Log "swap failed after retries; aborted"
+If Not fso.FileExists(setupPath) Then
+    Log "setup missing: " & setupPath & "; aborted"
     WScript.Quit 1
 End If
-' Wait until the freshly moved exe is readable (file lock / AV scan released),
-' then give it a grace period before relaunching.
-If Not WaitFileReadable(oldExe, 15000) Then
-    Log "new exe not readable in time; still trying to launch"
+If Not WaitFileReadable(setupPath, 15000) Then
+    Log "setup not readable in time; aborted"
+    WScript.Quit 1
 End If
-' Size sanity check (7th arg): the file must be fully in place.
-If args.Count >= 7 Then
-    expectedSize = CLng(args(6))
-    sizeTries = 0
-    Do While sizeTries < 10
-        If fso.GetFile(oldExe).Size = expectedSize Then Exit Do
-        Log "size mismatch, waiting (" & fso.GetFile(oldExe).Size & " <> " & expectedSize & ")"
-        WScript.Sleep 500
-        sizeTries = sizeTries + 1
-    Loop
+WScript.Sleep 1000
+' Run the installer hidden and wait for it to finish.
+rc = oShell.Run(Chr(34) & setupPath & Chr(34) & " " & setupFlags, 0, True)
+If rc = 0 Then
+    Log "installer finished OK: " & setupPath
+Else
+    Log "installer FAILED rc=" & rc & ": " & setupPath
 End If
-WScript.Sleep 2000
-If LCase(mode) = "restart" Then
-    oShell.CurrentDirectory = fso.GetParentFolderName(oldExe)
-    launched = False
-    For launchAttempt = 1 To 3
-        oShell.Run Chr(34) & oldExe & Chr(34), 1, False
-        WScript.Sleep 4000
-        If ProcessRunningByPath(oldExe) Then
-            WScript.Sleep 4000
-            If ProcessRunningByPath(oldExe) Then
-                launched = True
-                Exit For
-            End If
-        End If
-        Log "restart attempt " & launchAttempt & " did not stay alive; retrying"
-        WScript.Sleep 3000
-    Next
-    If Not launched Then
-        Log "restart gave up after retries; user can launch manually"
-    End If
-End If
-Log "update applied: " & oldExe
 WScript.Quit 0
 Function ProcessExists(p)
     On Error Resume Next
@@ -433,19 +484,6 @@ Function ProcessExists(p)
     End If
     Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ProcessId=" & p)
     ProcessExists = (procs.Count > 0)
-End Function
-Function ProcessRunningByPath(exePath)
-    On Error Resume Next
-    ProcessRunningByPath = False
-    Set wmi2 = GetObject("winmgmts:\\.\root\cimv2")
-    If Err.Number <> 0 Then
-        Err.Clear
-        Exit Function
-    End If
-    Dim escaped
-    escaped = Replace(exePath, "\", "\\")
-    Set procs2 = wmi2.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ExecutablePath='" & escaped & "'")
-    ProcessRunningByPath = (procs2.Count > 0)
 End Function
 Function WaitFileReadable(exePath, maxMs)
     On Error Resume Next
@@ -478,84 +516,36 @@ Sub Log(msg)
 End Sub
 """
 
-_ROLLBACK_VBS = r"""On Error Resume Next
-Set args = WScript.Arguments
-If args.Count < 4 Then WScript.Quit 1
-pid = CLng(args(0))
-parentPid = CLng(args(1))
-exe = args(2)
-logPath = args(3)
-bak = exe & ".old"
-Set fso = CreateObject("Scripting.FileSystemObject")
-Set oShell = CreateObject("WScript.Shell")
-elapsed = 0
-Do While elapsed < 60
-    If Not ProcessExists(pid) And Not ProcessExists(parentPid) Then Exit Do
-    WScript.Sleep 500
-    elapsed = elapsed + 1
-Loop
-If ProcessExists(pid) Or ProcessExists(parentPid) Then WScript.Quit 0
-WScript.Sleep 2000
-If Not fso.FileExists(bak) Then
-    Log "rollback: no backup found"
-    WScript.Quit 1
-End If
-ok = False
-For attempt = 1 To 8
-    Err.Clear
-    fso.DeleteFile exe, True
-    fso.MoveFile bak, exe
-    If Err.Number = 0 Then
-        ok = True
-        Exit For
-    End If
-    Log "rollback attempt failed: " & Err.Description
-    WScript.Sleep 1000
-Next
-If Not ok Then
-    Log "rollback failed after retries"
-    WScript.Quit 1
-End If
-WScript.Sleep 1000
-oShell.CurrentDirectory = fso.GetParentFolderName(exe)
-oShell.Run Chr(34) & exe & Chr(34), 1, False
-Log "rollback applied: " & exe
-WScript.Quit 0
-Function ProcessExists(p)
-    On Error Resume Next
-    ProcessExists = False
-    If p = 0 Then Exit Function
-    Set wmi = GetObject("winmgmts:\\.\root\cimv2")
-    If Err.Number <> 0 Then
-        Err.Clear
-        Exit Function
-    End If
-    Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ProcessId=" & p)
-    ProcessExists = (procs.Count > 0)
-End Function
-Sub Log(msg)
-    On Error Resume Next
-    Dim lf
-    Set lf = CreateObject("Scripting.FileSystemObject").OpenTextFile(logPath, 8, True)
-    If Err.Number = 0 Then
-        lf.WriteLine Now & " | " & msg
-        lf.Close
-    End If
-    Err.Clear
-End Sub
-"""
+
+def build_silent_setup_args(restart: bool, log_path: str | Path | None = None) -> list[str]:
+    """Флаги тихой установки Inno Setup (чистая функция — тестируется отдельно).
+
+    /DIR намеренно НЕ передаётся: при апгрейде Inno берёт прежний путь из
+    реестра. /RESTARTAPP включает перезапуск приложения записью [Run]
+    с Check: RestartAfterSilentUpdate.
+    """
+    flags = ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-"]
+    if restart:
+        flags.append("/RESTARTAPP")
+    if log_path is not None:
+        flags.append(f'/LOG="{log_path}"')
+    return flags
+
+
+def install_log_path() -> Path:
+    return config.app_dir() / "nodexy_install.log"
 
 
 def write_updater_script() -> Path:
     """VBS-помощник: WScript — GUI-подсистема, консольных окон не бывает."""
     script = config.app_dir() / "nodexy_update.vbs"
-    script.write_text(_UPDATER_VBS, encoding="ascii")
+    script.write_text(_SETUP_VBS, encoding="ascii")
     return script
 
 
 def write_rollback_script() -> Path:
     script = config.app_dir() / "nodexy_rollback.vbs"
-    script.write_text(_ROLLBACK_VBS, encoding="ascii")
+    script.write_text(_SETUP_VBS, encoding="ascii")
     return script
 
 
@@ -655,16 +645,17 @@ def _parent_pid() -> int:
 
 
 def schedule_apply(restart: bool) -> bool:
-    """Запускает скрытый помощник: дождётся завершения процесса и заменит exe."""
+    """Запускает скрытый помощник: дождётся выхода и тихо поставит установщик."""
     global _APPLY_SCHEDULED
     if _APPLY_SCHEDULED and not restart:
         return True
     pending = get_pending()
-    exe = current_exe()
-    if not pending or exe is None:
+    if not pending or current_exe() is None:
         return False
-    new_exe = Path(str(pending.get("file") or ""))
-    if not new_exe.is_file():
+    if pending.get("kind") != "installer":
+        return False
+    setup = Path(str(pending.get("file") or ""))
+    if not setup.is_file():
         set_pending(None)
         return False
     try:
@@ -672,22 +663,43 @@ def schedule_apply(restart: bool) -> bool:
     except Exception:
         config.log_error("updater.write_updater_script")
         return False
-    mode = "restart" if restart else "once"
+    flags = " ".join(build_silent_setup_args(restart, install_log_path()))
     ok = launch_script(
         script,
         [
             str(os.getpid()),
             str(_parent_pid()),
-            str(exe),
-            str(new_exe),
-            mode,
+            str(setup),
+            flags,
             str(update_log_path()),
-            str(pending.get("size") or new_exe.stat().st_size),
         ],
     )
     if ok:
         _APPLY_SCHEDULED = True
     return ok
+
+
+def schedule_rollback() -> bool:
+    """Тихая установка кэша предыдущего установщика (понижение версии)."""
+    prev = prev_installer()
+    if prev is None or current_exe() is None:
+        return False
+    try:
+        script = write_rollback_script()
+    except Exception:
+        config.log_error("updater.write_rollback_script")
+        return False
+    flags = " ".join(build_silent_setup_args(True, install_log_path()))
+    return launch_script(
+        script,
+        [
+            str(os.getpid()),
+            str(_parent_pid()),
+            str(prev),
+            flags,
+            str(update_log_path()),
+        ],
+    )
 
 
 # ---------------------------------------------------------------- boot control
@@ -713,15 +725,23 @@ def startup_processing(skip_update: bool = False) -> dict:
 
     pending = get_pending()
     if pending and not skip_update:
-        version = str(pending.get("version") or "")
-        if same_version(version, APP_VERSION):
-            set_last_update(version, str(pending.get("notes") or ""))
+        if pending.get("kind") != "installer":
+            # Записи старого механизма (замена exe на месте) больше не действуют.
+            cancel_pending()
+        elif same_version(str(pending.get("version") or ""), APP_VERSION):
+            # Обновление применилось: запоминаем заметки И путь к установщику —
+            # после стабильного старта он станет точкой отката в updates\prev.
+            set_last_update(
+                str(pending.get("version") or ""),
+                str(pending.get("notes") or ""),
+                str(pending.get("file") or ""),
+            )
             set_pending(None)
-            result["plate"] = version
+            result["plate"] = pending.get("version")
             result["notes"] = pending.get("notes") or ""
-        elif is_newer(version):
-            # Предыдущая попытка применения не удалась. Считаем попытки;
-            # помощник запускается только при выходе, при старте — никаких окон.
+        elif is_newer(str(pending.get("version") or "")):
+            # Предыдущая попытка установки не удалась (версия не сменилась).
+            # Считаем попытки; помощник запускается только при выходе.
             attempts = int(pending.get("attempts", 0)) + 1
             if attempts >= MAX_REPLACE_ATTEMPTS:
                 result["failed_url"] = str(pending.get("page") or "")
@@ -741,14 +761,20 @@ def startup_processing(skip_update: bool = False) -> dict:
         cfg["boot_check"] = boot
         config.write_config(cfg)
         if need_rollback:
-            exe = current_exe()
-            bak = backup_path()
-            if exe and bak and bak.is_file():
+            can_rollback, prev_path = rollback_possible()
+            if can_rollback:
                 try:
                     script = write_rollback_script()
+                    flags = " ".join(build_silent_setup_args(True, install_log_path()))
                     if launch_script(
                         script,
-                        [str(os.getpid()), str(_parent_pid()), str(exe), str(update_log_path())],
+                        [
+                            str(os.getpid()),
+                            str(_parent_pid()),
+                            prev_path,
+                            flags,
+                            str(update_log_path()),
+                        ],
                     ):
                         cfg = config.read_config()
                         cfg.pop("boot_check", None)
@@ -758,6 +784,16 @@ def startup_processing(skip_update: bool = False) -> dict:
                         result["rollback"] = True
                 except Exception:
                     config.log_error("updater.rollback")
+            else:
+                # Кэша предыдущего установщика нет (чистая установка, файл
+                # удалён/повреждён): НЕ откатываемся, чтобы не зациклиться.
+                # Сбрасываем счётчик, чистим ожидание — дальше обычная работа.
+                cfg = config.read_config()
+                cfg.pop("boot_check", None)
+                config.write_config(cfg)
+                cancel_pending()
+                config.log_error("updater: откат невозможен — нет кэша установщика")
+                result["failed_url"] = RELEASES_PAGE_URL
     return result
 
 
@@ -766,6 +802,12 @@ def boot_success() -> None:
     if "boot_check" in cfg:
         cfg.pop("boot_check", None)
         config.write_config(cfg)
+    # Установщик успешно применённой версии переезжает из updates\ в кэш
+    # отката: если СЛЕДУЮЩЕЕ обновление окажется битым, откатывать будет чем.
+    info = get_last_update()
+    if info and info.get("file"):
+        store_prev_installer(Path(str(info["file"])), str(info.get("version") or ""))
+    # Наследие старой схемы: резервные копии .old больше не создаются.
     bak = backup_path()
     if bak is not None:
         _remove_quiet(bak)

@@ -79,6 +79,15 @@ def main() -> int:
             )
         except Exception:
             pass
+        # Именованный мьютекс нужен установщику Inno (AppMutex): по нему он
+        # понимает, что приложение запущено. Держится до выхода процесса.
+        # QLockFile ниже остаётся как внутренняя защита второго экземпляра.
+        from app import win32_utils
+
+        if not win32_utils.acquire_instance_mutex():
+            app = QApplication(sys.argv)
+            QMessageBox.information(None, "Nodexy", "Приложение уже запущено.")
+            return 0
 
     # Проверка флага --minimized
     start_minimized = "--minimized" in sys.argv
@@ -115,17 +124,23 @@ def main() -> int:
     _ensure_first_launch(db)
     _backfill_today_hours(db)
     
-    # Синхронизировать реестр с настройками при старте
+    # Синхронизация автозапуска (HKCU\...\Run, значение "Nodexy") с настройкой в БД:
+    # 1) в БД включён — путь в реестре всегда актуализируется;
+    # 2) в БД выключен — удаляем запись, только если она указывает на ТЕКУЩИЙ
+    #    exe (чужую запись, сделанную пользователем вручную, не трогаем);
+    # 3) ключа в БД вообще нет — «усыновляем» автозапуск, оставленный
+    #    установщиком: если запись в реестре указывает на текущий exe,
+    #    фиксируем в БД 1, чтобы галочка в настройках отражала реальность.
     from app import win32_utils
     autostart_setting = db.get_int("autostart", 0)
     if autostart_setting == 1:
-        # Если автозапуск включён в настройках, убедиться что путь в реестре актуален
-        if not win32_utils.autostart_enabled():
-            # Реестр был изменён вручную — восстановить
-            win32_utils.set_autostart(True)
-        # Проверить, что путь в реестре совпадает с текущим
-        # (на случай переноса exe или смены venv)
         win32_utils.set_autostart(True)
+    elif db.has("autostart"):
+        if win32_utils.autostart_points_to_current():
+            win32_utils.set_autostart(False)
+    else:
+        if win32_utils.autostart_points_to_current():
+            db.set_int("autostart", 1)
     
     tracker = Tracker(db)
     window = MainWindow(db, tracker, boot)

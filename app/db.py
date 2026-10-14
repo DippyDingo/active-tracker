@@ -326,6 +326,11 @@ class Database:
         row = self._conn.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
         return row["value"] if row is not None else default
 
+    def has(self, key: str) -> bool:
+        """Существует ли ключ в настройках (важно отличать «нет» от 0)."""
+        row = self._conn.execute("SELECT 1 FROM settings WHERE key=?", (key,)).fetchone()
+        return row is not None
+
     def set_text(self, key: str, value: str) -> None:
         with self._conn:
             self._conn.execute(

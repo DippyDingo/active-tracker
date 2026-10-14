@@ -51,5 +51,9 @@ Thumbs.db
 *.spec
 chat_context.txt
 
+# Installer artifacts
+dist-installer/
+installer/version_info.txt
+
 image_generate/
 media-output/

@@ -227,6 +227,39 @@ def _hicon_to_png(hicon: int, size: int) -> bytes | None:
             pass
 
 
+_INSTANCE_MUTEX_HANDLE = None
+
+# Имя должно совпадать с AppMutex в installer/nodexy.iss — по нему Inno
+# Setup определяет, что приложение запущено (закрытие перед установкой).
+INSTANCE_MUTEX_NAME = "NodexySingleInstanceMutex"
+
+
+def acquire_instance_mutex(name: str = INSTANCE_MUTEX_NAME) -> bool:
+    """Создаёт именованный мьютекс одного экземпляра.
+
+    Возвращает True, если мьютекс создан (экземпляр первый). Дескриптор
+    намеренно НЕ закрывается: он должен жить до выхода процесса.
+    """
+    global _INSTANCE_MUTEX_HANDLE
+    import sys
+
+    if sys.platform != "win32":
+        return False
+    try:
+        kernel32.CreateMutexW.restype = wintypes.HANDLE
+        handle = kernel32.CreateMutexW(None, False, name)
+        if not handle:
+            return False
+        # ERROR_ALREADY_EXISTS = 183: мьютекс уже создан другим процессом.
+        if kernel32.GetLastError() == 183:
+            kernel32.CloseHandle(handle)
+            return False
+        _INSTANCE_MUTEX_HANDLE = handle
+        return True
+    except Exception:
+        return False
+
+
 def autostart_command(exe_path: str, script_path: str | None, minimized: bool = True, frozen: bool | None = None) -> str:
     """
     Формирует командную строку для автозапуска.
@@ -364,5 +397,57 @@ def autostart_enabled() -> bool:
             winreg.CloseKey(key)
             return False
     
+    except Exception:
+        return False
+
+
+def autostart_value() -> str | None:
+    """Сырое значение "Nodexy" из HKCU\\...\\Run или None."""
+    import sys
+
+    if sys.platform != "win32":
+        return None
+    try:
+        import winreg
+    except ImportError:
+        return None
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0,
+            winreg.KEY_QUERY_VALUE,
+        )
+        try:
+            value, _type = winreg.QueryValueEx(key, "Nodexy")
+            return str(value)
+        except FileNotFoundError:
+            return None
+        finally:
+            winreg.CloseKey(key)
+    except Exception:
+        return None
+
+
+def autostart_points_to_current() -> bool:
+    """Указывает ли значение автозапуска на ТЕКУЩИЙ исполняемый файл.
+
+    Значение имеет вид '"<путь>" --minimized' — берём первый путь в кавычках
+    и сравниваем с sys.executable. Нужно для «усыновления» автозапуска,
+    созданного установщиком, и для безопасного удаления только СВОЕЙ записи.
+    """
+    import os
+    import sys
+
+    raw = autostart_value()
+    if not raw:
+        return False
+    path, _index = parse_icon_location(raw)
+    if not path:
+        return False
+    try:
+        return os.path.normcase(os.path.normpath(path)) == os.path.normcase(
+            os.path.normpath(sys.executable)
+        )
     except Exception:
         return False

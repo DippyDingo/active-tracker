@@ -1578,7 +1578,8 @@ class MainWindow(QMainWindow):
         pending = updater.get_pending()
         if pending and pending.get("version") == release.tag:
             return
-        dest = str(updater.updates_dir() / f"Nodexy-{release.tag}.exe")
+        # Имя файла — как у ассета в релизе (Nodexy-Setup-<версия>.exe).
+        dest = str(updater.updates_dir() / (release.asset_name or f"Nodexy-{release.tag}.exe"))
         task = updater.DownloadTask(release.asset_url, dest, self)
         task.progress.connect(self._on_silent_progress)
         task.ok.connect(self._on_silent_downloaded)
@@ -1609,6 +1610,7 @@ class MainWindow(QMainWindow):
                 "file": path,
                 "page": release.html_url,
                 "attempts": 0,
+                "kind": "installer",
             }
         )
         self._settings_status(f"Доступна {release.tag} — установится при выходе")
@@ -1682,6 +1684,7 @@ class MainWindow(QMainWindow):
                 "file": path,
                 "page": panel._release.html_url,
                 "attempts": 0,
+                "kind": "installer",
             }
         )
         if updater.schedule_apply(restart=True):

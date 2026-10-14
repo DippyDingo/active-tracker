@@ -50,22 +50,24 @@ check(updater.parse_sha256("никаких сумм") is None, "нет сумм�
 check(updater.parse_sha256("abc123") is None, "короткий не-hex")
 
 # --- 4. Разбор релиза -----------------------------------------------------------
+sha_setup_body = f"Что нового\nsha256: {sha}"
 release_json = {
     "tag_name": "v1.2.0",
     "name": "Версия 1.2.0",
-    "body": f"Что нового\nsha256: {sha}",
+    "body": sha_setup_body,
     "published_at": "2026-10-12T10:00:00Z",
     "html_url": "https://github.com/x/y/releases/tag/v1.2.0",
     "draft": False,
     "prerelease": False,
     "assets": [
         {"name": "checksums.txt", "browser_download_url": "u0", "size": 10},
-        {"name": "Nodexy.exe", "browser_download_url": "u1", "size": 1234},
+        {"name": "Nodexy-Setup-1.2.0.exe", "browser_download_url": "u1", "size": 1234},
     ],
 }
 info = updater.parse_release(release_json)
 check(info is not None and info.tag == "v1.2.0", "разбор релиза")
-check(info.asset_name == "Nodexy.exe" and info.asset_url == "u1", "выбран exe")
+check(info.asset_name == "Nodexy-Setup-1.2.0.exe" and info.asset_url == "u1",
+      "выбран установщик")
 check(info.asset_size == 1234, "размер ассета")
 check(info.sha256 == sha, "sha256 из body")
 check(info.published_at == "2026-10-12", "дата релиза")
@@ -73,7 +75,31 @@ check(info.published_at == "2026-10-12", "дата релиза")
 check(updater.parse_release({**release_json, "draft": True}) is None, "черновик пропущен")
 check(updater.parse_release({**release_json, "prerelease": True}) is None, "prerelease пропущен")
 no_exe = updater.parse_release({**release_json, "assets": []})
-check(no_exe is not None and no_exe.asset_url is None, "релиз без exe")
+check(no_exe is not None and no_exe.asset_url is None, "релиз без ассетов")
+
+# Стратегия B: релиз ТОЛЬКО с голым exe не годится для автообновления —
+# апдейтер не должен скачивать его по старой памяти.
+plain_only = updater.parse_release({
+    **release_json,
+    "assets": [{"name": "Nodexy.exe", "browser_download_url": "u-plain", "size": 1}],
+})
+check(plain_only is not None and plain_only.asset_url is None,
+      "голый exe без установщика не выбирается")
+
+# Релиз с двумя ассетами (голый exe + установщик): апдейтер обязан взять
+# установщик независимо от порядка ассетов в ответе API.
+two_assets = {
+    **release_json,
+    "assets": [
+        {"name": "Nodexy.exe", "browser_download_url": "u-plain", "size": 1234},
+        {"name": "Nodexy-Setup-1.2.0.exe", "browser_download_url": "u-setup", "size": 999},
+    ],
+}
+info2 = updater.parse_release(two_assets)
+check(info2.asset_name == "Nodexy-Setup-1.2.0.exe", "при двух ассетах выбран установщик")
+two_assets_rev = {**two_assets, "assets": list(reversed(two_assets["assets"]))}
+info3 = updater.parse_release(two_assets_rev)
+check(info3.asset_name == "Nodexy-Setup-1.2.0.exe", "порядок ассетов не влияет на выбор")
 
 # --- 5. Выбор обновления и суммарные заметки ------------------------------------
 def mk(tag: str, body: str, exe: bool = True, **kw):
@@ -85,7 +111,9 @@ def mk(tag: str, body: str, exe: bool = True, **kw):
         "html_url": f"page-{tag}",
         "draft": False,
         "prerelease": False,
-        "assets": [{"name": "Nodexy.exe", "browser_download_url": f"u-{tag}", "size": 100}] if exe else [],
+        "assets": [
+            {"name": f"Nodexy-Setup-{tag}.exe", "browser_download_url": f"u-{tag}", "size": 100}
+        ] if exe else [],
     }
     d.update(kw)
     return d
@@ -105,6 +133,13 @@ check(latest is None, "обновлений нет")
 
 latest, _ = updater.select_update([mk("v2.0.0", "x", draft=True), mk("v1.5.0", "y")], current="1.0.0")
 check(latest is not None and latest.tag == "v1.5.0", "черновик не считается")
+
+# Релиз только с голым exe (без установщика) — обновления нет вообще.
+plain_release = {**mk("v2.0.0", "z"), "assets": [
+    {"name": "Nodexy.exe", "browser_download_url": "u", "size": 1},
+]}
+latest, _ = updater.select_update([plain_release], current="1.0.0")
+check(latest is None, "релиз без установщика не предлагается")
 
 # --- 6. Целостность файла --------------------------------------------------------
 with tempfile.TemporaryDirectory() as tmp:
@@ -152,7 +187,8 @@ with tempfile.TemporaryDirectory() as tmp:
         updater.APP_VERSION = "1.0.0"
 
         # Успех: ожидающая версия совпала с запущенной (тег с префиксом v!)
-        updater.set_pending({"version": "v1.0.0", "notes": "заметки", "file": "x", "page": "p", "attempts": 1})
+        updater.set_pending({"version": "v1.0.0", "notes": "заметки", "file": "x",
+                             "page": "p", "attempts": 1, "kind": "installer"})
         res = updater.startup_processing()
         check(res["plate"] == "v1.0.0", "плашка после успешного обновления (v-префикс)")
         check(updater.get_pending() is None, "pending очищен после успеха")
@@ -161,7 +197,8 @@ with tempfile.TemporaryDirectory() as tmp:
         # Регрессия: в frozen-режиме запись boot_check не должна воскрешать pending
         sys.frozen = True
         try:
-            updater.set_pending({"version": "v1.0.0", "notes": "n", "file": "x", "page": "p", "attempts": 0})
+            updater.set_pending({"version": "v1.0.0", "notes": "n", "file": "x",
+                                 "page": "p", "attempts": 0, "kind": "installer"})
             updater.startup_processing()
             check(updater.get_pending() is None, "frozen: pending не воскрешён записью boot_check")
             check(updater.get_last_update() is not None, "frozen: last_update сохранён")
@@ -173,7 +210,8 @@ with tempfile.TemporaryDirectory() as tmp:
         updater.clear_last_update()
 
         # Провал: версия новее, счётчик попыток растёт
-        updater.set_pending({"version": "2.0.0", "notes": "", "file": "нет-файла", "page": "url", "attempts": 0})
+        updater.set_pending({"version": "2.0.0", "notes": "", "file": "нет-файла",
+                             "page": "url", "attempts": 0, "kind": "installer"})
         res = updater.startup_processing()
         check(updater.get_pending()["attempts"] == 1, "попытка №1 учтена")
         updater.startup_processing()
@@ -182,49 +220,86 @@ with tempfile.TemporaryDirectory() as tmp:
         check(updater.get_pending() is None, "pending очищен после исчерпания")
 
         # Стоп-кран
-        updater.set_pending({"version": "3.0.0", "notes": "", "file": "f", "page": "", "attempts": 0})
+        updater.set_pending({"version": "3.0.0", "notes": "", "file": "f",
+                             "page": "", "attempts": 0, "kind": "installer"})
         updater.startup_processing(skip_update=True)
         check(updater.get_pending() is None, "--skip-update сбрасывает ожидание")
+
+        # Легаси-запись без kind (старый механизм замены exe) — недействительна.
+        updater.set_pending({"version": "9.9.9", "notes": "", "file": "f",
+                             "page": "", "attempts": 0})
+        updater.startup_processing()
+        check(updater.get_pending() is None, "запись без kind=installer очищена")
 
         updater.clear_last_update()
         check(updater.get_last_update() is None, "очистка «Что нового»")
     finally:
         updater.APP_VERSION = old_version
 
-# --- 10. Скрипт апдейтера (VBS, без консоли) -------------------------------------
+# --- 10. Скрипт апдейтера (VBS, без консоли, запуск установщика) -------------------
 with tempfile.TemporaryDirectory() as tmp:
     config.APP_DIR = Path(tmp)
     script = updater.write_updater_script()
     check(script.suffix == ".vbs", "помощник — VBS (GUI-подсистема, без консоли)")
     text = script.read_text(encoding="ascii")
     check("WScript.Arguments" in text, "параметры передаются аргументами")
-    check("args.Count < 6" in text, "полный набор аргументов: pid, родитель, пути, режим, лог")
+    check("args.Count < 5" in text, "набор аргументов: pid, родитель, путь, флаги, лог")
     check("ProcessExists(parentPid)" in text, "ждём и PyInstaller-bootloader-родителя")
-    check("WScript.Sleep 2000" in text, "пауза перед заменой после выхода")
+    check("WScript.Sleep 2000" in text, "пауза после выхода перед установкой")
     check("Win32_Process" in text, "ожидание процесса через WMI")
-    check("WScript.Sleep" in text, "пауза без внешних команд")
     check("tasklist" not in text and "timeout /" not in text.lower()
           and "ping -n" not in text, "нет внешних консольных команд")
     check("Set wsh" not in text, "зарезервированное имя wsh не используется")
     check("oShell" in text, "объект Shell под безопасным именем")
     check("Sub Log(" in text, "ошибки пишутся в лог, а не в системное окно")
-    check("For attempt" in text, "замена с повторными попытками")
+    check("fso.MoveFile" not in text, "помощник сам файлы не переносит — ставит Inno")
+    check("installer finished" in text, "результат установщика логируется")
+    check("WaitFileReadable(setupPath" in text, "установщик проверяется на читаемость")
     rollback = updater.write_rollback_script()
     rtext = rollback.read_text(encoding="ascii")
-    check("Win32_Process" in rtext and "Sub Log(" in rtext, "откат тоже с логом и WMI")
-    check("wsh" not in rtext.replace("oShell", ""), "в откате нет зарезервированного имени")
+    check("Win32_Process" in rtext and "Sub Log(" in rtext, "откат тем же шаблоном")
 
-# --- 10б. Очистка осиротевших помощников -----------------------------------------
+# --- 10а. Флаги тихой установки (чистая функция) ------------------------------------
+flags = updater.build_silent_setup_args(True, "C:\\x\\install.log")
+check("/VERYSILENT" in flags and "/SUPPRESSMSGBOXES" in flags and "/NORESTART" in flags
+      and "/SP-" in flags, "базовые флаги тихой установки")
+check("/RESTARTAPP" in flags, "restart=True добавляет /RESTARTAPP")
+check('/LOG="C:\\x\\install.log"' in flags, "лог установки в кавычках")
+flags2 = updater.build_silent_setup_args(False, None)
+check("/RESTARTAPP" not in flags2, "restart=False без /RESTARTAPP")
+check(not any(f.startswith("/LOG") for f in flags2), "без пути лога нет /LOG")
+
+# --- 10б. Кэш отката updates\prev -----------------------------------------------------
+with tempfile.TemporaryDirectory() as tmp:
+    config.APP_DIR = Path(tmp)
+    can, _p = updater.rollback_possible()
+    check(not can, "пустой кэш — откат невозможен")
+    src1 = Path(tmp) / "s1.exe"
+    src1.write_bytes(b"setup-v1")
+    stored = updater.store_prev_installer(src1, "v1.0.0")
+    check(stored is not None and stored.is_file(), "установщик сохранён в prev")
+    check(updater.prev_installer() == stored, "prev_installer находит кэш")
+    can, path = updater.rollback_possible()
+    check(can and path == str(stored), "с кэшем откат возможен")
+    src2 = Path(tmp) / "s2.exe"
+    src2.write_bytes(b"setup-v2")
+    updater.store_prev_installer(src2, "v1.1.0")
+    check(len(list(updater.prev_dir().glob("*.exe"))) == 1, "в prev только один пакет")
+    check(updater.store_prev_installer(Path(tmp) / "нет-такого.exe", "v9") is None,
+          "несуществующий файл не сохраняется")
+
+# --- 10в. Очистка осиротевших помощников -----------------------------------------
 killed = updater.cleanup_orphan_helpers()
 check(isinstance(killed, int) and killed >= 0, "cleanup_orphan_helpers не падает")
 
-# --- 10в. Устаревшее ожидание (версия не новее) сбрасывается ----------------------
+# --- 10г. Устаревшее ожидание (версия не новее) сбрасывается ----------------------
 with tempfile.TemporaryDirectory() as tmp:
     config.APP_DIR = Path(tmp)
     old_version = updater.APP_VERSION
     try:
         updater.APP_VERSION = "1.2.1"
-        updater.set_pending({"version": "1.1.0", "notes": "", "file": "f", "page": "", "attempts": 0})
+        updater.set_pending({"version": "1.1.0", "notes": "", "file": "f", "page": "",
+                             "attempts": 0, "kind": "installer"})
         updater.startup_processing()
         check(updater.get_pending() is None, "устаревшее ожидание сброшено")
     finally:

@@ -165,7 +165,7 @@ class UpdatePanel(QFrame):
     def _start_download(self) -> None:
         if self._task is not None or not self._release.asset_url:
             return
-        dest = str(updater.updates_dir() / f"Nodexy-{self._release.tag}.exe")
+        dest = str(updater.updates_dir() / (self._release.asset_name or f"Nodexy-{self._release.tag}.exe"))
         self._status.setText("Скачивание…")
         self._progress.setValue(0)
         self._set_state("downloading")
@@ -197,7 +197,10 @@ class UpdatePanel(QFrame):
         # Ожидание установки не фиксируем до клика «Установить»: в режиме
         # с подтверждением выход из приложения не должен ставить обновление.
         self._downloaded_path = path
-        self._status.setText("Файл проверен и готов к установке.")
+        self._status.setText(
+            "Установщик проверен. После нажатия приложение закроется, "
+            "установщик обновит файлы и откроет окно заново."
+        )
         self._set_state("ready")
 
     def _on_download_error(self, message: str) -> None:
