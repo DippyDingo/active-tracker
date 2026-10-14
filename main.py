@@ -79,6 +79,25 @@ def main() -> int:
             )
         except Exception:
             pass
+
+    # Проверка флага --minimized
+    start_minimized = "--minimized" in sys.argv
+    # Стоп-кран: --skip-update пропускает ожидающее обновление (аварийный вход).
+    skip_update = "--skip-update" in sys.argv
+
+    # Прямо сейчас помощник ставит обновление (пользователь запустил приложение
+    # во время установки): мгновенно выйти и оставить лёгкий вейтер — он
+    # дождётся окончания установки и откроет уже новую версию. Ждать внутри
+    # процесса нельзя: живой Nodexy блокирует установщик (AppMutex).
+    # Проверка делается ДО мьютекса, чтобы не мешать установке.
+    if getattr(sys, "frozen", False) and not skip_update:
+        if updater.install_in_progress():
+            updater.spawn_relaunch_waiter(
+                [a for a in sys.argv[1:] if a != "--skip-update"]
+            )
+            return 0
+
+    if sys.platform == "win32":
         # Именованный мьютекс нужен установщику Inno (AppMutex): по нему он
         # понимает, что приложение запущено. Держится до выхода процесса.
         # QLockFile ниже остаётся как внутренняя защита второго экземпляра.
@@ -88,11 +107,6 @@ def main() -> int:
             app = QApplication(sys.argv)
             QMessageBox.information(None, "Nodexy", "Приложение уже запущено.")
             return 0
-
-    # Проверка флага --minimized
-    start_minimized = "--minimized" in sys.argv
-    # Стоп-кран: --skip-update пропускает ожидающее обновление (аварийный вход).
-    skip_update = "--skip-update" in sys.argv
 
     # Бут-контроль и применение ожидающего обновления — до появления окна.
     boot = updater.startup_processing(skip_update)

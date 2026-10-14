@@ -224,6 +224,14 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
         painter.drawEllipse(pt(8, 8), 5.6 * scale, 5.6 * scale)
         painter.drawLine(pt(8, 7.4), pt(8, 11.4))
         painter.drawPoint(pt(8, 5.0))
+    elif kind == "update":
+        # Круговая стрелка («обновление»): дуга ~250° + наконечник.
+        painter.drawArc(
+            QRectF(2.8 * scale, 2.8 * scale, 10.4 * scale, 10.4 * scale),
+            60 * 16, 250 * 16,
+        )
+        painter.drawLine(pt(10.6, 3.5), pt(8.5, 3.1))
+        painter.drawLine(pt(10.6, 3.5), pt(11.3, 5.5))
     painter.end()
     pm.setDevicePixelRatio(scale)
     return QIcon(pm)

@@ -145,6 +145,11 @@ class SettingsPanel(QFrame):
         layout.addLayout(row6)
 
         row7 = QHBoxLayout()
+        self._update_btn = QPushButton("Обновить…")
+        self._update_btn.setObjectName("primary")
+        self._update_btn.setCursor(Qt.PointingHandCursor)
+        self._update_btn.setVisible(False)
+        row7.addWidget(self._update_btn)
         check_btn = QPushButton("Проверить сейчас")
         check_btn.setCursor(Qt.PointingHandCursor)
         check_btn.clicked.connect(self.check_now)
@@ -235,6 +240,15 @@ class SettingsPanel(QFrame):
 
     def set_update_status(self, text: str) -> None:
         self._update_status.setText(text)
+
+    def set_update_action(self, callback) -> None:
+        """Показывает кнопку «Обновить…» (есть доступное обновление)."""
+        try:
+            self._update_btn.clicked.disconnect()
+        except RuntimeError:
+            pass
+        self._update_btn.clicked.connect(callback)
+        self._update_btn.setVisible(True)
 
     def set_autoupdate_note(self, text: str) -> None:
         self._autoupdate_note.setText(text)

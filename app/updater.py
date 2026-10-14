@@ -429,61 +429,106 @@ def backup_path() -> Path | None:
 # Помощник (стратегия B): дожидается полного выхода приложения и запускает
 # установщик Inno Setup тихо. Никакого переноса файлов — файлы заменяет сам
 # установщик, он же правит версию в «Приложениях и компонентах» и (с
-# /RESTARTAPP) перезапускает приложение. Тот же шаблон служит для отката:
-# вместо нового пакета подставляется кэш предыдущего (updates\prev).
+# /RESTARTAPP) перезапускает приложение. Тот же шаблон служит для отката.
+#
+# Ключевые защиты (выстраданы на реальных сбоях):
+# - ожидание идёт по ИМЕНИ процесса, а не по PID: если пользователь снова
+#   запустил приложение во время установки, помощник дождётся его закрытия
+#   (иначе Inno отменяется из-за AppMutex с кодом 1);
+# - маркер install.lock вокруг запуска установщика: стартовавшее в этот
+#   момент приложение подождёт завершения установки и перезапустится уже
+#   новой версией (см. wait_for_ongoing_install в main.py);
+# - код возврата установщика проверяется вместе с Err (пустой rc раньше
+#   выдавал ложное «finished OK»);
+# - до трёх попыток установки с повторным ожиданием между ними.
 _SETUP_VBS = r"""On Error Resume Next
 Set args = WScript.Arguments
 If args.Count < 5 Then WScript.Quit 1
-pid = CLng(args(0))
-parentPid = CLng(args(1))
-setupPath = args(2)
-setupFlags = args(3)
-logPath = args(4)
+appName = args(0)
+setupPath = args(1)
+setupFlags = args(2)
+logPath = args(3)
+lockPath = args(4)
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set oShell = CreateObject("WScript.Shell")
-' Wait for BOTH the app process and its PyInstaller bootloader parent:
-' while the parent is alive the files are locked and Inno (AppMutex)
-' refuses to install.
-elapsed = 0
-Do While elapsed < 60
-    If Not ProcessExists(pid) And Not ProcessExists(parentPid) Then Exit Do
-    WScript.Sleep 500
-    elapsed = elapsed + 1
-Loop
-If ProcessExists(pid) Or ProcessExists(parentPid) Then
-    Log "timeout waiting for pid " & pid & " / parent " & parentPid & "; aborted, nothing changed"
-    WScript.Quit 0
-End If
-' Grace pause: let file handles and the _MEI cleanup settle.
-WScript.Sleep 2000
-If Not fso.FileExists(setupPath) Then
-    Log "setup missing: " & setupPath & "; aborted"
+' Lock marker is set RIGHT AWAY: an app instance launched by the user at any
+' point while this helper works will wait and then relaunch as new version.
+WriteLock
+installed = False
+For attempt = 1 To 3
+    ' Wait until no app process remains (child + PyInstaller bootloader parent
+    ' share the exe name; also catches the app being relaunched mid-update).
+    waited = 0
+    Do While waited < 120
+        If Not AppRunning(appName) Then Exit Do
+        WScript.Sleep 500
+        waited = waited + 1
+    Loop
+    If AppRunning(appName) Then
+        Log "app still running after 60s (attempt " & attempt & "); aborted, nothing changed"
+        RemoveLock
+        WScript.Quit 0
+    End If
+    ' Grace pause: let file handles and the _MEI cleanup settle.
+    WScript.Sleep 2000
+    If Not fso.FileExists(setupPath) Then
+        Log "setup missing: " & setupPath & "; aborted"
+        RemoveLock
+        WScript.Quit 1
+    End If
+    If Not WaitFileReadable(setupPath, 15000) Then
+        Log "setup not readable in time; aborted"
+        RemoveLock
+        WScript.Quit 1
+    End If
+    WScript.Sleep 1000
+    ' Re-check right before running: the user may have relaunched the app.
+    If AppRunning(appName) Then
+        Log "app relaunched before install (attempt " & attempt & "); retrying"
+        WScript.Sleep 3000
+    Else
+        Err.Clear
+        rc = oShell.Run(Chr(34) & setupPath & Chr(34) & " " & setupFlags, 0, True)
+        runErr = Err.Number
+        runDesc = Err.Description
+        Err.Clear
+        If runErr <> 0 Then
+            Log "run failed (attempt " & attempt & "): " & runDesc
+            WScript.Sleep 4000
+        ElseIf rc = 0 Then
+            Log "installer finished OK (attempt " & attempt & "): " & setupPath
+            installed = True
+            Exit For
+        Else
+            Log "installer FAILED rc=" & rc & " (attempt " & attempt & ")"
+            WScript.Sleep 4000
+        End If
+    End If
+Next
+RemoveLock
+If Not installed Then
+    Log "install gave up after retries; will retry on next app exit"
     WScript.Quit 1
-End If
-If Not WaitFileReadable(setupPath, 15000) Then
-    Log "setup not readable in time; aborted"
-    WScript.Quit 1
-End If
-WScript.Sleep 1000
-' Run the installer hidden and wait for it to finish.
-rc = oShell.Run(Chr(34) & setupPath & Chr(34) & " " & setupFlags, 0, True)
-If rc = 0 Then
-    Log "installer finished OK: " & setupPath
-Else
-    Log "installer FAILED rc=" & rc & ": " & setupPath
 End If
 WScript.Quit 0
-Function ProcessExists(p)
+Function AppRunning(procName)
     On Error Resume Next
-    ProcessExists = False
-    If p = 0 Then Exit Function
+    ' Fail-safe: on WMI failure assume the app IS running (better to wait
+    ' than to run the installer over a live app and get an AppMutex abort).
+    AppRunning = True
     Set wmi = GetObject("winmgmts:\\.\root\cimv2")
     If Err.Number <> 0 Then
         Err.Clear
         Exit Function
     End If
-    Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE ProcessId=" & p)
-    ProcessExists = (procs.Count > 0)
+    Dim escaped
+    escaped = Replace(procName, "'", "''")
+    Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name='" & escaped & "'")
+    If Err.Number <> 0 Then
+        Err.Clear
+        Exit Function
+    End If
+    AppRunning = (procs.Count > 0)
 End Function
 Function WaitFileReadable(exePath, maxMs)
     On Error Resume Next
@@ -504,6 +549,21 @@ Function WaitFileReadable(exePath, maxMs)
     Loop
     WaitFileReadable = False
 End Function
+Sub WriteLock()
+    On Error Resume Next
+    Dim lf
+    Set lf = CreateObject("Scripting.FileSystemObject").CreateTextFile(lockPath, True)
+    If Err.Number = 0 Then
+        lf.WriteLine Now
+        lf.Close
+    End If
+    Err.Clear
+End Sub
+Sub RemoveLock()
+    On Error Resume Next
+    CreateObject("Scripting.FileSystemObject").DeleteFile lockPath, True
+    Err.Clear
+End Sub
 Sub Log(msg)
     On Error Resume Next
     Dim lf
@@ -514,6 +574,51 @@ Sub Log(msg)
     End If
     Err.Clear
 End Sub
+"""
+
+
+_WAIT_VBS = r"""On Error Resume Next
+Set args = WScript.Arguments
+If args.Count < 4 Then WScript.Quit 1
+lockPath = args(0)
+exePath = args(1)
+appName = args(2)
+extraArgs = args(3)
+Set fso = CreateObject("Scripting.FileSystemObject")
+Set oShell = CreateObject("WScript.Shell")
+' Wait until the install helper clears its marker (max ~4 min).
+waited = 0
+Do While waited < 240
+    If Not fso.FileExists(lockPath) Then Exit Do
+    WScript.Sleep 1000
+    waited = waited + 1
+Loop
+' Grace pause, then launch the (now updated) app unless it is already running
+' (the installer may have relaunched it via /RESTARTAPP).
+WScript.Sleep 2000
+If Not AppRunning(appName) Then
+    oShell.CurrentDirectory = fso.GetParentFolderName(exePath)
+    oShell.Run Chr(34) & exePath & Chr(34) & extraArgs, 1, False
+End If
+WScript.Quit 0
+Function AppRunning(procName)
+    On Error Resume Next
+    ' Fail-safe: on WMI failure assume the app IS running.
+    AppRunning = True
+    Set wmi = GetObject("winmgmts:\\.\root\cimv2")
+    If Err.Number <> 0 Then
+        Err.Clear
+        Exit Function
+    End If
+    Dim escaped
+    escaped = Replace(procName, "'", "''")
+    Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name='" & escaped & "'")
+    If Err.Number <> 0 Then
+        Err.Clear
+        Exit Function
+    End If
+    AppRunning = (procs.Count > 0)
+End Function
 """
 
 
@@ -534,6 +639,70 @@ def build_silent_setup_args(restart: bool, log_path: str | Path | None = None) -
 
 def install_log_path() -> Path:
     return config.app_dir() / "nodexy_install.log"
+
+
+def install_lock_path() -> Path:
+    return config.app_dir() / "install.lock"
+
+
+def _helper_alive() -> bool:
+    """Жив ли сейчас wscript-помощник установки/отката."""
+    try:
+        import psutil
+    except Exception:
+        return False
+    markers = ("nodexy_update", "nodexy_rollback")
+    for proc in psutil.process_iter(["name", "cmdline"]):
+        try:
+            if (proc.info["name"] or "").lower() != "wscript.exe":
+                continue
+            cmdline = " ".join(proc.info["cmdline"] or []).lower()
+            if any(m in cmdline for m in markers):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def install_in_progress() -> bool:
+    """Прямо сейчас помощник ставит обновление (свежий маркер + живой помощник).
+
+    Протухший маркер (помощник погиб) молча удаляется.
+    """
+    import time
+
+    lock = install_lock_path()
+    try:
+        if not lock.exists():
+            return False
+        age = time.time() - lock.stat().st_mtime
+    except OSError:
+        return False
+    if age > 300 or not _helper_alive():
+        _remove_quiet(lock)
+        return False
+    return True
+
+
+def spawn_relaunch_waiter(extra_args: list[str]) -> bool:
+    """Оставляет лёгкий wscript-процесс: дождётся конца установки и запустит
+    приложение новой версией. Само приложение при этом сразу выходит, чтобы
+    не мешать установщику (Inno отменяется, пока жив хоть один наш процесс).
+    """
+    exe = current_exe()
+    if exe is None:
+        return False
+    try:
+        script = config.app_dir() / "nodexy_wait.vbs"
+        script.write_text(_WAIT_VBS, encoding="ascii")
+    except Exception:
+        config.log_error("updater.spawn_relaunch_waiter")
+        return False
+    joined = (" " + " ".join(extra_args)) if extra_args else ""
+    return launch_script(
+        script,
+        [str(install_lock_path()), str(exe), exe.name, joined],
+    )
 
 
 def write_updater_script() -> Path:
@@ -585,7 +754,7 @@ def cleanup_orphan_helpers() -> int:
         import psutil
     except Exception:
         return 0
-    markers = ("nodexy_update", "nodexy_rollback")
+    markers = ("nodexy_update", "nodexy_rollback", "nodexy_wait")
     my_pid = os.getpid()
     try:
         my_create = psutil.Process(my_pid).create_time()
@@ -626,22 +795,12 @@ def cleanup_orphan_helpers() -> int:
 
     # Старые скрипты больше не нужны (рабочий помощник уже загрузил свой в память).
     for name in ("nodexy_update.bat", "nodexy_rollback.bat",
-                 "nodexy_update.vbs", "nodexy_rollback.vbs"):
+                 "nodexy_update.vbs", "nodexy_rollback.vbs", "nodexy_wait.vbs"):
         _remove_quiet(config.app_dir() / name)
     return killed
 
 
 _APPLY_SCHEDULED = False
-
-
-def _parent_pid() -> int:
-    """PID PyInstaller-bootloader-родителя (onefile: процессов всегда два)."""
-    try:
-        import psutil
-
-        return psutil.Process(os.getpid()).ppid()
-    except Exception:
-        return 0
 
 
 def schedule_apply(restart: bool) -> bool:
@@ -650,7 +809,8 @@ def schedule_apply(restart: bool) -> bool:
     if _APPLY_SCHEDULED and not restart:
         return True
     pending = get_pending()
-    if not pending or current_exe() is None:
+    exe = current_exe()
+    if not pending or exe is None:
         return False
     if pending.get("kind") != "installer":
         return False
@@ -667,11 +827,11 @@ def schedule_apply(restart: bool) -> bool:
     ok = launch_script(
         script,
         [
-            str(os.getpid()),
-            str(_parent_pid()),
+            exe.name,
             str(setup),
             flags,
             str(update_log_path()),
+            str(install_lock_path()),
         ],
     )
     if ok:
@@ -682,7 +842,8 @@ def schedule_apply(restart: bool) -> bool:
 def schedule_rollback() -> bool:
     """Тихая установка кэша предыдущего установщика (понижение версии)."""
     prev = prev_installer()
-    if prev is None or current_exe() is None:
+    exe = current_exe()
+    if prev is None or exe is None:
         return False
     try:
         script = write_rollback_script()
@@ -693,11 +854,11 @@ def schedule_rollback() -> bool:
     return launch_script(
         script,
         [
-            str(os.getpid()),
-            str(_parent_pid()),
+            exe.name,
             str(prev),
             flags,
             str(update_log_path()),
+            str(install_lock_path()),
         ],
     )
 
@@ -761,21 +922,10 @@ def startup_processing(skip_update: bool = False) -> dict:
         cfg["boot_check"] = boot
         config.write_config(cfg)
         if need_rollback:
-            can_rollback, prev_path = rollback_possible()
+            can_rollback, _prev_path = rollback_possible()
             if can_rollback:
                 try:
-                    script = write_rollback_script()
-                    flags = " ".join(build_silent_setup_args(True, install_log_path()))
-                    if launch_script(
-                        script,
-                        [
-                            str(os.getpid()),
-                            str(_parent_pid()),
-                            prev_path,
-                            flags,
-                            str(update_log_path()),
-                        ],
-                    ):
+                    if schedule_rollback():
                         cfg = config.read_config()
                         cfg.pop("boot_check", None)
                         cfg["rollback_safe_mode"] = 1

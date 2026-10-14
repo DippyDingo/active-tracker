@@ -243,8 +243,8 @@ with tempfile.TemporaryDirectory() as tmp:
     check(script.suffix == ".vbs", "помощник — VBS (GUI-подсистема, без консоли)")
     text = script.read_text(encoding="ascii")
     check("WScript.Arguments" in text, "параметры передаются аргументами")
-    check("args.Count < 5" in text, "набор аргументов: pid, родитель, путь, флаги, лог")
-    check("ProcessExists(parentPid)" in text, "ждём и PyInstaller-bootloader-родителя")
+    check("args.Count < 5" in text, "набор аргументов: имя, путь, флаги, лог, маркер")
+    check("AppRunning(appName)" in text, "ждём ВСЕ процессы приложения по имени (гонка перезапуска)")
     check("WScript.Sleep 2000" in text, "пауза после выхода перед установкой")
     check("Win32_Process" in text, "ожидание процесса через WMI")
     check("tasklist" not in text and "timeout /" not in text.lower()
@@ -253,7 +253,11 @@ with tempfile.TemporaryDirectory() as tmp:
     check("oShell" in text, "объект Shell под безопасным именем")
     check("Sub Log(" in text, "ошибки пишутся в лог, а не в системное окно")
     check("fso.MoveFile" not in text, "помощник сам файлы не переносит — ставит Inno")
-    check("installer finished" in text, "результат установщика логируется")
+    check("installer finished OK" in text, "результат установщика логируется")
+    check("runErr" in text, "ошибка запуска отличима от rc=0 (ложного ОК больше нет)")
+    check("For attempt = 1 To 3" in text, "до трёх попыток установки")
+    check("AppRunning = True" in text, "WMI-сбой трактуется как «приложение живо» (fail-safe)")
+    check("WriteLock" in text and "RemoveLock" in text, "маркер install.lock вокруг установки")
     check("WaitFileReadable(setupPath" in text, "установщик проверяется на читаемость")
     rollback = updater.write_rollback_script()
     rtext = rollback.read_text(encoding="ascii")
@@ -268,6 +272,37 @@ check('/LOG="C:\\x\\install.log"' in flags, "лог установки в кав
 flags2 = updater.build_silent_setup_args(False, None)
 check("/RESTARTAPP" not in flags2, "restart=False без /RESTARTAPP")
 check(not any(f.startswith("/LOG") for f in flags2), "без пути лога нет /LOG")
+
+# --- 10а2. Защита от гонки «запуск во время установки» ------------------------------
+import time as _time  # noqa: E402
+
+with tempfile.TemporaryDirectory() as tmp:
+    config.APP_DIR = Path(tmp)
+    check(not updater.install_in_progress(), "нет маркера — установка не идёт")
+    lock = updater.install_lock_path()
+    lock.write_text("x")
+    os.utime(lock, (_time.time() - 1000, _time.time() - 1000))
+    check(not updater.install_in_progress(), "протухший маркер сброшен")
+    check(not lock.exists(), "протухший маркер удалён")
+    # Маркер есть, но помощник мёртв — не блокируем запуск.
+    lock.write_text("x")
+    check(not updater.install_in_progress(), "мёртвый помощник — маркер сброшен")
+    check(not lock.exists(), "маркер мёртвого помощника удалён")
+    # Живой помощник + свежий маркер — установка идёт.
+    real_alive = updater._helper_alive
+    updater._helper_alive = lambda: True
+    try:
+        lock.write_text("x")
+        check(updater.install_in_progress(), "живой помощник: установка идёт")
+    finally:
+        updater._helper_alive = real_alive
+        lock.unlink(missing_ok=True)
+
+# Вейтер перезапуска: ждёт снятия маркера, не плодит второй экземпляр.
+wait_vbs = updater._WAIT_VBS
+check("lockPath" in wait_vbs and "AppRunning" in wait_vbs,
+      "вейтер ждёт маркер и проверяет запущенность")
+check("Nodexy" not in wait_vbs, "вейтер не хардкодит имя приложения")
 
 # --- 10б. Кэш отката updates\prev -----------------------------------------------------
 with tempfile.TemporaryDirectory() as tmp:

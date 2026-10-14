@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPalette, QPixmap
 
 from .. import config, updater, win32_utils
 from ..db import Database
@@ -157,7 +157,7 @@ class AppMenuPopup(QFrame):
             item.clicked.connect(signal.emit)
             layout.addWidget(item)
 
-        self._update_item = _PopupItem(ui_icon("download"), "Доступно обновление")
+        self._update_item = _PopupItem(ui_icon("update"), "Доступно обновление")
         self._update_item.clicked.connect(self.update_requested)
         self._update_item.setVisible(False)
         layout.addWidget(self._update_item)
@@ -180,7 +180,7 @@ class AppMenuPopup(QFrame):
     def retheme(self) -> None:
         self._sep.setStyleSheet(f"background: {theme.pal().card}; border: none;")
         self._quit_item.set_icon(ui_icon("power", theme.pal().danger))
-        self._update_item.set_icon(ui_icon("download"))
+        self._update_item.set_icon(ui_icon("update"))
         self._whatsnew_item.set_icon(ui_icon("info"))
         self.update()
 
@@ -294,6 +294,9 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(theme.load_app_icon())
         self.resize(1210, 780)
         self.setMinimumSize(1020, 680)
+        # Нативный фон окна под цвет темы: без этого при первом показе и при
+        # перестроении карточек мелькает белый HWND/QAbstractScrollArea.
+        self._apply_window_palette()
 
         root = QWidget()
         root.setObjectName("mainRoot")
@@ -463,6 +466,8 @@ class MainWindow(QMainWindow):
         self._empty_label.setAlignment(Qt.AlignCenter)
         self._scroll.setWidget(container)
         layout.addWidget(self._scroll, 1)
+        # Вьюпорт прокрутки создан — закрасить его нативный фон под тему.
+        self._apply_window_palette()
 
         self._popup = AppMenuPopup()
         self._popup.settings_requested.connect(self._open_settings)
@@ -1424,6 +1429,8 @@ class MainWindow(QMainWindow):
         panel.theme_changed.connect(self._preview_theme)
         panel.check_now.connect(lambda: self._check_updates(manual=True))
         panel.set_update_status(self._settings_status_text())
+        if self._update_available is not None:
+            panel.set_update_action(self._open_update_panel)
         can, reason = updater.can_self_update()
         if not can:
             panel.set_autoupdate_note(
@@ -1493,7 +1500,28 @@ class MainWindow(QMainWindow):
             if panel is not None and hasattr(panel, "retheme"):
                 panel.retheme()
             self._overlay.update()
+        self._apply_window_palette()
         self.update()
+
+    def _apply_window_palette(self) -> None:
+        """Красит нативные фоны в цвет темы до первой отрисовки QSS.
+
+        Убирает белые вспышки: при первом показе окна и при массовом
+        перестроении карточек (перенос между категориями, обновление списка).
+        """
+        bg = QColor(theme.pal().bg)
+        pal = self.palette()
+        pal.setColor(QPalette.Window, bg)
+        self.setPalette(pal)
+        self.setAutoFillBackground(True)
+        scroll = getattr(self, "_scroll", None)
+        if scroll is not None:
+            vp = scroll.viewport()
+            vpal = vp.palette()
+            vpal.setColor(QPalette.Window, bg)
+            vpal.setColor(QPalette.Base, bg)
+            vp.setPalette(vpal)
+            vp.setAutoFillBackground(True)
 
     # ------------------------------------------------------------- updates
     def _autoupdate_on(self) -> bool:
@@ -1537,6 +1565,9 @@ class MainWindow(QMainWindow):
         self._update_notes = notes
         if manual:
             self._settings_status(f"Доступна {release.tag}")
+            sp = self._settings_panel()
+            if sp is not None:
+                sp.set_update_action(self._open_update_panel)
         self._apply_update_state()
 
     def _on_check_error(self, _msg: str, manual: bool) -> None:
@@ -1555,7 +1586,10 @@ class MainWindow(QMainWindow):
             self._start_silent_download()
             return
         # Ручной режим или деградация тихого: бейдж + баннер.
+        first_notice = not self._badge.isVisible()
         self._badge.show()
+        if first_notice:
+            self._pulse_badge()
         snoozed = updater.snooze_active(
             self.db.get_text("update_snooze"), release.tag
         )
@@ -1650,6 +1684,20 @@ class MainWindow(QMainWindow):
     def _hide_banner_session(self) -> None:
         self._banner_session_hidden = True
         self._banner.setVisible(False)
+
+    def _pulse_badge(self) -> None:
+        """Короткая пульсация бейджа: обновление заметно без звука и окон."""
+        eff = QGraphicsOpacityEffect(self._badge)
+        self._badge.setGraphicsEffect(eff)
+        anim = QVariantAnimation(self)
+        anim.setStartValue(1.0)
+        anim.setEndValue(0.15)
+        anim.setDuration(450)
+        anim.setLoopCount(6)
+        anim.setEasingCurve(QEasingCurve.InOutSine)
+        anim.valueChanged.connect(lambda v: eff.setOpacity(v))
+        anim.finished.connect(lambda: self._badge.setGraphicsEffect(None))
+        anim.start(QVariantAnimation.DeleteWhenStopped)
 
     def _snooze_update(self) -> None:
         if self._update_available is not None:
