@@ -57,3 +57,7 @@ installer/version_info.txt
 
 image_generate/
 media-output/
+
+# Концепты иконок: сырые генерации, готовые png и сайт-галерея
+# КОММИТЯТСЯ в git (иначе теряются). Не коммитим только архивы.
+assets/icon-concepts/*.zip

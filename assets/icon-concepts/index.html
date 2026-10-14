@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редиски для Nodexy — выбор иконки</title>
+<style>
+  :root{
+    --bg:#0b1220; --bg2:#0f172a; --sidebar:#0f1b2d; --card:#1e293b; --card2:#151f33;
+    --border:#24344d; --text:#e5e7eb; --text2:#9ca3af; --text3:#6b7280;
+    --accent:#60a5fa; --cyan:#22d3ee; --pick:#4ade80;
+  }
+  *{box-sizing:border-box;outline:0}
+  html,body{margin:0;padding:0}
+  body{
+    background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);
+    color:var(--text); min-height:100vh;
+    font-family:"Segoe UI",-apple-system,Roboto,Arial,sans-serif; font-size:14px;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 24px 120px}
+
+  /* ---------- шапка ---------- */
+  header{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:26px}
+  .logo{
+    width:74px;height:74px;border-radius:18px;overflow:hidden;flex:0 0 auto;
+    border:1px solid var(--border);box-shadow:0 10px 30px rgba(2,6,23,.6)
+  }
+  .logo img{width:100%;height:100%;display:block}
+  h1{margin:0;font-size:25px;font-weight:800;letter-spacing:.2px}
+  .sub{color:var(--text2);font-size:13px;margin-top:5px}
+  .sub b{color:var(--accent);font-weight:700}
+  .grow{flex:1 1 auto}
+
+  /* ---------- панель управления ---------- */
+  .bar{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:linear-gradient(180deg,var(--sidebar),rgba(15,23,42,.55));
+    border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:22px;
+  }
+  .bar .lab{color:var(--text2);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+  .sizes{display:flex;gap:6px;flex-wrap:wrap}
+  .sizes button{
+    background:rgba(255,255,255,.04);border:1px solid var(--card);color:var(--text2);
+    padding:7px 12px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;
+    transition:.15s;font-family:inherit;
+  }
+  .sizes button:hover{color:var(--text);border-color:var(--accent);background:rgba(96,165,250,.1)}
+  .sizes button.on{color:#fff;border-color:var(--accent);background:linear-gradient(180deg,#3b82f6,#2563eb)}
+
+  /* ---------- мокап трея ---------- */
+  .tray{
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    background:#0a1020;border:1px solid var(--border);border-radius:14px;
+    padding:12px 16px;margin-bottom:26px;
+  }
+  .tray .lab{color:var(--text3);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+  .tray .row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);
+    border:1px solid var(--border);border-radius:10px;padding:7px 12px}
+  .tray img{display:block;border-radius:6px}
+  .tray .clock{margin-left:auto;color:var(--text3);font-size:12px;font-variant-numeric:tabular-nums}
+
+  /* ---------- секции ---------- */
+  section{margin-bottom:44px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .sec-head h2{margin:0;font-size:19px;font-weight:800}
+  .sec-head .cnt{
+    background:rgba(96,165,250,.14);color:var(--accent);border-radius:9px;padding:2px 10px;
+    font-size:12px;font-weight:800
+  }
+  .sec-head .soon{background:rgba(107,114,128,.16);color:var(--text3);border-radius:9px;padding:2px 10px;font-size:12px;font-weight:800}
+  .sec-desc{color:var(--text2);font-size:13px;margin-bottom:18px}
+
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(184px,1fr))}
+  .card{
+    background:linear-gradient(180deg,var(--card),var(--card2));
+    border:1px solid var(--border);border-radius:16px;padding:14px;
+    display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;
+    transition:.16s;
+  }
+  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .card.picked{border-color:var(--pick);box-shadow:0 0 0 1px rgba(74,222,128,.35),0 12px 28px rgba(2,6,23,.5)}
+  .tile{
+    width:100%;aspect-ratio:1/1;border-radius:12px;background:#0b1220;
+    border:1px solid rgba(255,255,255,.04);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:zoom-in;
+  }
+  .tile img{display:block;border-radius:8px;transition:width .18s,height .18s}
+  .meta{width:100%;text-align:center}
+  .meta .nm{font-weight:700;font-size:13.5px}
+  .meta .id{color:var(--text3);font-size:11.5px;font-weight:700;letter-spacing:.4px}
+  .note{color:#fbbf24;font-size:11px;margin-top:4px}
+  .acts{display:flex;gap:8px;width:100%}
+  .acts button,.acts a{
+    flex:1;text-align:center;text-decoration:none;cursor:pointer;font-family:inherit;
+    border-radius:10px;padding:7px 8px;font-size:12px;font-weight:700;
+    border:1px solid var(--card);background:rgba(255,255,255,.04);color:var(--text2);transition:.15s
+  }
+  .acts button:hover,.acts a:hover{color:var(--text);border-color:var(--accent);background:rgba(96,165,250,.12)}
+  .acts .pickbtn.picked{color:var(--pick);border-color:rgba(74,222,128,.5);background:rgba(74,222,128,.1)}
+  .badge{
+    position:absolute;top:10px;right:10px;background:var(--pick);color:#04250f;
+    border-radius:8px;font-size:11px;font-weight:800;padding:3px 8px
+  }
+  .empty{
+    border:1px dashed var(--border);border-radius:16px;padding:34px;text-align:center;color:var(--text3)
+  }
+
+  /* ---------- нижняя панель выбора ---------- */
+  footer{
+    position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:rgba(11,18,32,.93);backdrop-filter:blur(10px);
+    border-top:1px solid var(--border);padding:12px 24px
+  }
+  .fin{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .fin img{width:44px;height:44px;border-radius:11px;border:1px solid var(--border)}
+  .fin .t{font-weight:700}
+  .fin .s{color:var(--text3);font-size:12px}
+  .fin .btn{
+    text-decoration:none;border-radius:11px;padding:9px 16px;font-weight:700;font-size:13px;
+    background:linear-gradient(180deg,#3b82f6,#2563eb);color:#fff;border:none;cursor:pointer;font-family:inherit
+  }
+  .fin .btn.ghost{background:rgba(255,255,255,.05);color:var(--text2);border:1px solid var(--card)}
+
+  /* ---------- лайтбокс ---------- */
+  .lb{
+    position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+    background:rgba(4,9,20,.86);backdrop-filter:blur(4px);padding:24px
+  }
+  .lb.open{display:flex}
+  .lb-panel{
+    background:linear-gradient(180deg,#101a2c,#0d1526);border:1px solid var(--border);
+    border-radius:18px;padding:22px;max-width:min(760px,92vw);width:100%;position:relative
+  }
+  .lb-img{
+    display:flex;align-items:center;justify-content:center;background:#0b1220;
+    border-radius:14px;border:1px solid rgba(255,255,255,.05);min-height:280px;padding:20px
+  }
+  .lb-img img{display:block;border-radius:14px;max-width:100%}
+  .lb-info{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .lb-info .nm{font-size:17px;font-weight:800}
+  .lb-info .id{color:var(--text3);font-weight:700;font-size:12px}
+  .lb-info .sp{flex:1 1 auto}
+  .lb-close{
+    position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:10px;cursor:pointer;
+    background:rgba(255,255,255,.05);border:1px solid var(--card);color:var(--text2);font-size:17px;font-family:inherit
+  }
+  .lb-close:hover{color:var(--text);border-color:var(--accent)}
+  .lb-nav{
+    position:absolute;top:50%;transform:translateY(-50%);width:40px;height:52px;border-radius:12px;cursor:pointer;
+    background:rgba(255,255,255,.05);border:1px solid var(--card);color:var(--text2);font-size:20px;font-family:inherit
+  }
+  .lb-nav:hover{color:var(--text);border-color:var(--accent)}
+  .lb-nav.prev{left:-10px}.lb-nav.next{right:-10px}
+  .lb-sizes{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  .lb-sizes button{background:rgba(255,255,255,.04);border:1px solid var(--card);color:var(--text2);
+    padding:6px 11px;border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit}
+  .lb-sizes button.on{color:#fff;border-color:var(--accent);background:rgba(96,165,250,.16)}
+  .dl{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .dl a{text-decoration:none;border-radius:10px;padding:9px 14px;font-weight:700;font-size:12.5px;
+    background:rgba(255,255,255,.05);border:1px solid var(--card);color:var(--text2)}
+  .dl a:hover{color:var(--text);border-color:var(--accent)}
+  .dl a.main{background:linear-gradient(180deg,#3b82f6,#2563eb);color:#fff;border:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo"><img id="logo" src="icons/A01-512.png" alt=""></div>
+    <div>
+      <h1>Редиски для Nodexy</h1>
+      <div class="sub">Галерея вариантов иконки · <b id="cnt">0</b> штук в трёх наборах · клик по иконке — увеличить</div>
+    </div>
+  </header>
+
+  <div class="bar">
+    <span class="lab">Показывать в размере</span>
+    <div class="sizes" id="sizes"></div>
+    <div class="grow"></div>
+    <span class="sub" id="hint">Так иконка будет выглядеть в интерфейсе</span>
+  </div>
+
+  <div class="tray">
+    <span class="lab">Трей / панель задач</span>
+    <div class="row" id="tray32"></div>
+    <div class="row" id="tray16"></div>
+    <span class="clock">Nodexy · учёт времени</span>
+  </div>
+
+  <div id="sets"></div>
+</div>
+
+<footer>
+  <div class="fin">
+    <img id="finimg" src="icons/A01-256.png" alt="">
+    <div>
+      <div class="t" id="fint">Иконка не выбрана</div>
+      <div class="s" id="fins">Нажми «выбрать» на понравившемся варианте</div>
+    </div>
+    <div class="grow"></div>
+    <a class="btn ghost" id="finclear" href="#" style="display:none">Сбросить</a>
+    <a class="btn" id="findl" href="#" style="display:none">Скачать 1024 px</a>
+  </div>
+</footer>
+
+<div class="lb" id="lb">
+  <div class="lb-panel">
+    <button class="lb-close" id="lbclose">✕</button>
+    <button class="lb-nav prev" id="lbprev">‹</button>
+    <button class="lb-nav next" id="lbnext">›</button>
+    <div class="lb-img"><img id="lbimg" src="" alt=""></div>
+    <div class="lb-info">
+      <span class="nm" id="lbnm"></span>
+      <span class="id" id="lbid"></span>
+      <span class="sp"></span>
+      <button class="btn" id="lbpick" style="border:none;cursor:pointer;border-radius:11px;padding:8px 15px;font-weight:700;font-size:13px;background:linear-gradient(180deg,#3b82f6,#2563eb);color:#fff;font-family:inherit">Выбрать эту</button>
+    </div>
+    <div class="lb-sizes" id="lbsizes"></div>
+    <div class="dl">
+      <a class="main" id="lbdl1024" href="#" download>Скачать 1024 px</a>
+      <a id="lbdl512" href="#" download>512 px</a>
+      <a id="lbdl256" href="#" download>256 px</a>
+    </div>
+  </div>
+</div>
+
+<script src="manifest.js"></script>
+<script>
+const DATA = window.ICON_DATA || {sets:[],stats:{total:0}};
+const SIZES = [512,256,128,96,64,48,32];
+const LBSIZES = [512,256,128,96,48,32];
+const LB_KEY = "nodexy-icon-pick";
+let showSize = 256;
+let lbIndex = 0, lbSize = 512;
+const flat = [];
+DATA.sets.forEach(s => s.icons.forEach(i => flat.push({...i, set:s.letter, setTitle:s.title})));
+
+const $ = id => document.getElementById(id);
+
+/* ---- размер превью ---- */
+function renderSizes(){
+  const box = $("sizes"); box.innerHTML = "";
+  SIZES.forEach(v => {
+    const b = document.createElement("button");
+    b.textContent = v + " px";
+    if (v === showSize) b.classList.add("on");
+    b.onclick = () => { showSize = v; renderSizes(); renderCards(); renderTray(); };
+    box.appendChild(b);
+  });
+}
+function renderLbSizes(){
+  const box = $("lbsizes"); box.innerHTML = "";
+  LBSIZES.forEach(v => {
+    const b = document.createElement("button");
+    b.textContent = v + " px";
+    if (v === lbSize) b.classList.add("on");
+    b.onclick = () => {
+      lbSize = v;
+      const ic = flat[lbIndex];
+      $("lbimg").src = (v >= 512 && ic.big) ? ic.big : ic.src;
+      $("lbimg").style.width = v + "px";
+      $("lbimg").style.height = v + "px";
+      renderLbSizes();
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ---- карточки ---- */
+function iconImg(ic, px, cls){
+  const im = document.createElement("img");
+  im.src = px >= 512 ? ic.src : (px <= 256 ? ic.small : ic.src);
+  im.width = px; im.height = px;
+  if (cls) im.className = cls;
+  im.alt = ic.name;
+  im.loading = "lazy";
+  return im;
+}
+function renderCards(){
+  const host = $("sets"); host.innerHTML = "";
+  DATA.sets.forEach(set => {
+    const sec = document.createElement("section");
+    const ready = set.icons.length === 10;
+    sec.innerHTML = `
+      <div class="sec-head">
+        <h2>${set.title}</h2>
+        ${ready ? `<span class="cnt">${set.icons.length} / 10</span>`
+                : `<span class="soon">${set.icons.length} из 10 · в работе</span>`}
+      </div>
+      <div class="sec-desc">${set.desc}</div>`;
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    if (!set.icons.length){
+      const e = document.createElement("div");
+      e.className = "empty";
+      e.textContent = "Набор ещё не сгенерирован — будет в следующем шаге";
+      grid.appendChild(e);
+    }
+    set.icons.forEach(ic => {
+      const pick = getPick();
+      const card = document.createElement("div");
+      card.className = "card" + (pick === ic.id ? " picked" : "");
+      if (pick === ic.id) card.insertAdjacentHTML("beforeend", `<span class="badge">выбрано</span>`);
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.appendChild(iconImg(ic, Math.min(showSize, 320)));
+      tile.onclick = () => openLb(ic.id);
+      card.appendChild(tile);
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = `<div class="nm">${ic.name}</div><div class="id">${ic.id}</div>`
+        + (ic.note ? `<div class="note">⚠ ${ic.note}</div>` : "");
+      card.appendChild(meta);
+
+      const acts = document.createElement("div");
+      acts.className = "acts";
+      const pb = document.createElement("button");
+      pb.className = "pickbtn" + (pick === ic.id ? " picked" : "");
+      pb.textContent = pick === ic.id ? "✓ выбрана" : "выбрать";
+      pb.onclick = () => setPick(pick === ic.id ? null : ic.id);
+      const dl = document.createElement("a");
+      dl.href = "icons/" + ic.id + "-1024.png";
+      dl.download = ic.id + "-1024.png";
+      dl.textContent = "⬇ png";
+      acts.append(pb, dl);
+      card.appendChild(acts);
+      grid.appendChild(card);
+    });
+    sec.appendChild(grid);
+    host.appendChild(sec);
+  });
+}
+
+/* ---- трей ---- */
+function renderTray(){
+  const t32 = $("tray32"), t16 = $("tray16");
+  t32.innerHTML = ""; t16.innerHTML = "";
+  flat.forEach(ic => {
+    const a = iconImg(ic, 32); a.style.borderRadius = "6px"; t32.appendChild(a);
+    const b = iconImg(ic, 16); b.style.borderRadius = "3px"; t16.appendChild(b);
+  });
+}
+
+/* ---- выбор ---- */
+function getPick(){ try { return localStorage.getItem(LB_KEY); } catch(e){ return null; } }
+function setPick(id){
+  try { localStorage.setItem(LB_KEY, id || ""); } catch(e){}
+  if (!id) try { localStorage.removeItem(LB_KEY); } catch(e){}
+  renderCards(); renderFooter();
+}
+function renderFooter(){
+  const id = getPick();
+  const ic = flat.find(i => i.id === id);
+  if (!ic){
+    $("fint").textContent = "Иконка не выбрана";
+    $("fins").textContent = "Нажми «выбрать» на понравившемся варианте";
+    $("finimg").src = "icons/A01-256.png";
+    $("finimg").style.opacity = .35;
+    $("findl").style.display = "none";
+    $("finclear").style.display = "none";
+    return;
+  }
+  $("fint").textContent = `Выбрано: ${ic.id} — ${ic.name}`;
+  $("fins").textContent = `${ic.setTitle} · можно поставить эту иконку в приложение`;
+  $("finimg").src = ic.src;
+  $("finimg").style.opacity = 1;
+  $("findl").href = "icons/" + ic.id + "-1024.png";
+  $("findl").download = ic.id + "-1024.png";
+  $("findl").style.display = "";
+  $("finclear").style.display = "";
+}
+
+/* ---- лайтбокс ---- */
+function openLb(id){
+  lbIndex = Math.max(0, flat.findIndex(i => i.id === id));
+  lbSize = 512;
+  paintLb();
+  $("lb").classList.add("open");
+}
+function paintLb(){
+  const ic = flat[lbIndex];
+  if (!ic) return;
+  const img = $("lbimg");
+  img.src = (lbSize >= 512 && ic.big) ? ic.big : ic.src;
+  img.style.width = lbSize + "px";
+  img.style.height = lbSize + "px";
+  $("lbnm").textContent = ic.name;
+  $("lbid").textContent = `${ic.id} · ${ic.setTitle}`;
+  const pick = getPick();
+  $("lbpick").textContent = pick === ic.id ? "✓ Уже выбрана" : "Выбрать эту";
+  $("lbdl1024").href = "icons/" + ic.id + "-1024.png";
+  $("lbdl512").href = "icons/" + ic.id + "-512.png";
+  $("lbdl256").href = "icons/" + ic.id + "-256.png";
+  [["lbdl1024","1024"],["lbdl512","512"],["lbdl256","256"]].forEach(([el,px])=>{
+    $(el).download = `${ic.id}-${px}.png`;
+  });
+  renderLbSizes();
+}
+$("lbclose").onclick = () => $("lb").classList.remove("open");
+$("lb").onclick = e => { if (e.target.id === "lb") $("lb").classList.remove("open"); };
+$("lbprev").onclick = () => { lbIndex = (lbIndex - 1 + flat.length) % flat.length; paintLb(); };
+$("lbnext").onclick = () => { lbIndex = (lbIndex + 1) % flat.length; paintLb(); };
+$("lbpick").onclick = () => { const ic = flat[lbIndex]; setPick(getPick() === ic.id ? null : ic.id); paintLb(); };
+$("finclear").onclick = e => { e.preventDefault(); setPick(null); };
+document.addEventListener("keydown", e => {
+  if (!$("lb").classList.contains("open")) return;
+  if (e.key === "Escape") $("lb").classList.remove("open");
+  if (e.key === "ArrowLeft") $("lbprev").click();
+  if (e.key === "ArrowRight") $("lbnext").click();
+});
+
+/* ---- старт ---- */
+$("cnt").textContent = DATA.stats.total;
+const first = flat[0];
+if (first) { $("logo").src = first.src; }
+renderSizes(); renderCards(); renderTray(); renderFooter();
+</script>
+</body>
+</html>

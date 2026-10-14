@@ -1,0 +1,113 @@
+window.ICON_DATA = {
+ "sets": [
+  {
+   "letter": "A",
+   "title": "Набор A — флэт-минимализм",
+   "desc": "Чистые формы, холодные тона. Лучше всех читается в трее и в списке приложений.",
+   "opacity": 1.0,
+   "ready": true,
+   "icons": [
+    {
+     "id": "A01",
+     "name": "Классика",
+     "src": "icons/A01-512.png",
+     "small": "icons/A01-256.png",
+     "big": "icons/A01-1024.png",
+     "note": null
+    },
+    {
+     "id": "A02",
+     "name": "Срез",
+     "src": "icons/A02-512.png",
+     "small": "icons/A02-256.png",
+     "big": "icons/A02-1024.png",
+     "note": null
+    },
+    {
+     "id": "A03",
+     "name": "Грядка",
+     "src": "icons/A03-512.png",
+     "small": "icons/A03-256.png",
+     "big": "icons/A03-1024.png",
+     "note": null
+    },
+    {
+     "id": "A04",
+     "name": "В кольце",
+     "src": "icons/A04-512.png",
+     "small": "icons/A04-256.png",
+     "big": "icons/A04-1024.png",
+     "note": null
+    },
+    {
+     "id": "A05",
+     "name": "Половинки",
+     "src": "icons/A05-512.png",
+     "small": "icons/A05-256.png",
+     "big": "icons/A05-1024.png",
+     "note": null
+    },
+    {
+     "id": "A06",
+     "name": "Трио",
+     "src": "icons/A06-512.png",
+     "small": "icons/A06-256.png",
+     "big": "icons/A06-1024.png",
+     "note": null
+    },
+    {
+     "id": "A07",
+     "name": "Вектор",
+     "src": "icons/A07-512.png",
+     "small": "icons/A07-256.png",
+     "big": "icons/A07-1024.png",
+     "note": null
+    },
+    {
+     "id": "A08",
+     "name": "Инверсия",
+     "src": "icons/A08-512.png",
+     "small": "icons/A08-256.png",
+     "big": "icons/A08-1024.png",
+     "note": "фон под плиткой не тёмный — проверь в трее"
+    },
+    {
+     "id": "A09",
+     "name": "Геометрия",
+     "src": "icons/A09-512.png",
+     "small": "icons/A09-256.png",
+     "big": "icons/A09-1024.png",
+     "note": null
+    },
+    {
+     "id": "A10",
+     "name": "Пиксели",
+     "src": "icons/A10-512.png",
+     "small": "icons/A10-256.png",
+     "big": "icons/A10-1024.png",
+     "note": null
+    }
+   ]
+  },
+  {
+   "letter": "B",
+   "title": "Набор B — дуотон-силуэт",
+   "desc": "Градиенты пинк→виолет, плоские силуэты. Самые яркие в панели задач.",
+   "opacity": 1.0,
+   "ready": false,
+   "icons": []
+  },
+  {
+   "letter": "C",
+   "title": "Набор C — эмблема-знак",
+   "desc": "Геометрический лого-знак: минимум элементов, максимум узнаваемости.",
+   "opacity": 1.0,
+   "ready": false,
+   "icons": []
+  }
+ ],
+ "stats": {
+  "total": 10,
+  "sets": 3
+ }
+};
