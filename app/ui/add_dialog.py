@@ -20,6 +20,7 @@
 
 import os
 import sys
+import time
 
 from PySide6.QtCore import QObject, QRunnable, QSize, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QFontMetrics, QPalette
@@ -54,6 +55,25 @@ class _ScanWorker(QThread):
 
 # Живые потоки сканирования: панель может закрыться, поток доживёт сам.
 _active_workers: set = set()
+
+
+def wait_workers(timeout_ms: int = 8000) -> None:
+    """Ждёт завершения всех фоновых потоков сканирования.
+
+    Вызывается при выходе из приложения. Если закрыть программу, пока поток ещё
+    сканирует установленные программы, QThread будет уничтожен на ходу
+    («QThread: Destroyed while thread is still running»), что портит память при
+    завершении процесса. Короткое ожидание это исключает.
+    """
+    deadline = time.monotonic() + timeout_ms / 1000
+    for worker in list(_active_workers):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        try:
+            worker.wait(int(remaining * 1000))
+        except Exception:
+            continue
 
 
 class _IconSignals(QObject):

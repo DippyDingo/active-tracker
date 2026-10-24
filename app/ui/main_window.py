@@ -491,16 +491,24 @@ class MainWindow(QMainWindow):
         # то место, где пользователь читал список.
         cur = self._scroll.verticalScrollBar().value() if self._scroll else 0
 
+        # На время перестроения запрещаем отрисовку: иначе между удалением
+        # старых виджетов и добавлением новых проскакивает кадр с пустым
+        # контентом — то самое «белое окно». Старые виджеты прячем сразу,
+        # чтобы они не рисовались поверх новых до своего фактического удаления.
+        self.setUpdatesEnabled(False)
+
         self._discard_inline()
         while self._grid.count():
             item = self._grid.takeAt(0)
             widget = item.widget()
             if widget is not None and widget is not self._empty_label:
+                widget.hide()
                 widget.deleteLater()
         while self._side_layout.count():
             item = self._side_layout.takeAt(0)
             widget = item.widget()
             if widget is not None:
+                widget.hide()
                 widget.deleteLater()
         self._cards.clear()
         self._hosts.clear()
@@ -543,6 +551,9 @@ class MainWindow(QMainWindow):
         self.tracker.set_tracked({row.exe_path: row.id for row in apps})
         self._update_status_right()
         self._update_values()
+
+        self.setUpdatesEnabled(True)
+        self.update()
         if self._scroll is not None:
             self._scroll.verticalScrollBar().setValue(cur)
 
@@ -1419,7 +1430,11 @@ class MainWindow(QMainWindow):
         existing = {row.exe_path for row in self.db.list_apps()}
         panel = AddPanel(existing, self)
         panel.add_requested.connect(lambda app: self._on_add_request(app, cat_id))
-        self._show_modal(panel, on_closed=lambda: (panel.shutdown(), self.refresh_apps()))
+        # При закрытии ничего не перестраиваем — список уже обновился в момент
+        # добавления (_on_add_request). Раньше здесь был refresh_apps(), и его
+        # полное перестроение показывало белое окно. Теперь закрытие работает
+        # так же чисто, как закрытие статистики карточки.
+        self._show_modal(panel, on_closed=panel.shutdown)
 
     def _on_add_request(self, app, cat_id: int | None = None) -> None:
         # Извлечение иконки — в фоне: сетевые/медленные пути не должны

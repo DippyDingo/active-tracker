@@ -259,6 +259,12 @@ def main() -> int:
 
     tracker.start()
     qt.aboutToQuit.connect(tracker.stop)
+    # Фоновые сканы списка программ (окно добавления) должны дожить свой цикл
+    # до уничтожения процесса — иначе «QThread destroyed while running» и
+    # порча памяти при выходе.
+    from app.ui import add_dialog
+
+    qt.aboutToQuit.connect(add_dialog.wait_workers)
     # Штатный выход помечаем: счётчик неудачных запусков (откат версии) должен
     # расти только на реальных падениях, а не на обычном закрытии окна.
     qt.aboutToQuit.connect(updater.mark_clean_exit)
