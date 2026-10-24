@@ -53,6 +53,31 @@ p = theme.apply_theme(app, "no-such-theme")
 check(p.key == theme.DEFAULT_THEME, "битая тема не вернула дефолт")
 check(theme.pal().key == theme.DEFAULT_THEME, "pal() не обновился после битой темы")
 
+# --- 2а. Глобальная нативная палитра в цветах темы ----------------------------
+# Без неё системные части (фон окна, вьюпорты, диалоги) остаются светлыми —
+# это и есть «белая вспышка» при старте и перестроении карточек.
+from PySide6.QtGui import QPalette  # noqa: E402
+
+for key, expected in theme.PALETTES.items():
+    theme.apply_theme(app, key)
+    pal = theme.build_palette(theme.PALETTES[key])
+    check(pal.color(QPalette.Window).name() == QColor(expected.bg).name(),
+          f"{key}: Window-роль не в цвет фона темы")
+    check(pal.color(QPalette.Base).name() == QColor(expected.bg).name(),
+          f"{key}: Base-роль не в цвет фона темы (вьюпорты будут светлыми)")
+    check(pal.color(QPalette.Text).name() == QColor(expected.text).name(),
+          f"{key}: Text-роль не в цвет текста темы")
+    check(pal.color(QPalette.Highlight).name() == QColor(expected.accent).name(),
+          f"{key}: Highlight не в акцентный цвет")
+    # Глобальная палитра приложения реально обновлена apply_theme.
+    check(app.palette().color(QPalette.Window).name() == QColor(expected.bg).name(),
+          f"{key}: apply_theme не поставил глобальную палитру")
+
+# Контраст: текст темы должен читаться на её фоне (иначе тема «слепая»).
+for key, expected in theme.PALETTES.items():
+    d = dist(QColor(expected.bg), QColor(expected.text))
+    check(d > 100, f"{key}: слишком низкий контраст текста и фона ({d:.0f})")
+
 # --- 3. Рендер виджетов в каждой теме: фон отличается от текста ---------------
 values = [120, 400, 90, 700, 30, 260, 500]
 labels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]

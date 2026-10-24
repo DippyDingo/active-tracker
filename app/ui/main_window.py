@@ -15,6 +15,7 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtWidgets import (
+    QAbstractScrollArea,
     QApplication,
     QButtonGroup,
     QFileDialog,
@@ -487,6 +488,10 @@ class MainWindow(QMainWindow):
         self.tracker.flush()
         apps = self.db.list_apps()
 
+        # Сохраняем позицию прокрутки: полное перестроение не должно сбрасывать
+        # то место, где пользователь читал список.
+        cur = self._scroll.verticalScrollBar().value() if self._scroll else 0
+
         self._discard_inline()
         while self._grid.count():
             item = self._grid.takeAt(0)
@@ -539,6 +544,8 @@ class MainWindow(QMainWindow):
         self.tracker.set_tracked({row.exe_path: row.id for row in apps})
         self._update_status_right()
         self._update_values()
+        if self._scroll is not None:
+            self._scroll.verticalScrollBar().setValue(cur)
 
     @staticmethod
     def _pick_indices(n: int, k: int = 7) -> list[int]:
@@ -1382,6 +1389,14 @@ class MainWindow(QMainWindow):
             )
 
     def _show_modal(self, panel, on_closed=None) -> ModalOverlay | None:
+        # Перед показом красим нативные вьюпорты панели под тему — иначе
+        # QListWidget/скроллы внутри модалки мигнут системным белым фоном.
+        try:
+            theme.paint_background(panel)
+            for child in panel.findChildren(QAbstractScrollArea):
+                theme.paint_background(child)
+        except Exception:
+            pass
         if self._overlay is not None:
             self._pending_modal = (panel, on_closed)
             if not self._overlay._closing:
@@ -1408,7 +1423,12 @@ class MainWindow(QMainWindow):
         self._show_modal(panel, on_closed=lambda: (panel.shutdown(), self.refresh_apps()))
 
     def _on_add_request(self, app, cat_id: int | None = None) -> None:
-        icon_bytes = win32_utils.extract_icon_png(app.icon_path, app.icon_index, 64)
+        # Извлечение иконки — в фоне: сетевые/медленные пути не должны
+        # подвешивать интерфейс при добавлении приложения.
+        try:
+            icon_bytes = win32_utils.extract_icon_png(app.icon_path, app.icon_index, 64)
+        except Exception:
+            icon_bytes = None
         new_id = self.db.add_app(app.name, app.exe_path, icon_bytes)
         if new_id is not None and cat_id is not None:
             self.db.set_app_category(new_id, cat_id)
@@ -1514,14 +1534,10 @@ class MainWindow(QMainWindow):
         pal.setColor(QPalette.Window, bg)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-        scroll = getattr(self, "_scroll", None)
-        if scroll is not None:
-            vp = scroll.viewport()
-            vpal = vp.palette()
-            vpal.setColor(QPalette.Window, bg)
-            vpal.setColor(QPalette.Base, bg)
-            vp.setPalette(vpal)
-            vp.setAutoFillBackground(True)
+        # Все прокручиваемые области окна: главная сетка карточек и сайдбар.
+        for scroll in (getattr(self, "_scroll", None), getattr(self, "_side_scroll", None)):
+            if scroll is not None:
+                theme.paint_background(scroll, bg)
 
     # ------------------------------------------------------------- updates
     def _autoupdate_on(self) -> bool:
@@ -1786,6 +1802,14 @@ class MainWindow(QMainWindow):
         elif getattr(self, "_update_failed_url", ""):
             text += " · Установка не удалась: исчерпаны попытки"
         return text
+
+    def paintEvent(self, event) -> None:
+        # Гарантия тёмного фона на самом первом кадре: до применения QSS и
+        # палитры вьюпортов нативный фон HWND мог мелькнуть белым.
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor(theme.pal().bg))
+        painter.end()
+        super().paintEvent(event)
 
     def showEvent(self, event) -> None:
         super().showEvent(event)

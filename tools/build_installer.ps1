@@ -25,7 +25,11 @@ Write-Host "Версия: $version"
 
 # 2) Сборка exe теми же параметрами, что и build_exe.bat (без pause).
 if (-not $SkipExe) {
-    & ".venv\Scripts\pyinstaller.exe" --noconfirm --onefile --noconsole `
+    # --onedir: без распаковки в %TEMP% при каждом старте. Раньше (--onefile)
+    # 54 МБ exe распаковывался в temp и на секунду показывал белое окно-хост;
+    # кроме того в папке установки был только один exe. Теперь рядом лежит
+    # папка _internal с библиотеками, а запуск происходит мгновенно.
+    & ".venv\Scripts\pyinstaller.exe" --noconfirm --onedir --noconsole `
         --name Nodexy `
         --version-file installer\version_info.txt `
         --icon assets\app_icon.ico `
@@ -60,11 +64,12 @@ if (-not $iscc) {
 & $iscc "/DMyAppVersion=$version" "installer\nodexy.iss"
 if ($LASTEXITCODE -ne 0) { Fail "ISCC: компиляция установщика не удалась" }
 
-# 5) Портативный архив (понадобится, когда голый exe перестанет
-#    публиковаться отдельным ассетом).
+# 5) Портативный архив: вся папка dist\Nodexy (exe + _internal), чтобы
+#    портативная версия запускалась без распаковки в temp.
 $distInstaller = Join-Path $root "dist-installer"
 $zipPath = Join-Path $distInstaller "Nodexy-portable-$version.zip"
-Compress-Archive -Path "dist\Nodexy.exe" -DestinationPath $zipPath -Force
+if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+Compress-Archive -Path "dist\Nodexy\*" -DestinationPath $zipPath -Force
 
 # 6) Контрольные суммы всех артефактов.
 $setup = Join-Path $distInstaller "Nodexy-Setup-$version.exe"

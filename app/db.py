@@ -132,6 +132,49 @@ class Database:
     def close(self) -> None:
         self._conn.close()
 
+    def backup_to(self, dest) -> bool:
+        """Консистентная копия БД (с учётом WAL) в указанный файл."""
+        try:
+            from pathlib import Path
+
+            target = Path(dest)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            self._conn.commit()
+            self._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            tmp = target.with_suffix(target.suffix + ".part")
+            if tmp.exists():
+                tmp.unlink()
+            try:
+                # sqlite3.connect().backup — надёжный способ снять снапшот,
+                # даже если к БД обращаются другие потоки.
+                import sqlite3
+
+                dst = sqlite3.connect(str(tmp))
+                try:
+                    self._conn.backup(dst)
+                finally:
+                    dst.close()
+            except Exception:
+                # запасной вариант: копия напрямую
+                import shutil
+
+                shutil.copy2(self.path, tmp)
+            if target.exists():
+                target.unlink()
+            tmp.replace(target)
+            return True
+        except Exception:
+            try:
+                import os
+
+                from pathlib import Path
+
+                if "tmp" in locals() and Path(tmp).exists():
+                    os.remove(tmp)
+            except Exception:
+                pass
+            return False
+
     def add_app(self, name: str, exe_path: str, icon: bytes | None = None) -> int | None:
         try:
             with self._conn:

@@ -68,7 +68,11 @@ Name: "desktopicon"; Description: "Создать ярлык на рабочем
 Name: "autostart"; Description: "Запускать при входе в Windows"; GroupDescription: "Дополнительно:"; Flags: unchecked
 
 [Files]
-Source: "..\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+; --onedir: основной exe + вся папка _internal с библиотеками. Установка
+; «папкой», а не одним файлом — и запуск без распаковки в temp (нет белого
+; окна на старте), и в каталоге программы лежат все файлы приложения.
+Source: "..\dist\Nodexy\Nodexy.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\Nodexy\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -88,8 +92,13 @@ Filename: "{app}\{#MyAppExeName}"; Description: "Запустить {#MyAppName}
 Filename: "{app}\{#MyAppExeName}"; Flags: nowait skipifdoesntexist; Check: RestartAfterSilentUpdate
 
 [UninstallDelete]
-; Резервные копии апдейтера и задел на возможный переход на onedir.
+; Резервные копии апдейтера и остатки старых сборок.
 Type: files; Name: "{app}\*.old"
+Type: filesandordirs; Name: "{app}\_internal"
+
+; При установке поверх старой версии _internal очищается ДО копирования:
+; иначе файлы, удалённые в новой версии, остались бы и раздували каталог.
+[InstallDelete]
 Type: filesandordirs; Name: "{app}\_internal"
 
 [Code]

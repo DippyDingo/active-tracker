@@ -5,7 +5,8 @@ import sys
 import traceback
 from datetime import date
 
-from PySide6.QtCore import QLockFile, QTimer
+from PySide6.QtCore import QLockFile, QRectF, Qt, QTimer
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from app import config, updater
@@ -14,6 +15,12 @@ from app.tracker import Tracker
 from app.ui import theme
 from app.ui.main_window import MainWindow
 from app.ui.welcome_dialog import WelcomeDialog
+
+# Ротация логов до открытия crash.log: файл не должен расти бесконечно.
+try:
+    config.rotate_logs()
+except Exception:
+    pass
 
 _CRASH_LOG = config.app_dir() / "crash.log"
 _crash_file = open(_CRASH_LOG, "a", encoding="utf-8")
@@ -42,6 +49,17 @@ def _ensure_first_launch(db: Database) -> None:
 
 
 def _backfill_today_hours(db: Database) -> None:
+    """Одноразовая миграция: размазать «сегодня» по часам, если почасовые данные
+    отсутствуют (наследие версий до почасового учёта).
+
+    Выполняется только когда в настройках нет маркера `hours_backfilled`.
+    Раньше это выполнялось при КАЖДОМ запуске: пока приложение было закрыто,
+    секунды копились в `stats`, а при следующем старте равномерно
+    размазывались по уже прошедшим часам — почасовой график «сегодня»
+    выглядел неестественно ровным.
+    """
+    if db.has("hours_backfilled"):
+        return
     import time
 
     today = date.today().isoformat()
@@ -56,6 +74,33 @@ def _backfill_today_hours(db: Database) -> None:
             add = per + (1 if hour < rem else 0)
             if add > 0:
                 db.add_hour(app_id, today, hour, add)
+    db.set_int("hours_backfilled", 1)
+
+
+def _daily_backup(db: Database) -> None:
+    """Раз в сутки снимает консистентную копию базы в updates\\..\\backup.
+
+    Раньше резервных копий не было вовсе: повреждение файла или неудачная
+    миграция означали безвозвратную потерю всей статистики.
+    """
+    try:
+        today = date.today().isoformat()
+        if db.get_text("last_backup") == today:
+            return
+        dest = config.app_dir() / "backup" / f"tracker_{today}.db"
+        if not db.backup_to(dest):
+            return
+        db.set_text("last_backup", today)
+        # Храним только три последних копии.
+        backup_dir = config.app_dir() / "backup"
+        copies = sorted(backup_dir.glob("tracker_*.db"))
+        for old in copies[:-3]:
+            try:
+                old.unlink()
+            except OSError:
+                pass
+    except Exception:
+        config.log_error("main._daily_backup")
 
 
 def _resolve_db_path() -> str:
@@ -69,6 +114,39 @@ def _resolve_db_path() -> str:
     if dialog.mode == "create":
         return str(config.default_db_path())
     return dialog.path
+
+
+def _make_splash():
+    """Тёмный сплэш в цветах текущей палитры (лёгкий, без анимаций)."""
+    try:
+        from PySide6.QtCore import QSize
+        from PySide6.QtGui import QFont, QPixmap
+        from PySide6.QtWidgets import QSplashScreen
+
+        p = theme.pal()
+        w, h = 300, 180
+        pm = QPixmap(w, h)
+        pm.fill(QColor(p.bg))
+        painter = QPainter(pm)
+        painter.setRenderHint(QPainter.Antialiasing)
+        icon = theme.make_clock_icon().pixmap(QSize(72, 72))
+        painter.drawPixmap((w - 72) // 2, 26, icon)
+        font = QFont("Segoe UI", 14, QFont.Bold)
+        painter.setFont(font)
+        painter.setPen(QColor(p.text))
+        painter.drawText(
+            QRectF(0, 106, w, 26), Qt.AlignCenter, "Nodexy"
+        )
+        small = QFont("Segoe UI", 9)
+        painter.setFont(small)
+        painter.setPen(QColor(p.text2))
+        painter.drawText(QRectF(0, 132, w, 20), Qt.AlignCenter, "загрузка…")
+        painter.end()
+        splash = QSplashScreen(pm)
+        splash.show()
+        return splash
+    except Exception:
+        return None
 
 
 def main() -> int:
@@ -123,12 +201,21 @@ def main() -> int:
     qt = QApplication(sys.argv)
     qt.setApplicationName("Nodexy")
     qt.setOrganizationName("Nodexy")
+    # Нативный стиль Fusion + глобальная палитра в цветах темы ДО создания
+    # виджетов: системные части (фон окна, вьюпорты, диалоги, QMessageBox)
+    # рисуются сразу тёмными — белая вспышка при первом показе исчезает.
+    qt.setStyle("Fusion")
     qt.setStyleSheet(theme.QSS)
     qt.setWindowIcon(theme.load_app_icon())
     qt.setQuitOnLastWindowClosed(False)
 
+    # Сплаш-экран в цвете темы: пока распаковывается --onefile и грузится БД,
+    # на экране не пустота/белое окно, а аккуратный логотип.
+    _splash = _make_splash()
     db_path = _resolve_db_path()
     if not db_path:
+        if _splash is not None:
+            _splash.close()
         return 0
     if not config.set_db_path(db_path):
         config.log_error("Не удалось сохранить путь к базе данных в config.json")
@@ -137,6 +224,8 @@ def main() -> int:
     theme.apply_theme(qt, db.get_text("theme", theme.DEFAULT_THEME))
     _ensure_first_launch(db)
     _backfill_today_hours(db)
+    # Ежедневная резервная копия БД (не чаще раза в сутки; храним 3 шт.).
+    _daily_backup(db)
     
     # Синхронизация автозапуска (HKCU\...\Run, значение "Nodexy") с настройкой в БД:
     # 1) в БД включён — путь в реестре всегда актуализируется;
@@ -159,6 +248,8 @@ def main() -> int:
     tracker = Tracker(db)
     window = MainWindow(db, tracker, boot)
 
+    if _splash is not None:
+        _splash.close()
     if start_minimized:
         # Не показывать окно, только иконка в трее
         pass
@@ -171,6 +262,9 @@ def main() -> int:
 
     tracker.start()
     qt.aboutToQuit.connect(tracker.stop)
+    # Штатный выход помечаем: счётчик неудачных запусков (откат версии) должен
+    # расти только на реальных падениях, а не на обычном закрытии окна.
+    qt.aboutToQuit.connect(updater.mark_clean_exit)
     return qt.exec()
 
 

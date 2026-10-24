@@ -208,6 +208,9 @@ class UpdatePanel(QFrame):
         if message == "cancelled":
             self._status.setText("Скачивание отменено.")
             self._set_state("idle")
+        elif message == "already-downloading":
+            self._status.setText("Загрузка уже идёт — подождите завершения.")
+            self._set_state("idle")
         else:
             self._status.setText(f"Не удалось скачать: {message}")
             self._set_state("error")

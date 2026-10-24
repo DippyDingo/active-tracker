@@ -171,13 +171,19 @@ check(not updater.snooze_active("мусор", "v1.2.0", today), "битая от
 
 # --- 8. Счётчик запусков (откат) ---------------------------------------------------
 boot, rollback = updater.boot_step(None, "1.0.0")
-check(boot == {"version": "1.0.0", "fails": 1} and not rollback, "первый запуск")
+check(boot == {"version": "1.0.0", "fails": 0, "clean": False} and not rollback, "первый запуск")
 boot, rollback = updater.boot_step(boot, "1.0.0")
-check(boot["fails"] == 2 and not rollback, "второй запуск")
+check(boot["fails"] == 1 and not rollback, "неудачный прошлый сеанс → 1")
 boot, rollback = updater.boot_step(boot, "1.0.0")
-check(rollback, "третий неудачный запуск — откат")
-boot, rollback = updater.boot_step({"version": "0.9.0", "fails": 9}, "1.0.0")
-check(boot["fails"] == 1 and not rollback, "смена версии сбрасывает счётчик")
+check(boot["fails"] == 2 and not rollback, "два неудачных сеанса — ещё не откат")
+boot, rollback = updater.boot_step(boot, "1.0.0")
+check(rollback, "три неудачных запуска подряд — откат")
+# Штатное завершение сбрасывает счётчик: после clean запусков нет.
+boot = {"version": "1.0.0", "fails": 2, "clean": True}
+boot, rollback = updater.boot_step(boot, "1.0.0")
+check(boot["fails"] == 2 and not rollback, "clean-сеанс не увеличивает счётчик")
+boot, rollback = updater.boot_step({"version": "0.9.0", "fails": 9, "clean": False}, "1.0.0")
+check(boot["fails"] == 0 and not rollback, "смена версии сбрасывает счётчик")
 
 # --- 9. Состояние обновления в config.json -----------------------------------------
 with tempfile.TemporaryDirectory() as tmp:
@@ -303,6 +309,11 @@ wait_vbs = updater._WAIT_VBS
 check("lockPath" in wait_vbs and "AppRunning" in wait_vbs,
       "вейтер ждёт маркер и проверяет запущенность")
 check("Nodexy" not in wait_vbs, "вейтер не хардкодит имя приложения")
+
+# Маркер установки должен жить дольше, чем самые долгие попытки помощника
+# (3 × 120 с ожидания): иначе старт во время установки снова даёт AppMutex rc=1.
+check(updater.INSTALL_LOCK_TTL >= 900, "TTL маркера установки покрывает все ретраи")
+check("waited < 960" in wait_vbs, "вейтер ждёт столько же, сколько живёт маркер")
 
 # --- 10б. Кэш отката updates\prev -----------------------------------------------------
 with tempfile.TemporaryDirectory() as tmp:

@@ -22,6 +22,10 @@ SNOOZE_DAYS = 3
 MAX_REPLACE_ATTEMPTS = 3
 BOOT_FAIL_LIMIT = 3
 HTTP_TIMEOUT = 25
+# Сколько маркер install.lock считается свежим. Помощник может работать дольше
+# 300 с (3 попытки × 120 с ожидания + паузы): раньше маркер протухал, приложение
+# стартовало во время установки и установщик снова падал по AppMutex (rc=1).
+INSTALL_LOCK_TTL = 900
 
 
 # ---------------------------------------------------------------- versions
@@ -223,6 +227,11 @@ class DownloadTask(QThread):
         self._cancel = True
 
     def run(self) -> None:
+        # Один файл — одна загрузка. Автоскачивание и ручная кнопка в панели
+        # ранее писали в один и тот же *.part и портили друг друга.
+        if not claim_download(self.dest):
+            self.error.emit("already-downloading")
+            return
         tmp = self.dest + ".part"
         try:
             req = urllib.request.Request(self.url, headers={"User-Agent": "Nodexy"})
@@ -248,6 +257,8 @@ class DownloadTask(QThread):
         except Exception as e:
             _remove_quiet(tmp)
             self.error.emit(str(e))
+        finally:
+            release_download(self.dest)
 
 
 def _remove_quiet(path) -> None:
@@ -257,6 +268,27 @@ def _remove_quiet(path) -> None:
             p.unlink()
     except Exception:
         pass
+
+
+# ---------------------------------------------------------------- download lock
+# Один файл — одна активная загрузка. Автоскачивание (тихий режим) и ручная
+# кнопка «Скачать и установить» писали ранее в один и тот же *.part и портили
+# друг друга; теперь второй запрос получает отказ.
+_DOWNLOAD_LOCKS: dict[str, int] = {}
+_DOWNLOAD_LOCK_GUARD = __import__("threading").Lock()
+
+
+def claim_download(dest: str) -> bool:
+    with _DOWNLOAD_LOCK_GUARD:
+        if _DOWNLOAD_LOCKS.get(dest, 0) > 0:
+            return False
+        _DOWNLOAD_LOCKS[dest] = 1
+        return True
+
+
+def release_download(dest: str) -> None:
+    with _DOWNLOAD_LOCK_GUARD:
+        _DOWNLOAD_LOCKS.pop(dest, None)
 
 
 # ---------------------------------------------------------------- integrity
@@ -586,9 +618,10 @@ appName = args(2)
 extraArgs = args(3)
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set oShell = CreateObject("WScript.Shell")
-' Wait until the install helper clears its marker (max ~4 min).
+' Wait until the install helper clears its marker (max ~16 min: helper may
+' legitimately take 3 attempts with 2-minute waits each).
 waited = 0
-Do While waited < 240
+Do While waited < 960
     If Not fso.FileExists(lockPath) Then Exit Do
     WScript.Sleep 1000
     waited = waited + 1
@@ -678,7 +711,7 @@ def install_in_progress() -> bool:
         age = time.time() - lock.stat().st_mtime
     except OSError:
         return False
-    if age > 300 or not _helper_alive():
+    if age > INSTALL_LOCK_TTL or not _helper_alive():
         _remove_quiet(lock)
         return False
     return True
@@ -864,13 +897,38 @@ def schedule_rollback() -> bool:
 
 
 # ---------------------------------------------------------------- boot control
+# Счётчик считает НЕ запуски, а «грязные» выходы: если прошлый сеанс завершился
+# штатно (приложение само пометило выход), падение не засчитывается. Раньше
+# любое быстрое закрытие окна увеличивало счётчик: трижды запустить и сразу
+# выйти — и приложение молча откатывалось на предыдущую версию.
 def boot_step(boot: dict | None, version: str) -> tuple[dict, bool]:
-    """Чистая логика счётчика запусков: (новое состояние, нужен ли откат)."""
+    """Чистая логика счётчика: (новое состояние, нужен ли откат).
+
+    fails увеличивается только если предыдущий сеанс этой же версии НЕ пометил
+    себя штатно закрытым (clean). Первый запуск новой версии — fails = 0.
+    """
+    prev_clean = True
+    fails = 0
     if isinstance(boot, dict) and boot.get("version") == version:
-        fails = int(boot.get("fails", 0)) + 1
-    else:
-        fails = 1
-    return {"version": version, "fails": fails}, fails >= BOOT_FAIL_LIMIT
+        fails = int(boot.get("fails", 0))
+        prev_clean = bool(boot.get("clean", False))
+        if not prev_clean:
+            fails += 1
+    return {"version": version, "fails": fails, "clean": False}, fails >= BOOT_FAIL_LIMIT
+
+
+def mark_clean_exit() -> None:
+    """Помечает текущий сеанс штатно завершённым (вызывается при выходе)."""
+    try:
+        cfg = config.read_config()
+        boot = cfg.get("boot_check")
+        if isinstance(boot, dict) and boot.get("version") == APP_VERSION:
+            if not boot.get("clean"):
+                boot["clean"] = True
+                cfg["boot_check"] = boot
+                config.write_config(cfg)
+    except Exception:
+        pass
 
 
 def startup_processing(skip_update: bool = False) -> dict:

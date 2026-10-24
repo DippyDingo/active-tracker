@@ -220,11 +220,13 @@ def _steam_games() -> list[InstalledApp]:
 
 
 def _start_menu_apps() -> list[InstalledApp]:
+    com_ready = False
     try:
         import pythoncom
         from win32com.client import Dispatch
 
         pythoncom.CoInitialize()
+        com_ready = True
     except Exception:
         return []
     try:
@@ -262,10 +264,11 @@ def _start_menu_apps() -> list[InstalledApp]:
     except Exception:
         return []
     finally:
-        try:
-            pythoncom.CoUninitialize()
-        except Exception:
-            pass
+        if com_ready:
+            try:
+                pythoncom.CoUninitialize()
+            except Exception:
+                pass
 
 
 def _running_apps() -> list[InstalledApp]:

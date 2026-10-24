@@ -4,6 +4,12 @@ from pathlib import Path
 
 APP_DIR = Path(os.getenv("APPDATA", str(Path.home()))) / "ActiveTracker"
 
+# Ротация логов: при старте файл больше лимита переименовывается в *.old
+# (старый *.old перезаписывается). Без этого crash.log и nodexy_update.log
+# копятся бесконечно.
+LOG_ROTATE_BYTES = 2 * 1024 * 1024
+_LOG_FILES = ("crash.log", "nodexy_update.log", "nodexy_install.log")
+
 
 def app_dir() -> Path:
     APP_DIR.mkdir(parents=True, exist_ok=True)
@@ -56,5 +62,21 @@ def log_error(message: str) -> None:
         with open(APP_DIR / "crash.log", "a", encoding="utf-8") as f:
             f.write(f"\n=== {datetime.now().isoformat()} {message} ===\n")
             f.write(traceback.format_exc())
+    except Exception:
+        pass
+
+
+def rotate_logs() -> None:
+    """Ротация логов при старте: >2 МБ → *.old (перезапись)."""
+    try:
+        for name in _LOG_FILES:
+            path = APP_DIR / name
+            try:
+                if path.exists() and path.stat().st_size > LOG_ROTATE_BYTES:
+                    old = path.with_suffix(path.suffix + ".old")
+                    old.unlink(missing_ok=True)
+                    path.rename(old)
+            except OSError:
+                continue
     except Exception:
         pass

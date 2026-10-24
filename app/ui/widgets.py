@@ -340,18 +340,37 @@ class MiniChart(QWidget):
         self._draw_anim.setStartValue(0.0)
         self._draw_anim.setEndValue(1.0)
 
+        # Пульс заполнения — одноразовый (на появление/обновление данных), а не
+        # бесконечный цикл: постоянный QVariantAnimation(-1) с update() каждого
+        # тика перерисовывал ВСЕ графики каждые ~200 мс даже в простое.
         self._pulse_anim = QVariantAnimation(self)
         self._pulse_anim.setDuration(3200)
-        self._pulse_anim.setKeyValueAt(0.0, 0.82)
+        self._pulse_anim.setKeyValueAt(0.0, 0.85)
         self._pulse_anim.setKeyValueAt(0.5, 1.0)
-        self._pulse_anim.setKeyValueAt(1.0, 0.82)
+        self._pulse_anim.setKeyValueAt(1.0, 0.85)
         self._pulse_anim.setEasingCurve(QEasingCurve.InOutSine)
-        self._pulse_anim.setLoopCount(-1)
+        self._pulse_anim.setLoopCount(1)
         self._pulse_anim.valueChanged.connect(self._on_pulse)
-        self._pulse_anim.start()
 
         self._draw_anim.finished.connect(self._on_draw_finished)
         self._drawn_at_least_once = False
+        self._pulse_ran_once = False
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not self._pulse_ran_once and self._values:
+            self._pulse_ran_once = True
+            if not self._pulse_anim.state():
+                self._pulse_anim.setStartValue(0.85)
+                self._pulse_anim.setEndValue(0.85)
+                self._pulse_anim.start()
+
+    def _start_pulse(self) -> None:
+        """Короткое «дыхание» при обновлении данных (один цикл, потом тишина)."""
+        if self._pulse_anim.state():
+            return
+        self._pulse = 0.85
+        self._pulse_anim.start()
 
     def _on_pulse(self, value) -> None:
         self._pulse = float(value)
@@ -390,6 +409,7 @@ class MiniChart(QWidget):
         if same_len and new_vals == self._values and not animate:
             return  # ничего не изменилось — не трогаем ни hover, ни перерисовку
         
+        changed = self._values != new_vals
         # Запоминаем старые значения для плавной интерполяции.
         if animate:
             self._values_start = list(self._values) if self._values else []
@@ -417,6 +437,8 @@ class MiniChart(QWidget):
         else:
             self._progress = 1.0
             self._drawn_at_least_once = True
+        if same_len and changed:
+            self._start_pulse()
         self.update()
 
     def set_view(self, visible: int | None) -> None:

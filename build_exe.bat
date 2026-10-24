@@ -10,7 +10,7 @@ if exist .venv\Scripts\python.exe (
 )
 if "%VERSION_ARGS%"=="" echo Предупреждение: version_info.txt не создан, сборка без ресурса версии.
 
-call .venv\Scripts\pyinstaller.exe --noconfirm --onefile --noconsole ^
+call .venv\Scripts\pyinstaller.exe --noconfirm --onedir --noconsole ^
   --name Nodexy ^
   %VERSION_ARGS% ^
   --icon assets\app_icon.ico ^
@@ -29,6 +29,6 @@ if errorlevel 1 (
   exit /b 1
 )
 echo.
-echo Готово: dist\Nodexy.exe
+echo Готово: dist\Nodexy\Nodexy.exe
 rem В CI (определена переменная CI) не ждём нажатия клавиши.
 if not defined CI pause

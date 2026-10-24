@@ -3,7 +3,7 @@ from pathlib import Path
 from string import Template
 
 from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPainter, QPalette, QPen, QPixmap
 
 
 @dataclass(frozen=True)
@@ -713,6 +713,79 @@ def build_qss(p: Palette) -> str:
     return _QSS_TEMPLATE.safe_substitute(_derive(p))
 
 
+def build_palette(p: Palette) -> QPalette:
+    """Нативная палитра в цветах темы.
+
+    QSS красит только те элементы, которые умеет; всё остальное (фон окна до
+    первой отрисовки, вьюпорты QScrollArea, QMessageBox, рамки диалогов и
+    всплывающие подсказки ОС) берёт цвета отсюда. Без этого при старте и при
+    перестроении виджетов мелькает системный белый фон.
+    """
+    bg = QColor(p.bg)
+    bg2 = QColor(p.bg2)
+    text = QColor(p.text)
+    text2 = QColor(p.text2)
+    text3 = QColor(p.text3)
+    accent = QColor(p.accent)
+    card = QColor(p.card)
+    popup = QColor(p.popup)
+    dimmed = QColor(p.border)
+
+    pal = QPalette()
+    roles_window = (QPalette.Window, QPalette.Base, QPalette.AlternateBase,
+                    QPalette.ToolTipBase, QPalette.Button, QPalette.Light,
+                    QPalette.Midlight, QPalette.Dark, QPalette.Mid, QPalette.Shadow)
+    for role in roles_window:
+        pal.setColor(role, bg)
+    roles_window_text = (QPalette.WindowText, QPalette.Text, QPalette.ToolTipText,
+                         QPalette.ButtonText, QPalette.BrightText)
+    for role in roles_window_text:
+        pal.setColor(role, text)
+    pal.setColor(QPalette.Highlight, accent)
+    pal.setColor(QPalette.HighlightedText, QColor("#ffffff"))
+    pal.setColor(QPalette.Link, accent)
+    pal.setColor(QPalette.LinkVisited, accent)
+    pal.setColor(QPalette.PlaceholderText, text3)
+    pal.setColor(QPalette.Disabled, QPalette.Text, text3)
+    pal.setColor(QPalette.Disabled, QPalette.WindowText, text3)
+    pal.setColor(QPalette.Disabled, QPalette.ButtonText, text3)
+    pal.setColor(QPalette.Disabled, QPalette.Base, bg2)
+    pal.setColor(QPalette.Disabled, QPalette.Highlight, dimmed)
+    pal.setColor(QPalette.Disabled, QPalette.HighlightedText, text2)
+    pal.setColor(QPalette.Disabled, QPalette.Light, card)
+    pal.setColor(QPalette.Disabled, QPalette.Mid, dimmed)
+    # Тёмные темы почти не используют эти роли, но системные диалоги — да.
+    pal.setColor(QPalette.ToolTipBase, popup)
+    pal.setColor(QPalette.ToolTipText, text)
+    if p.is_light:
+        pal.setColor(QPalette.HighlightedText, QColor("#ffffff"))
+    else:
+        pal.setColor(QPalette.HighlightedText, QColor("#04121f"))
+    return pal
+
+
+def paint_background(widget, color: QColor | None = None) -> None:
+    """Красит нативный фон виджета и его вьюпорта (если он есть) под тему."""
+    col = QColor(color) if color is not None else QColor(_current.bg)
+    pal = widget.palette()
+    pal.setColor(QPalette.Window, col)
+    pal.setColor(QPalette.Base, col)
+    widget.setPalette(pal)
+    widget.setAutoFillBackground(True)
+    viewport = getattr(widget, "viewport", None)
+    if callable(viewport):
+        try:
+            vp = viewport()
+        except Exception:
+            vp = None
+        if vp is not None and vp is not widget:
+            vpal = vp.palette()
+            vpal.setColor(QPalette.Window, col)
+            vpal.setColor(QPalette.Base, col)
+            vp.setPalette(vpal)
+            vp.setAutoFillBackground(True)
+
+
 _current: Palette = PALETTES[DEFAULT_THEME]
 _COLOR_CACHE: dict[str, QColor] = {}
 
@@ -741,8 +814,33 @@ def apply_theme(app, key: str) -> Palette:
     ACCENT, CYAN, TXT, TXT2, TXT3 = p.accent, p.cyan, p.text, p.text2, p.text3
     QSS = build_qss(p)
     if app is not None:
+        # Глобальная нативная палитра: без неё системные части (фоны окон,
+        # вьюпорты, диалоги, тултипы) остаются светлыми и мелькают белым.
+        app.setPalette(build_palette(p))
         app.setStyleSheet(QSS)
+        _paint_all_scrollareas(app)
     return p
+
+
+def _paint_all_scrollareas(app) -> None:
+    """Красит нативные фоны ВСЕХ прокручиваемых областей в дереве виджетов.
+
+    QSS красит только сами области, а их viewport() — системный, белый.
+    Перекраска при применении темы гарантирует, что и вьюпорты модальных
+    панелей (настройки, статистика, обновление) не мигнут белым.
+    """
+    try:
+        from PySide6.QtWidgets import QAbstractScrollArea
+
+        def walk(widget):
+            for child in widget.findChildren(QAbstractScrollArea):
+                paint_background(child)
+            for child in widget.findChildren(QAbstractScrollArea):
+                walk(child)
+
+        walk(app)
+    except Exception:
+        pass
 
 
 def accent_alpha(alpha: int) -> QColor:
