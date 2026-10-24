@@ -158,6 +158,18 @@ def main() -> int:
         except Exception:
             pass
 
+    # QApplication создаётся ровно один раз и ДО любых проверок/диалогов.
+    # Раньше при занятом mutex создавался отдельный QApplication без темы,
+    # из-за чего появлялось белое окно с заголовком Nodexy.
+    qt = QApplication(sys.argv)
+    qt.setApplicationName("Nodexy")
+    qt.setOrganizationName("Nodexy")
+    qt.setStyle("Fusion")
+    qt.setPalette(theme.build_palette(theme.pal()))
+    qt.setStyleSheet(theme.QSS)
+    qt.setWindowIcon(theme.load_app_icon())
+    qt.setQuitOnLastWindowClosed(False)
+
     # Проверка флага --minimized
     start_minimized = "--minimized" in sys.argv
     # Стоп-кран: --skip-update пропускает ожидающее обновление (аварийный вход).
@@ -182,7 +194,6 @@ def main() -> int:
         from app import win32_utils
 
         if not win32_utils.acquire_instance_mutex():
-            app = QApplication(sys.argv)
             QMessageBox.information(None, "Nodexy", "Приложение уже запущено.")
             return 0
 
@@ -194,28 +205,16 @@ def main() -> int:
 
     lock = QLockFile(str(config.app_dir() / "nodexy.lock"))
     if not lock.tryLock(100):
-        app = QApplication(sys.argv)
         QMessageBox.information(None, "Nodexy", "Приложение уже запущено.")
         return 0
 
-    qt = QApplication(sys.argv)
-    qt.setApplicationName("Nodexy")
-    qt.setOrganizationName("Nodexy")
-    # Нативный стиль Fusion + глобальная палитра в цветах темы ДО создания
-    # виджетов: системные части (фон окна, вьюпорты, диалоги, QMessageBox)
-    # рисуются сразу тёмными — белая вспышка при первом показе исчезает.
-    qt.setStyle("Fusion")
-    qt.setStyleSheet(theme.QSS)
-    qt.setWindowIcon(theme.load_app_icon())
-    qt.setQuitOnLastWindowClosed(False)
-
-    # Сплаш-экран в цвете темы: пока распаковывается --onefile и грузится БД,
-    # на экране не пустота/белое окно, а аккуратный логотип.
-    _splash = _make_splash()
+    # Отдельный QSplashScreen намеренно не используем: это самостоятельный
+    # top-level HWND, который Windows успевал показать белым до первого кадра
+    # главного окна. С onedir загрузка достаточно быстрая, а первое окно сразу
+    # создаётся с уже установленной палитрой.
+    _splash = None
     db_path = _resolve_db_path()
     if not db_path:
-        if _splash is not None:
-            _splash.close()
         return 0
     if not config.set_db_path(db_path):
         config.log_error("Не удалось сохранить путь к базе данных в config.json")
@@ -248,8 +247,6 @@ def main() -> int:
     tracker = Tracker(db)
     window = MainWindow(db, tracker, boot)
 
-    if _splash is not None:
-        _splash.close()
     if start_minimized:
         # Не показывать окно, только иконка в трее
         pass

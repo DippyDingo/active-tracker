@@ -19,6 +19,7 @@
 """
 
 import os
+import sys
 
 from PySide6.QtCore import QObject, QRunnable, QSize, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import QFontMetrics, QPalette
@@ -344,11 +345,27 @@ class AddPanel(QFrame):
             self._hint.setText(f"Доступно приложений: {len(self._rows)}")
 
     def _pick_path(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Выберите приложение", "", "Программы (*.exe);;Все файлы (*.*)"
+        # Свой тёмный выбор файла вместо QFileDialog: системный диалог
+        # открывается отдельным светлым окном Windows.
+        from .file_picker import FilePickerPanel
+
+        start = os.path.dirname(os.path.abspath(sys.argv[0])) if hasattr(sys, "argv") else ""
+        picker = FilePickerPanel(start, "Выберите приложение", self)
+        picker.close_requested.connect(picker.deleteLater)
+        picker.picked.connect(self._on_file_picked)
+        picker.move(
+            (self.width() - picker.width()) // 2,
+            (self.height() - picker.height()) // 2,
         )
-        if not path:
-            return
+        picker.show()
+        picker.raise_()
+        self._picker = picker
+
+    def _on_file_picked(self, path: str) -> None:
+        picker = getattr(self, "_picker", None)
+        if picker is not None:
+            picker.deleteLater()
+            self._picker = None
         path = os.path.normpath(path)
         suggestion = (
             win32_utils.get_file_description(path)
