@@ -842,19 +842,17 @@ def _paint_all_scrollareas(app) -> None:
     """Красит нативные фоны ВСЕХ прокручиваемых областей в дереве виджетов.
 
     QSS красит только сами области, а их viewport() — системный, белый.
-    Перекраска при применении темы гарантирует, что и вьюпорты модальных
-    панелей (настройки, статистика, обновление) не мигнут белым.
+    findChildren обходит дерево рекурсивно сам, поэтому никакой собственной
+    рекурсии здесь быть не должно (иначе бесконечный обход и падение стека).
     """
     try:
         from PySide6.QtWidgets import QAbstractScrollArea
 
-        def walk(widget):
-            for child in widget.findChildren(QAbstractScrollArea):
-                paint_background(child)
-            for child in widget.findChildren(QAbstractScrollArea):
-                walk(child)
-
-        walk(app)
+        root = app if hasattr(app, "findChildren") else None
+        if root is None:
+            return
+        for area in root.findChildren(QAbstractScrollArea):
+            paint_background(area)
     except Exception:
         pass
 

@@ -55,7 +55,9 @@ from ..utils import (
 )
 from . import theme
 from .add_dialog import AddPanel
+from .add_page import AddApplicationPage
 from .modal import ModalOverlay
+from .shell import PageStack
 from .settings_dialog import SettingsPanel
 from .stats_panel import StatsPanel
 from .update_dialog import UpdatePanel, WhatsNewPanel
@@ -475,7 +477,13 @@ class MainWindow(QMainWindow):
         self._popup.load_requested.connect(self._load_database)
         self._popup.quit_requested.connect(self._quit_app)
 
-        root_layout.addWidget(content, 1)
+        # Стек страниц: главная (Activity) и вложенные экраны. Все экраны —
+        # обычные дочерние виджеты, поэтому ни один не может стать отдельным
+        # окном Windows (раньше модалки поднимались как самостоятельные окна
+        # и на кадр показывались белыми).
+        self._pages = PageStack()
+        self._pages.set_main_page(content)
+        root_layout.addWidget(self._pages, 1)
 
     def _show_app_menu(self) -> None:
         corner = self._profile_btn.mapToGlobal(
@@ -1416,10 +1424,22 @@ class MainWindow(QMainWindow):
             self._show_modal(panel, on_closed)
 
     def _open_add(self, cat_id: int | None = None) -> None:
+        # Новый экран добавления — страница QStackedWidget, не модальное окно.
+        # Поэтому при открытии и закрытии не создаётся отдельный HWND.
         existing = {row.exe_path for row in self.db.list_apps()}
-        panel = AddPanel(existing, self)
-        panel.add_requested.connect(lambda app: self._on_add_request(app, cat_id))
-        self._show_modal(panel, on_closed=lambda: (panel.shutdown(), self.refresh_apps()))
+        page = AddApplicationPage(existing, self)
+        page.application_added.connect(
+            lambda app: self._on_add_request(app, cat_id)
+        )
+        page.close_requested.connect(lambda: self._close_page(page))
+        self._pages.addWidget(page)
+        self._pages.show_page(page)
+
+    def _close_page(self, page) -> None:
+        if hasattr(page, "shutdown"):
+            page.shutdown()
+        self._pages.discard_page(page)
+        self.refresh_apps()
 
     def _on_add_request(self, app, cat_id: int | None = None) -> None:
         # Извлечение иконки — в фоне: сетевые/медленные пути не должны
