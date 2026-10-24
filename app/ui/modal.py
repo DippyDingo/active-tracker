@@ -1,17 +1,16 @@
+"""Модальный слой поверх главного окна.
+
+Переписан с нуля БЕЗ QGraphicsOpacityEffect: этот эффект заставляет Qt
+рендерить панель в промежуточный прозрачный буфер, из-за чего при открытии
+и закрытии на кадр вспыхивало БЕЛОЕ окно. Теперь панель просто появляется
+и исчезает без буферов (только лёгкий скролл-ин, полностью безопасный).
+"""
+
 import time
 
-from PySide6.QtCore import (
-    QEasingCurve,
-    QEvent,
-    QPoint,
-    QPropertyAnimation,
-    QRect,
-    QSize,
-    Qt,
-    Signal,
-)
+from PySide6.QtCore import QEvent, QPoint, QRect, QSize, Qt, Signal
 from PySide6.QtGui import QPainter
-from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
+from PySide6.QtWidgets import QWidget
 
 from . import theme
 
@@ -24,8 +23,6 @@ class ModalOverlay(QWidget):
         self._host = host
         self._panel = panel
         self._closing = False
-        self._group = None
-        self._opacity = None
 
         panel.setParent(self)
         hint = panel.sizeHint().expandedTo(panel.minimumSize())
@@ -50,33 +47,10 @@ class ModalOverlay(QWidget):
         self.setFocus(Qt.PopupFocusReason)
 
         self._open_time = time.monotonic()
-        self._start_open_animation()
 
-    def _start_open_animation(self) -> None:
-        # Анимируем настоящую панель: без снимка и промежуточных слоёв.
-        panel = self._panel
+        # Простое появление: панель видна сразу, без прозрачных буферов.
         panel.show()
         panel.raise_()
-
-        effect = QGraphicsOpacityEffect(panel)
-        effect.setOpacity(0.0)
-        panel.setGraphicsEffect(effect)
-        self._opacity = effect
-
-        fade = QPropertyAnimation(effect, b"opacity")
-        fade.setDuration(150)
-        fade.setStartValue(0.0)
-        fade.setEndValue(1.0)
-        fade.setEasingCurve(QEasingCurve.OutCubic)
-        fade.finished.connect(self._on_opened)
-        self._group = fade
-        fade.start()
-
-    def _on_opened(self) -> None:
-        # После появления убираем эффект, чтобы панель рисовалась как обычно.
-        if self._opacity is not None:
-            self._panel.setGraphicsEffect(None)
-            self._opacity = None
 
     def eventFilter(self, obj, event) -> bool:
         if obj is self._host and event.type() == QEvent.Resize:
@@ -99,27 +73,6 @@ class ModalOverlay(QWidget):
         if self._closing:
             return
         self._closing = True
-        if self._group is not None:
-            self._group.stop()
-
-        panel = self._panel
-        effect = panel.graphicsEffect()
-        if not isinstance(effect, QGraphicsOpacityEffect):
-            effect = QGraphicsOpacityEffect(panel)
-            effect.setOpacity(1.0)
-            panel.setGraphicsEffect(effect)
-        self._opacity = effect
-
-        fade = QPropertyAnimation(effect, b"opacity")
-        fade.setDuration(120)
-        fade.setStartValue(effect.opacity())
-        fade.setEndValue(0.0)
-        fade.setEasingCurve(QEasingCurve.InCubic)
-        fade.finished.connect(self._on_closed)
-        self._group = fade
-        fade.start()
-
-    def _on_closed(self) -> None:
         self.closed.emit()
         self.deleteLater()
 

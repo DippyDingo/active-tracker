@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QFileDialog,
     QFrame,
-    QGraphicsDropShadowEffect,
     QGraphicsOpacityEffect,
     QGridLayout,
     QHBoxLayout,
@@ -1512,7 +1511,6 @@ class MainWindow(QMainWindow):
         )
         self._popup.retheme()
         for card in self._cards.values():
-            card._shadow.setColor(theme.color("shadow"))
             card.update()
             card.chart.update()
         if self._overlay is not None:
@@ -1702,18 +1700,33 @@ class MainWindow(QMainWindow):
         self._banner.setVisible(False)
 
     def _pulse_badge(self) -> None:
-        """Короткая пульсация бейджа: обновление заметно без звука и окон."""
-        eff = QGraphicsOpacityEffect(self._badge)
-        self._badge.setGraphicsEffect(eff)
-        anim = QVariantAnimation(self)
-        anim.setStartValue(1.0)
-        anim.setEndValue(0.15)
-        anim.setDuration(450)
-        anim.setLoopCount(6)
-        anim.setEasingCurve(QEasingCurve.InOutSine)
-        anim.valueChanged.connect(lambda v: eff.setOpacity(v))
-        anim.finished.connect(lambda: self._badge.setGraphicsEffect(None))
-        anim.start(QVariantAnimation.DeleteWhenStopped)
+        """Короткая пульсация бейджа: обновление заметно без звука и окон.
+
+        БЕЗ QGraphicsOpacityEffect: он рендерит бейдж в прозрачный буфер и
+        вызывал белую вспышку. Пульсируем размер/отступ — безопасно и видно.
+        """
+        try:
+            if not self._badge.isVisible():
+                return
+            start = self._badge.geometry()
+            end = QRect(start)
+            end.adjust(-3, -3, 3, 3)
+            anim = QVariantAnimation(self)
+            anim.setStartValue(0.0)
+            anim.setEndValue(1.0)
+            anim.setDuration(240)
+            anim.setEasingCurve(QEasingCurve.OutCubic)
+
+            def on_tick(v):
+                w = int(start.width() + (end.width() - start.width()) * v)
+                h = int(start.height() + (end.height() - start.height()) * v)
+                self._badge.setFixedSize(w, h)
+
+            anim.valueChanged.connect(on_tick)
+            anim.finished.connect(lambda: self._badge.setFixedSize(start.size()))
+            anim.start(QVariantAnimation.DeleteWhenStopped)
+        except Exception:
+            pass
 
     def _snooze_update(self) -> None:
         if self._update_available is not None:

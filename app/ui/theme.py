@@ -359,9 +359,11 @@ QFrame#appCard {
 }
 QFrame#appCard:hover {
     border-color: $hover_border;
+    border: 2px solid $hover_border;
 }
 QFrame#appCard[selected="true"] {
     border-color: $accent;
+    border: 2px solid $accent;
 }
 
 QFrame#modalPanel {
@@ -585,6 +587,20 @@ QListWidget#addList::item {
 }
 QListWidget#addList::item:selected {
     background: rgba($accent_rgb, 10%);
+}
+
+/* Список приложений в окне добавления: QScrollArea с фоном темы.
+   Вьюпорт красится явно (theme.paint_background), эти правила — страховка. */
+QScrollArea#addScroll {
+    background: $list_bg;
+    border: 1px solid $card;
+    border-radius: 12px;
+}
+QScrollArea#addScroll > QWidget > QWidget {
+    background: $list_bg;
+}
+QWidget#addHost {
+    background: $list_bg;
 }
 
 QScrollBar:vertical {

@@ -1596,8 +1596,11 @@ class AppCard(QFrame):
         shadow.setBlurRadius(22)
         shadow.setOffset(0, 8)
         shadow.setColor(theme.color("shadow"))
-        self.setGraphicsEffect(shadow)
+        # Тень рисуем через QSS (box-shadow-подобный фон) НЕ через
+        # QGraphicsDropShadowEffect: тот рендерит карточку в буфер и вызывал
+        # белые вспышки при перестроении и «дёрганье» при скролле.
         self._shadow = shadow
+        self.setGraphicsEffect(None)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 14, 12, 12)
@@ -1713,30 +1716,20 @@ class AppCard(QFrame):
         self.chart.set_days(labels)
 
     def enterEvent(self, event) -> None:
-        self._animate_shadow(theme.color("shadow_hover"), 32)
+        self._set_hover(True)
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
-        self._animate_shadow(theme.color("shadow"), 22)
+        self._set_hover(False)
         super().leaveEvent(event)
 
-    def _animate_shadow(self, color: QColor, blur: int) -> None:
-        for attr in ("color", "blurRadius"):
-            old = getattr(self, f"_shadow_{attr}_anim", None)
-            if old is not None:
-                old.stop()
-        color_anim = QPropertyAnimation(self._shadow, b"color")
-        color_anim.setDuration(180)
-        color_anim.setStartValue(self._shadow.color())
-        color_anim.setEndValue(color)
-        blur_anim = QPropertyAnimation(self._shadow, b"blurRadius")
-        blur_anim.setDuration(180)
-        blur_anim.setStartValue(self._shadow.blurRadius())
-        blur_anim.setEndValue(blur)
-        self._shadow_color_anim = color_anim
-        self._shadow_blur_anim = blur_anim
-        color_anim.start()
-        blur_anim.start()
+    def _set_hover(self, hovered: bool) -> None:
+        if self.property("hovered") == hovered:
+            return
+        self.setProperty("hovered", hovered)
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
 
 
 class CardHost(QWidget):

@@ -1,23 +1,42 @@
+"""Окно добавления приложения — переписано с нуля.
+
+Что было не так в прежней версии:
+  * список на QListWidget: его viewport() — системный, светлый; при показе
+    панели он на кадр вспыхивал белым;
+  * строки с иконками создавались ПОСЛЕ открытия панели (асинхронный скан),
+    поэтому сначала была видна пустая светлая область;
+  * QInputDialog/QFileDialog — нативные светлые диалоги.
+
+Как сделано теперь:
+  * прокрутка на QScrollArea с явно заданным фоном темы (viewport красится
+    вместе с панелью);
+  * строки — обычные QWidget в QVBoxLayout, без QListWidget и его вьюпорта;
+  * имя приложения спрашивается собственным тёмным диалогом вместо
+    QInputDialog;
+  * скан установленных программ стартует сразу при создании панели, а
+    показывается панель только когда есть что показать (или сразу, если
+    список пуст).
+"""
+
 import os
 
 from PySide6.QtCore import QObject, QRunnable, QSize, Qt, QThread, QThreadPool, QTimer, Signal
-from PySide6.QtGui import QFontMetrics
+from PySide6.QtGui import QFontMetrics, QPalette
 from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
     QHBoxLayout,
-    QInputDialog,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
 
 from .. import installed_apps, win32_utils
 from ..installed_apps import InstalledApp
+from . import theme
 from .widgets import magnifier_icon, pixmap_from_png, rounded_pixmap, ui_icon
 
 
@@ -32,8 +51,7 @@ class _ScanWorker(QThread):
         self.finished_scan.emit(apps)
 
 
-# Живые потоки сканирования: панель можно закрыть, поток доживёт сам и не будет
-# уничтожен вместе с ней (иначе возможно падение при работе фонового QThread).
+# Живые потоки сканирования: панель может закрыться, поток доживёт сам.
 _active_workers: set = set()
 
 
@@ -64,6 +82,50 @@ class _IconTask(QRunnable):
             png = None
         if png:
             self.signals.ready.emit(self.key, png)
+
+
+class _NameDialog(QFrame):
+    """Собственный тёмный диалог ввода имени (замена нативного QInputDialog)."""
+
+    def __init__(self, title: str, suggestion: str, on_done, parent=None):
+        super().__init__(parent)
+        self.setObjectName("modalPanel")
+        self.setFixedWidth(420)
+        self._on_done = on_done
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 20, 24, 18)
+        layout.setSpacing(12)
+
+        head = QLabel(title)
+        head.setObjectName("modalTitle")
+        layout.addWidget(head)
+
+        self._edit = QLineEdit(suggestion)
+        self._edit.selectAll()
+        self._edit.returnPressed.connect(self._accept)
+        layout.addWidget(self._edit)
+
+        row = QHBoxLayout()
+        row.addStretch(1)
+        cancel = QPushButton("Отмена")
+        cancel.setCursor(Qt.PointingHandCursor)
+        cancel.clicked.connect(self._cancel)
+        row.addWidget(cancel)
+        ok = QPushButton("Добавить")
+        ok.setObjectName("primary")
+        ok.setCursor(Qt.PointingHandCursor)
+        ok.clicked.connect(self._accept)
+        row.addWidget(ok)
+        layout.addLayout(row)
+
+        self._edit.setFocus()
+
+    def _accept(self) -> None:
+        self._on_done(self._edit.text().strip())
+
+    def _cancel(self) -> None:
+        self._on_done("")
 
 
 class _Row(QFrame):
@@ -150,7 +212,6 @@ class AddPanel(QFrame):
 
         self._existing = {os.path.normcase(p) for p in existing_exes}
         self._rows: list[_Row] = []
-        self._items: list[QListWidgetItem] = []
         self._scheduled: set[str] = set()
         self._pool = QThreadPool.globalInstance()
 
@@ -175,8 +236,6 @@ class AddPanel(QFrame):
         self._search.setObjectName("searchEdit")
         self._search.setPlaceholderText("  Поиск по названию или пути")
         self._search.setClearButtonEnabled(True)
-        self._search.setAttribute(Qt.WA_InputMethodEnabled, False)
-        self._search.setInputMethodHints(Qt.ImhNoAutoUppercase)
         self._search.addAction(magnifier_icon(), QLineEdit.LeadingPosition)
         self._search.setTextMargins(14, 0, 0, 0)
         self._search.textChanged.connect(self._apply_filter)
@@ -186,10 +245,21 @@ class AddPanel(QFrame):
         self._hint.setObjectName("subtleLabel")
         layout.addWidget(self._hint)
 
-        self._list = QListWidget()
-        self._list.setObjectName("addList")
-        self._list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        layout.addWidget(self._list, 1)
+        # Прокрутка на QScrollArea с фоном темы вместо QListWidget: вьюпорт
+        # QScrollArea мы красим явно, поэтому белой вспышки при показе нет.
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setObjectName("addScroll")
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._scroll.setFrameShape(QFrame.NoFrame)
+        self._host = QWidget()
+        self._host.setObjectName("addHost")
+        self._list_layout = QVBoxLayout(self._host)
+        self._list_layout.setContentsMargins(0, 0, 0, 0)
+        self._list_layout.setSpacing(2)
+        self._list_layout.addStretch(1)
+        self._scroll.setWidget(self._host)
+        layout.addWidget(self._scroll, 1)
 
         bottom = QHBoxLayout()
         path_btn = QPushButton("Добавить по пути...")
@@ -207,23 +277,31 @@ class AddPanel(QFrame):
         bottom.addWidget(done_btn)
         layout.addLayout(bottom)
 
+        self._paint_bg()
+
         self._worker = _ScanWorker()
         self._worker.finished_scan.connect(self._on_scanned)
         self._worker.finished.connect(lambda: _active_workers.discard(self._worker))
         _active_workers.add(self._worker)
         self._worker.start()
 
+    # ------------------------------------------------------------- фон
+    def _paint_bg(self) -> None:
+        theme.paint_background(self._scroll)
+        pal = self._host.palette()
+        bg = theme.color("popup")
+        pal.setColor(QPalette.Window, bg)
+        pal.setColor(QPalette.Base, bg)
+        self._host.setPalette(pal)
+        self._host.setAutoFillBackground(True)
+
     def _on_scanned(self, apps: list) -> None:
         apps = [a for a in apps if os.path.normcase(a.exe_path) not in self._existing]
         for app in apps:
             row = _Row(app)
             row.add_clicked.connect(self._on_row_add)
-            item = QListWidgetItem()
-            item.setSizeHint(QSize(0, 52))
-            self._list.addItem(item)
-            self._list.setItemWidget(item, row)
+            self._list_layout.insertWidget(self._list_layout.count() - 1, row)
             self._rows.append(row)
-            self._items.append(item)
             self._schedule_icon(app, row)
         self._apply_filter(self._search.text())
 
@@ -254,9 +332,9 @@ class AddPanel(QFrame):
     def _apply_filter(self, text: str) -> None:
         lowered = (text or "").strip().lower()
         shown = 0
-        for row, item in zip(self._rows, self._items):
+        for row in self._rows:
             match = row.matches(lowered)
-            item.setHidden(not match)
+            row.setVisible(match)
             shown += 1 if match else 0
         if self._worker.isRunning() and not self._rows:
             self._hint.setText("Загрузка списка установленных программ...")
@@ -272,19 +350,37 @@ class AddPanel(QFrame):
         if not path:
             return
         path = os.path.normpath(path)
-        suggestion = win32_utils.get_file_description(path) or os.path.splitext(os.path.basename(path))[0]
-        name, ok = QInputDialog.getText(self, "Название приложения", "Название:", text=suggestion)
-        if not ok or not name.strip():
+        suggestion = (
+            win32_utils.get_file_description(path)
+            or os.path.splitext(os.path.basename(path))[0]
+        )
+        self._ask_name(suggestion, path)
+
+    def _ask_name(self, suggestion: str, path: str) -> None:
+        dialog = _NameDialog("Название приложения", suggestion, self._on_name, self)
+        dialog.move(
+            (self.width() - dialog.width()) // 2, (self.height() - dialog.height()) // 2
+        )
+        dialog.show()
+        dialog.raise_()
+        self._name_dialog = dialog
+        self._pending_path = path
+
+    def _on_name(self, name: str) -> None:
+        dialog = getattr(self, "_name_dialog", None)
+        if dialog is not None:
+            dialog.deleteLater()
+            self._name_dialog = None
+        path = getattr(self, "_pending_path", "")
+        if not name or not path:
             return
-        app = InstalledApp(name=name.strip(), exe_path=path, icon_path=path, icon_index=0)
+        app = InstalledApp(name=name, exe_path=path, icon_path=path, icon_index=0)
         self.add_requested.emit(app)
         self._existing.add(os.path.normcase(path))
         self._hint.setText(f"Добавлено: {app.name}")
         QTimer.singleShot(3000, self, lambda: self._apply_filter(self._search.text()))
 
     def shutdown(self) -> None:
-        # Не блокируем интерфейс: поток сканирования независим и доживёт сам.
-        # Отключаем сигнал, чтобы завершение скана после закрытия не трогало панель.
         if self._worker is not None:
             try:
                 self._worker.finished_scan.disconnect(self._on_scanned)

@@ -43,7 +43,10 @@ if (-not $SkipExe) {
         main.py
     if ($LASTEXITCODE -ne 0) { Fail "PyInstaller: сборка exe не удалась" }
 }
-if (-not (Test-Path "dist\Nodexy.exe")) { Fail "dist\Nodexy.exe не найден" }
+# --onedir: exe и _internal лежат в dist\Nodexy\. Старый onefile-файл
+# dist\Nodexy.exe намеренно не используется (может остаться от прошлых сборок).
+$exeFile = Join-Path $root "dist\Nodexy\Nodexy.exe"
+if (-not (Test-Path $exeFile)) { Fail "dist\Nodexy\Nodexy.exe не найден (нужна сборка exe)" }
 
 # 3) Поиск ISCC: PATH → Program Files (x86) → Program Files.
 $iscc = $null
@@ -75,7 +78,10 @@ Compress-Archive -Path "dist\Nodexy\*" -DestinationPath $zipPath -Force
 $setup = Join-Path $distInstaller "Nodexy-Setup-$version.exe"
 if (-not (Test-Path $setup)) { Fail "Установщик не создан: $setup" }
 $shaSetup = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLower()
-$shaExe = (Get-FileHash "dist\Nodexy.exe" -Algorithm SHA256).Hash.ToLower()
+# --onedir: exe лежит в dist\Nodexy\Nodexy.exe (не dist\Nodexy.exe — тот
+# остаётся от старых onefile-сборок и вводит в заблуждение).
+$exeFile = Join-Path (Join-Path $root "dist") "Nodexy\Nodexy.exe"
+$shaExe = (Get-FileHash $exeFile -Algorithm SHA256).Hash.ToLower()
 $shaZip = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLower()
 Set-Content -Path "$setup.sha256" -Value $shaSetup -Encoding ascii
 
@@ -84,7 +90,7 @@ Write-Host ""
 Write-Host "=== Артефакты ==="
 Write-Host $setup
 Write-Host "$setup.sha256"
-Write-Host "dist\Nodexy.exe"
+Write-Host $exeFile
 Write-Host $zipPath
 Write-Host ""
 Write-Host "=== Контрольные суммы ==="
