@@ -94,8 +94,89 @@
    "title": "Набор B — дуотон-силуэт",
    "desc": "Градиенты пинк→виолет, плоские силуэты. Самые яркие в панели задач.",
    "opacity": 1.0,
-   "ready": false,
-   "icons": []
+   "ready": true,
+   "icons": [
+    {
+     "id": "B01",
+     "name": "Градиент",
+     "src": "icons/B01-512.png",
+     "small": "icons/B01-256.png",
+     "big": "icons/B01-1024.png",
+     "note": null
+    },
+    {
+     "id": "B02",
+     "name": "Инверсия",
+     "src": "icons/B02-512.png",
+     "small": "icons/B02-256.png",
+     "big": "icons/B02-1024.png",
+     "note": null
+    },
+    {
+     "id": "B03",
+     "name": "Часы",
+     "src": "icons/B03-512.png",
+     "small": "icons/B03-256.png",
+     "big": "icons/B03-1024.png",
+     "note": null
+    },
+    {
+     "id": "B04",
+     "name": "Двойной",
+     "src": "icons/B04-512.png",
+     "small": "icons/B04-256.png",
+     "big": "icons/B04-1024.png",
+     "note": null
+    },
+    {
+     "id": "B05",
+     "name": "Профиль",
+     "src": "icons/B05-512.png",
+     "small": "icons/B05-256.png",
+     "big": "icons/B05-1024.png",
+     "note": null
+    },
+    {
+     "id": "B06",
+     "name": "Неон",
+     "src": "icons/B06-512.png",
+     "small": "icons/B06-256.png",
+     "big": "icons/B06-1024.png",
+     "note": null
+    },
+    {
+     "id": "B07",
+     "name": "Ризо",
+     "src": "icons/B07-512.png",
+     "small": "icons/B07-256.png",
+     "big": "icons/B07-1024.png",
+     "note": null
+    },
+    {
+     "id": "B08",
+     "name": "Шов",
+     "src": "icons/B08-512.png",
+     "small": "icons/B08-256.png",
+     "big": "icons/B08-1024.png",
+     "note": null
+    },
+    {
+     "id": "B09",
+     "name": "Стикер",
+     "src": "icons/B09-512.png",
+     "small": "icons/B09-256.png",
+     "big": "icons/B09-1024.png",
+     "note": null
+    },
+    {
+     "id": "B10",
+     "name": "В листе",
+     "src": "icons/B10-512.png",
+     "small": "icons/B10-256.png",
+     "big": "icons/B10-1024.png",
+     "note": null
+    }
+   ]
   },
   {
    "letter": "C",
@@ -107,7 +188,7 @@
   }
  ],
  "stats": {
-  "total": 10,
+  "total": 20,
   "sets": 3
  }
 }

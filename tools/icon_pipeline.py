@@ -84,18 +84,43 @@ def content_bbox(im: Image.Image, thr: int = 26):
             int((max(xs) + 1) * k), int((max(ys) + 1) * k))
 
 
-def ring_bg(im: Image.Image, inset: int = 2):
+def ring_bg(im: Image.Image):
+    """Фон плитки: медиана по четырём площадкам в серединах сторон
+    (внутри плитки, минуя белый холст и скруглённые углы)."""
     px = im.load()
     W, H = im.size
+    d = max(3, int(W * 0.06))
+    s = max(2, int(W * 0.02))
     vals = []
-    for x in range(W):
-        vals.append(px[x, inset])
-        vals.append(px[x, H - 1 - inset])
-    for y in range(H):
-        vals.append(px[inset, y])
-        vals.append(px[W - 1 - inset, y])
+    for cx, cy in ((W // 2, d), (W // 2, H - 1 - d), (d, H // 2), (W - 1 - d, H // 2)):
+        for y in range(max(0, cy - s), min(H, cy + s + 1)):
+            for x in range(max(0, cx - s), min(W, cx + s + 1)):
+                vals.append(px[x, y])
     n = len(vals)
     return tuple(sorted(v[i] for v in vals)[n // 2] for i in range(3))
+
+
+def scrub_canvas(im: Image.Image, bright: int = 150):
+    """Убирает белый холст генератора: светлые пиксели, связанные с углами,
+    заменяет подложкой. Белый холст окружает скруглённую плитку снаружи и
+    иначе оставляет белые «точки» в углах готовой иконки."""
+    px = im.load()
+    W, H = im.size
+    seen = set()
+    for cx, cy in ((0, 0), (W - 1, 0), (0, H - 1), (W - 1, H - 1)):
+        if min(px[cx, cy][:3]) <= bright:
+            continue
+        dq = [(cx, cy)]
+        seen.add((cx, cy))
+        while dq:
+            x, y = dq.pop()
+            px[x, y] = FILL
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if 0 <= nx < W and 0 <= ny < H and (nx, ny) not in seen \
+                        and min(px[nx, ny][:3]) > bright:
+                    seen.add((nx, ny))
+                    dq.append((nx, ny))
+    return im
 
 
 def flush_bg(im: Image.Image):
@@ -121,6 +146,7 @@ def process(src: Path, out_dir: Path, raw_dir: Path):
         im = im.crop((max(0, box[0] - mx), max(0, box[1] - my),
                       min(im.width, box[2] + mx), min(im.height, box[3] + my)))
     im = im.resize((1024, 1024), Image.LANCZOS)
+    im = scrub_canvas(im)
     im = flush_bg(im)
 
     cb = content_bbox(im)
