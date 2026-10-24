@@ -135,7 +135,7 @@ class AddApplicationPage(Page):
         wrap_layout.addStretch(2)
         body.addWidget(wrap, 1)
 
-        # -------- верхняя строка: поиск + обзор (в одной строке)
+        # -------- верхняя строка: поиск + обновление + обзор (в одной строке)
         top = QHBoxLayout()
         self._search = QLineEdit()
         self._search.setObjectName("searchEdit")
@@ -145,6 +145,14 @@ class AddApplicationPage(Page):
         self._search.setTextMargins(14, 0, 0, 0)
         self._search.textChanged.connect(self._apply_filter)
         top.addWidget(self._search, 1)
+
+        refresh_btn = QPushButton()
+        refresh_btn.setIcon(ui_icon("update"))
+        refresh_btn.setFixedSize(30, 30)
+        refresh_btn.setCursor(Qt.PointingHandCursor)
+        refresh_btn.setToolTip("Пересканировать установленные программы")
+        refresh_btn.clicked.connect(self._rescan)
+        top.addWidget(refresh_btn)
 
         browse_btn = QPushButton("Обзор…")
         browse_btn.setCursor(Qt.PointingHandCursor)
@@ -233,6 +241,15 @@ class AddApplicationPage(Page):
         self._scan_thread = ApplicationScanThread(use_cache, self)
         self._scan_thread.scanned.connect(self._on_scanned)
         self._scan_thread.start()
+
+    def _rescan(self) -> None:
+        """Полный перескан: программа установлена после кэширования списка."""
+        if self._scan_thread is not None and self._scan_thread.isRunning():
+            return
+        invalidate_cache()
+        self._scan_done = False
+        self._rebuild_rows([])
+        self._start_scan(use_cache=False)
 
     def _on_scanned(self, apps: list) -> None:
         self._scan_done = True
