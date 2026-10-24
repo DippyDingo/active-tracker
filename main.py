@@ -5,9 +5,8 @@ import sys
 import traceback
 from datetime import date
 
-from PySide6.QtCore import QLockFile, QRectF, Qt, QTimer
-from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication, QDialog
 
 from app import config, updater
 from app.runtime import InstanceGuard, create_application
@@ -117,39 +116,6 @@ def _resolve_db_path() -> str:
     return dialog.path
 
 
-def _make_splash():
-    """Тёмный сплэш в цветах текущей палитры (лёгкий, без анимаций)."""
-    try:
-        from PySide6.QtCore import QSize
-        from PySide6.QtGui import QFont, QPixmap
-        from PySide6.QtWidgets import QSplashScreen
-
-        p = theme.pal()
-        w, h = 300, 180
-        pm = QPixmap(w, h)
-        pm.fill(QColor(p.bg))
-        painter = QPainter(pm)
-        painter.setRenderHint(QPainter.Antialiasing)
-        icon = theme.make_clock_icon().pixmap(QSize(72, 72))
-        painter.drawPixmap((w - 72) // 2, 26, icon)
-        font = QFont("Segoe UI", 14, QFont.Bold)
-        painter.setFont(font)
-        painter.setPen(QColor(p.text))
-        painter.drawText(
-            QRectF(0, 106, w, 26), Qt.AlignCenter, "Nodexy"
-        )
-        small = QFont("Segoe UI", 9)
-        painter.setFont(small)
-        painter.setPen(QColor(p.text2))
-        painter.drawText(QRectF(0, 132, w, 20), Qt.AlignCenter, "загрузка…")
-        painter.end()
-        splash = QSplashScreen(pm)
-        splash.show()
-        return splash
-    except Exception:
-        return None
-
-
 def main() -> int:
     if sys.platform == "win32":
         try:
@@ -198,11 +164,9 @@ def main() -> int:
         # Внешний апдейтер вернёт старую версию и перезапустит её.
         return 0
 
-    # Отдельный QSplashScreen намеренно не используем: это самостоятельный
-    # top-level HWND, который Windows успевал показать белым до первого кадра
-    # главного окна. С onedir загрузка достаточно быстрая, а первое окно сразу
-    # создаётся с уже установленной палитрой.
-    _splash = None
+    # Сплэш-экрана нет намеренно: это отдельный top-level HWND, который Windows
+    # успевал показать белым. С onedir загрузка быстрая, а главное окно сразу
+    # создаётся с применённой палитрой темы.
     db_path = _resolve_db_path()
     if not db_path:
         return 0

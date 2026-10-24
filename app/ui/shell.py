@@ -141,6 +141,44 @@ class PageStack(QStackedWidget):
         page.deleteLater()
 
 
+class PanelHostPage(Page):
+    """Страница-обёртка для самодостаточных панелей (настройки, статистика,
+    обновления). Панель центрируется внутри тела страницы; заголовок страницы
+    скрыт, так как у панелей есть собственная шапка с кнопкой закрытия."""
+
+    def __init__(self, panel: QWidget, parent=None):
+        super().__init__("", parent)
+        self._panel = panel
+        self._header.setVisible(False)
+
+        body = self.body_layout()
+        body.setContentsMargins(0, 0, 0, 0)
+        body.setSpacing(0)
+
+        wrap = QWidget()
+        wrap_layout = QVBoxLayout(wrap)
+        wrap_layout.setContentsMargins(28, 12, 28, 22)
+        wrap_layout.addStretch(1)
+        holder = QHBoxLayout()
+        holder.addStretch(1)
+        holder.addWidget(panel, 0, Qt.AlignTop)
+        holder.addStretch(1)
+        wrap_layout.addLayout(holder)
+        wrap_layout.addStretch(3)
+        body.addWidget(wrap, 1)
+
+        if hasattr(panel, "close_requested"):
+            panel.close_requested.connect(self.close_requested)
+
+    def panel(self) -> QWidget:
+        return self._panel
+
+    def shutdown(self) -> None:
+        panel_shutdown = getattr(self._panel, "shutdown", None)
+        if callable(panel_shutdown):
+            panel_shutdown()
+
+
 class ScrollPage(Page):
     """Страница с прокручиваемым содержимым (стиль сохраняется)."""
 

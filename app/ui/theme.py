@@ -716,6 +716,21 @@ QLabel#updatePlateText {
     font-size: 13px;
     font-weight: 700;
 }
+QFrame#confirmStrip {
+    border-radius: 12px;
+    border: 1px solid rgba($danger_rgb, 40%);
+    background: rgba($danger_rgb, 10%);
+}
+QLabel#confirmStripText {
+    color: $text;
+    font-size: 13px;
+    font-weight: 600;
+}
+QFrame#manualBlock {
+    border-radius: 14px;
+    border: 1px solid $border;
+    background: rgba($accent_rgb, 4%);
+}
 QLabel#popupVersion {
     color: $text3;
     font-size: 11px;
