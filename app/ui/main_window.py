@@ -1,7 +1,6 @@
 import os
 from collections import defaultdict
 from datetime import date, datetime, timedelta
-from pathlib import Path
 
 from PySide6.QtCore import (
     QEasingCurve,
@@ -16,22 +15,26 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtWidgets import (
+    QAbstractScrollArea,
     QApplication,
     QButtonGroup,
+    QFileDialog,
     QFrame,
+    QGraphicsOpacityEffect,
     QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QMainWindow,
     QMenu,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPainterPath, QPalette, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPalette, QPixmap
 
 from .. import config, updater, win32_utils
 from ..db import Database
@@ -51,9 +54,8 @@ from ..utils import (
     week_start,
 )
 from . import theme
-from .add_page import AddApplicationPage
-from .data_page import DataPage
-from .shell import PageStack, PanelHostPage
+from .add_dialog import AddPanel
+from .modal import ModalOverlay
 from .settings_dialog import SettingsPanel
 from .stats_panel import StatsPanel
 from .update_dialog import UpdatePanel, WhatsNewPanel
@@ -70,23 +72,6 @@ from .widgets import (
 
 # Подпись «АКТИВНОСТЬ ЗА …» в шапке для каждого периода (индексы = PERIOD_KEYS).
 PERIOD_GENITIVE = ["СЕГОДНЯ", "НЕДЕЛЮ", "МЕСЯЦ", "ГОД", "ВСЁ ВРЕМЯ"]
-
-
-def _faded_pixmap(pm: QPixmap, alpha: float) -> QPixmap:
-    """Пиксмап с «запечённой» полупрозрачностью.
-
-    Замена QGraphicsOpacityEffect: эффект прозрачности заставляет Qt рендерить
-    виджет в промежуточный буфер и вызывал артефакты; альфа прямо в пиксмапе
-    не создаёт никаких дополнительных слоёв.
-    """
-    img = pm.toImage().convertToFormat(QImage.Format_ARGB32_Premultiplied)
-    p = QPainter(img)
-    p.setCompositionMode(QPainter.CompositionMode_DestinationIn)
-    p.fillRect(img.rect(), QColor(0, 0, 0, int(255 * max(0.0, min(1.0, alpha)))))
-    p.end()
-    out = QPixmap.fromImage(img)
-    out.setDevicePixelRatio(pm.devicePixelRatioF())
-    return out
 
 
 class SearchEdit(QLineEdit):
@@ -278,8 +263,11 @@ class MainWindow(QMainWindow):
         self._selected_id: int | None = None
         self._filter = ""
         self._cols = 3
+        self._overlay = None
+        self._pending_modal: tuple | None = None
         self._drag: dict | None = None
         self._drag_ghost: QLabel | None = None
+        self._drag_dim = None
         self._drop_anim = None
         self._running: set[str] = set()
         self._header_value = 0
@@ -487,13 +475,7 @@ class MainWindow(QMainWindow):
         self._popup.load_requested.connect(self._load_database)
         self._popup.quit_requested.connect(self._quit_app)
 
-        # Стек страниц: главная (Activity) и вложенные экраны. Все экраны —
-        # обычные дочерние виджеты, поэтому ни один не может стать отдельным
-        # окном Windows (раньше модалки поднимались как самостоятельные окна
-        # и на кадр показывались белыми).
-        self._pages = PageStack()
-        self._pages.set_main_page(content)
-        root_layout.addWidget(self._pages, 1)
+        root_layout.addWidget(content, 1)
 
     def _show_app_menu(self) -> None:
         corner = self._profile_btn.mapToGlobal(
@@ -509,24 +491,16 @@ class MainWindow(QMainWindow):
         # то место, где пользователь читал список.
         cur = self._scroll.verticalScrollBar().value() if self._scroll else 0
 
-        # На время перестроения запрещаем отрисовку: без этого между удалением
-        # старых виджетов и добавлением новых проскакивал кадр с пустым (белым)
-        # контентом — пользователь видел «белое окно». Старые виджеты прячем
-        # сразу, чтобы они не рисовались поверх новых до своего удаления.
-        self.setUpdatesEnabled(False)
-
         self._discard_inline()
         while self._grid.count():
             item = self._grid.takeAt(0)
             widget = item.widget()
             if widget is not None and widget is not self._empty_label:
-                widget.hide()
                 widget.deleteLater()
         while self._side_layout.count():
             item = self._side_layout.takeAt(0)
             widget = item.widget()
             if widget is not None:
-                widget.hide()
                 widget.deleteLater()
         self._cards.clear()
         self._hosts.clear()
@@ -569,9 +543,6 @@ class MainWindow(QMainWindow):
         self.tracker.set_tracked({row.exe_path: row.id for row in apps})
         self._update_status_right()
         self._update_values()
-
-        self.setUpdatesEnabled(True)
-        self.update()
         if self._scroll is not None:
             self._scroll.verticalScrollBar().setValue(cur)
 
@@ -982,16 +953,18 @@ class MainWindow(QMainWindow):
             pass
 
     def _delete_category(self, cat_id: int, cat_name: str) -> None:
-        # Инлайн-подтверждение вместо QMessageBox (без второго окна).
-        def do_delete():
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Question)
+        box.setWindowTitle("Удаление категории")
+        box.setText(f"Удалить категорию «{cat_name}»?")
+        box.setInformativeText("Приложения из неё останутся в списке без категории.")
+        yes_btn = box.addButton("Удалить", QMessageBox.AcceptRole)
+        box.addButton("Отмена", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is yes_btn:
             self._collapsed.discard(cat_id)
             self.db.delete_category(cat_id)
             self.refresh_apps()
-
-        self._show_confirm(
-            f"Удалить категорию «{cat_name}»? Приложения из неё останутся в списке без категории.",
-            on_yes=do_delete,
-        )
 
     def _sidebar_context_menu(self, pos: QPoint) -> None:
         menu = QMenu(self)
@@ -1203,12 +1176,20 @@ class MainWindow(QMainWindow):
         )
         pm.setDevicePixelRatio(dpr)
         ghost = QLabel(self)
-        ghost.setPixmap(_faded_pixmap(pm, 0.8))
+        ghost.setPixmap(pm)
         ghost.setFixedSize(host.size())
         ghost.setAttribute(Qt.WA_TransparentForMouseEvents)
+        opacity = QGraphicsOpacityEffect(ghost)
+        opacity.setOpacity(0.8)
+        ghost.setGraphicsEffect(opacity)
         ghost.show()
         ghost.raise_()
         self._drag_ghost = ghost
+
+        dim = QGraphicsOpacityEffect(host)
+        dim.setOpacity(0.35)
+        host.setGraphicsEffect(dim)
+        self._drag_dim = dim
 
         self._move_ghost(global_pos)
 
@@ -1224,6 +1205,9 @@ class MainWindow(QMainWindow):
         host = self._hosts.get(app_id)
         ghost = self._drag_ghost
         self._drag_ghost = None
+        if host is not None:
+            host.setGraphicsEffect(None)
+        self._drag_dim = None
         if ghost is None or host is None:
             if ghost is not None:
                 ghost.deleteLater()
@@ -1315,9 +1299,12 @@ class MainWindow(QMainWindow):
         )
         pm.setDevicePixelRatio(dpr)
         ghost = QLabel(self)
-        ghost.setPixmap(_faded_pixmap(pm, 0.75))
+        ghost.setPixmap(pm)
         ghost.setFixedSize(item.size())
         ghost.setAttribute(Qt.WA_TransparentForMouseEvents)
+        opacity = QGraphicsOpacityEffect(ghost)
+        opacity.setOpacity(0.75)
+        ghost.setGraphicsEffect(opacity)
         ghost.show()
         ghost.raise_()
         self._side_ghost = ghost
@@ -1400,34 +1387,39 @@ class MainWindow(QMainWindow):
                 f"background: rgba({theme._rgb_str(theme.pal().accent)}, 10%); border-radius: 8px;"
             )
 
+    def _show_modal(self, panel, on_closed=None) -> ModalOverlay | None:
+        # Перед показом красим нативные вьюпорты панели под тему — иначе
+        # QListWidget/скроллы внутри модалки мигнут системным белым фоном.
+        try:
+            theme.paint_background(panel)
+            for child in panel.findChildren(QAbstractScrollArea):
+                theme.paint_background(child)
+        except Exception:
+            pass
+        if self._overlay is not None:
+            self._pending_modal = (panel, on_closed)
+            if not self._overlay._closing:
+                self._overlay.close_modal()
+            return None
+        overlay = ModalOverlay(self, panel)
+        self._overlay = overlay
+        overlay.closed.connect(self._on_modal_closed)
+        if on_closed is not None:
+            overlay.closed.connect(on_closed)
+        return overlay
+
+    def _on_modal_closed(self) -> None:
+        self._overlay = None
+        if self._pending_modal is not None:
+            panel, on_closed = self._pending_modal
+            self._pending_modal = None
+            self._show_modal(panel, on_closed)
+
     def _open_add(self, cat_id: int | None = None) -> None:
-        # Новый экран добавления — страница QStackedWidget, не модальное окно.
-        # Поэтому при открытии и закрытии не создаётся отдельный HWND.
         existing = {row.exe_path for row in self.db.list_apps()}
-        page = AddApplicationPage(existing, self)
-        page.application_added.connect(
-            lambda app: self._on_add_request(app, cat_id)
-        )
-        page.close_requested.connect(lambda: self._close_page(page))
-        self._pages.addWidget(page)
-        self._pages.show_page(page)
-
-    def _close_page(self, page) -> None:
-        if hasattr(page, "shutdown"):
-            page.shutdown()
-        self._pages.discard_page(page)
-        self.refresh_apps()
-
-    def _open_page(self, page) -> None:
-        """Показывает страницу внутри стека и закрывает её по сигналу."""
-        page.close_requested.connect(lambda: self._dismiss_page(page))
-        self._pages.addWidget(page)
-        self._pages.show_page(page)
-
-    def _dismiss_page(self, page) -> None:
-        if hasattr(page, "shutdown"):
-            page.shutdown()
-        self._pages.discard_page(page)
+        panel = AddPanel(existing, self)
+        panel.add_requested.connect(lambda app: self._on_add_request(app, cat_id))
+        self._show_modal(panel, on_closed=lambda: (panel.shutdown(), self.refresh_apps()))
 
     def _on_add_request(self, app, cat_id: int | None = None) -> None:
         # Извлечение иконки — в фоне: сетевые/медленные пути не должны
@@ -1463,7 +1455,7 @@ class MainWindow(QMainWindow):
             panel.set_autoupdate_note(
                 f"{reason}. Обновления будут предлагаться с подтверждением."
             )
-        self._open_page(PanelHostPage(panel, self))
+        self._show_modal(panel)
 
     def _apply_settings(
         self,
@@ -1499,9 +1491,10 @@ class MainWindow(QMainWindow):
             else:
                 # Ошибка записи в реестр
                 config.log_error(f"Не удалось {'включить' if autostart else 'выключить'} автозапуск")
-                self._show_notice(
-                    f"Не удалось {'включить' if autostart else 'выключить'} автозапуск. "
-                    "Проверьте права доступа к реестру Windows."
+                QMessageBox.warning(
+                    self,
+                    "Ошибка",
+                    f"Не удалось {'включить' if autostart else 'выключить'} автозапуск.\nПроверьте права доступа к реестру Windows."
                 )
         
         self._update_status_right()
@@ -1520,9 +1513,11 @@ class MainWindow(QMainWindow):
         for card in self._cards.values():
             card.update()
             card.chart.update()
-        current = self._pages.currentWidget()
-        if hasattr(current, "retheme"):
-            current.retheme()
+        if self._overlay is not None:
+            panel = getattr(self._overlay, "_panel", None)
+            if panel is not None and hasattr(panel, "retheme"):
+                panel.retheme()
+            self._overlay.update()
         self._apply_window_palette()
         self.update()
 
@@ -1750,7 +1745,7 @@ class MainWindow(QMainWindow):
         panel.install_requested.connect(lambda: self._install_and_restart(panel))
         panel.later_requested.connect(self._snooze_update)
         panel.later_requested.connect(panel.close_requested)
-        self._open_page(PanelHostPage(panel, self))
+        self._show_modal(panel, on_closed=panel.shutdown)
 
     def _install_and_restart(self, panel: UpdatePanel) -> None:
         if self._updater_launched:
@@ -1788,7 +1783,7 @@ class MainWindow(QMainWindow):
         if not info:
             return
         panel = WhatsNewPanel(str(info.get("version", "")), str(info.get("notes", "")), self)
-        self._open_page(PanelHostPage(panel, self))
+        self._show_modal(panel)
 
     def _apply_pending_on_exit(self) -> None:
         if self._updater_launched:
@@ -1802,8 +1797,9 @@ class MainWindow(QMainWindow):
             self._updater_launched = True
 
     def _settings_panel(self):
-        current = self._pages.currentWidget()
-        panel = getattr(current, "_panel", None) if hasattr(current, "_panel") else current
+        if self._overlay is None:
+            return None
+        panel = getattr(self._overlay, "_panel", None)
         return panel if isinstance(panel, SettingsPanel) else None
 
     def _settings_status(self, text: str) -> None:
@@ -1848,36 +1844,49 @@ class MainWindow(QMainWindow):
     def _export_database(self) -> None:
         self._popup.hide()
         self.tracker.flush()
-        self._open_data_page(focus="export")
+        default_name = f"tracker_{date.today().isoformat()}.db"
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Экспорт базы данных", default_name, "База данных (*.db)"
+        )
+        if not path:
+            return
+        if not path.lower().endswith(".db"):
+            path += ".db"
+        if self.db.export_to(path):
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Information)
+            box.setWindowTitle("Экспорт базы данных")
+            box.setText("База данных успешно экспортирована.")
+            box.setInformativeText(path)
+            box.setStandardButtons(QMessageBox.Ok)
+            box.exec()
+        else:
+            QMessageBox.warning(self, "Ошибка", "Не удалось экспортировать базу данных.")
 
     def _load_database(self) -> None:
         self._popup.hide()
-        self._open_data_page(focus="import")
-
-    def _open_data_page(self, focus: str = "export") -> None:
-        # Одна страница на экспорт и импорт: без QFileDialog/QMessageBox,
-        # поэтому второе окно Windows здесь появиться не может.
-        current = self._pages.currentWidget()
-        if isinstance(getattr(current, "panel", lambda: None)(), DataPage):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Загрузка базы данных", "", "База данных (*.db);;Все файлы (*.*)"
+        )
+        if not path:
             return
-        page = DataPage(str(self.db.path), self)
-        if focus == "export":
-            default_name = f"tracker_{date.today().isoformat()}.db"
-            page._export_path.setText(str(Path.home() / default_name))
-        page.export_done.connect(self._run_export)
-        page.import_done.connect(self._run_import)
-        self._data_page = page
-        self._open_page(page)
-
-    def _run_export(self, path: str) -> None:
-        self.tracker.flush()
-        ok = self.db.export_to(path)
-        page = getattr(self, "_data_page", None)
-        if page is not None:
-            page.set_export_result(ok, path)
-
-    def _run_import(self, path: str) -> None:
-        self._switch_db(path)
+        if not Database.validate(path):
+            QMessageBox.warning(
+                self,
+                "Неподходящий файл",
+                "Выбранный файл не является корректной базой данных трекера.",
+            )
+            return
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Question)
+        box.setWindowTitle("Загрузка базы данных")
+        box.setText("Переключиться на выбранную базу?")
+        box.setInformativeText("Текущая база останется на диске без изменений.")
+        yes_btn = box.addButton("Переключиться", QMessageBox.AcceptRole)
+        box.addButton("Отмена", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is yes_btn:
+            self._switch_db(path)
 
     def _switch_db(self, path: str) -> None:
         new_db = Database(path)
@@ -1886,12 +1895,16 @@ class MainWindow(QMainWindow):
         self.db = new_db
         config.set_db_path(path)
         self._selected_id = None
-        page = getattr(self, "_data_page", None)
-        if page is not None:
-            page.set_import_result(True, path)
         self.refresh_apps()
         self._update_values()
         self._update_status()
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Information)
+        box.setWindowTitle("Загрузка базы данных")
+        box.setText("База данных загружена.")
+        box.setInformativeText(path)
+        box.setStandardButtons(QMessageBox.Ok)
+        box.exec()
 
     def _open_stats(self, app_id: int) -> None:
         row = self._rows_meta.get(app_id)
@@ -1914,77 +1927,28 @@ class MainWindow(QMainWindow):
         )
         panel.delete_requested.connect(
             lambda aid: (
-                self._dismiss_page(self._pages.currentWidget()),
+                self._overlay.close_modal() if self._overlay else None,
                 self._confirm_delete(aid),
             )
         )
-        self._open_page(PanelHostPage(panel, self))
+        self._show_modal(panel)
 
     def _confirm_delete(self, app_id: int) -> None:
-        # Подтверждение внутри главного окна: вместо QMessageBox (отдельное
-        # нативное окно) показываем строку подтверждения в шапке контента.
         name = self._names.get(app_id, "приложение")
-        self._show_confirm(
-            f"Удалить «{name}» из отслеживания? Накопленная статистика будет удалена.",
-            on_yes=lambda: self._do_delete(app_id),
-        )
-
-    def _show_confirm(self, text: str, on_yes) -> None:
-        self._hide_confirm()
-        strip = QFrame()
-        strip.setObjectName("confirmStrip")
-        lay = QHBoxLayout(strip)
-        lay.setContentsMargins(14, 8, 10, 8)
-        lay.setSpacing(10)
-        label = QLabel(text)
-        label.setObjectName("confirmStripText")
-        label.setWordWrap(True)
-        lay.addWidget(label, 1)
-        yes_btn = QPushButton("Удалить")
-        yes_btn.setObjectName("danger")
-        yes_btn.setCursor(Qt.PointingHandCursor)
-        lay.addWidget(yes_btn)
-        no_btn = QPushButton("Отмена")
-        no_btn.setCursor(Qt.PointingHandCursor)
-        lay.addWidget(no_btn)
-        self._confirm_strip = strip
-        self._content_layout.insertWidget(1, strip)
-        yes_btn.clicked.connect(lambda: (on_yes(), self._hide_confirm()))
-        no_btn.clicked.connect(self._hide_confirm)
-
-    def _show_notice(self, text: str) -> None:
-        """Информационная полоса в шапке контента (без второго окна)."""
-        self._hide_confirm()
-        strip = QFrame()
-        strip.setObjectName("updatePlate")
-        lay = QHBoxLayout(strip)
-        lay.setContentsMargins(14, 8, 10, 8)
-        lay.setSpacing(10)
-        label = QLabel(text)
-        label.setObjectName("updatePlateText")
-        label.setWordWrap(True)
-        lay.addWidget(label, 1)
-        ok_btn = QPushButton("Понятно")
-        ok_btn.setCursor(Qt.PointingHandCursor)
-        ok_btn.clicked.connect(self._hide_confirm)
-        lay.addWidget(ok_btn)
-        self._confirm_strip = strip
-        self._content_layout.insertWidget(1, strip)
-        QTimer.singleShot(10000, self._hide_confirm)
-
-    def _hide_confirm(self) -> None:
-        strip = getattr(self, "_confirm_strip", None)
-        if strip is not None:
-            self._confirm_strip = None
-            self._content_layout.removeWidget(strip)
-            strip.deleteLater()
-
-    def _do_delete(self, app_id: int) -> None:
-        if self._selected_id == app_id:
-            self._selected_id = None
-        self.tracker.forget_app(app_id)
-        self.db.remove_app(app_id)
-        self.refresh_apps()
+        box = QMessageBox(self)
+        box.setWindowTitle("Удаление приложения")
+        box.setIcon(QMessageBox.Warning)
+        box.setText(f"Удалить «{name}» из отслеживания?")
+        box.setInformativeText("Накопленная статистика по нему будет удалена.")
+        delete_btn = box.addButton("Удалить", QMessageBox.AcceptRole)
+        box.addButton("Отмена", QMessageBox.RejectRole)
+        box.exec()
+        if box.clickedButton() is delete_btn:
+            if self._selected_id == app_id:
+                self._selected_id = None
+            self.tracker.forget_app(app_id)
+            self.db.remove_app(app_id)
+            self.refresh_apps()
 
     def _update_status_right(self) -> None:
         suffix = " · фон ✦" if self.tracker.background_counting() else ""

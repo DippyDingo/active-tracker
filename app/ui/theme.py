@@ -716,21 +716,6 @@ QLabel#updatePlateText {
     font-size: 13px;
     font-weight: 700;
 }
-QFrame#confirmStrip {
-    border-radius: 12px;
-    border: 1px solid rgba($danger_rgb, 40%);
-    background: rgba($danger_rgb, 10%);
-}
-QLabel#confirmStripText {
-    color: $text;
-    font-size: 13px;
-    font-weight: 600;
-}
-QFrame#manualBlock {
-    border-radius: 14px;
-    border: 1px solid $border;
-    background: rgba($accent_rgb, 4%);
-}
 QLabel#popupVersion {
     color: $text3;
     font-size: 11px;
@@ -857,17 +842,19 @@ def _paint_all_scrollareas(app) -> None:
     """Красит нативные фоны ВСЕХ прокручиваемых областей в дереве виджетов.
 
     QSS красит только сами области, а их viewport() — системный, белый.
-    findChildren обходит дерево рекурсивно сам, поэтому никакой собственной
-    рекурсии здесь быть не должно (иначе бесконечный обход и падение стека).
+    Перекраска при применении темы гарантирует, что и вьюпорты модальных
+    панелей (настройки, статистика, обновление) не мигнут белым.
     """
     try:
         from PySide6.QtWidgets import QAbstractScrollArea
 
-        root = app if hasattr(app, "findChildren") else None
-        if root is None:
-            return
-        for area in root.findChildren(QAbstractScrollArea):
-            paint_background(area)
+        def walk(widget):
+            for child in widget.findChildren(QAbstractScrollArea):
+                paint_background(child)
+            for child in widget.findChildren(QAbstractScrollArea):
+                walk(child)
+
+        walk(app)
     except Exception:
         pass
 
