@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 from app import config, updater
+from app.runtime import InstanceGuard, create_application
 from app.db import Database
 from app.tracker import Tracker
 from app.ui import theme
@@ -159,16 +160,9 @@ def main() -> int:
             pass
 
     # QApplication создаётся ровно один раз и ДО любых проверок/диалогов.
-    # Раньше при занятом mutex создавался отдельный QApplication без темы,
-    # из-за чего появлялось белое окно с заголовком Nodexy.
-    qt = QApplication(sys.argv)
-    qt.setApplicationName("Nodexy")
-    qt.setOrganizationName("Nodexy")
-    qt.setStyle("Fusion")
-    qt.setPalette(theme.build_palette(theme.pal()))
-    qt.setStyleSheet(theme.QSS)
-    qt.setWindowIcon(theme.load_app_icon())
-    qt.setQuitOnLastWindowClosed(False)
+    # Тема и палитра применяются здесь же, поэтому первое же окно рождается
+    # уже в цветах темы (никакого белого кадра).
+    qt = create_application(sys.argv)
 
     # Проверка флага --minimized
     start_minimized = "--minimized" in sys.argv
@@ -187,25 +181,21 @@ def main() -> int:
             )
             return 0
 
-    if sys.platform == "win32":
-        # Именованный мьютекс нужен установщику Inno (AppMutex): по нему он
-        # понимает, что приложение запущено. Держится до выхода процесса.
-        # QLockFile ниже остаётся как внутренняя защита второго экземпляра.
-        from app import win32_utils
-
-        if not win32_utils.acquire_instance_mutex():
-            QMessageBox.information(None, "Nodexy", "Приложение уже запущено.")
-            return 0
+    guard = InstanceGuard()
+    if not guard.acquire():
+        # Второй экземпляр ничего не рисует и не создаёт окон: просит уже
+        # запущенное приложение показать окно и тихо завершается.
+        try:
+            from app import win32_utils
+            win32_utils.activate_existing_window("Nodexy")
+        except Exception:
+            pass
+        return 0
 
     # Бут-контроль и применение ожидающего обновления — до появления окна.
     boot = updater.startup_processing(skip_update)
     if boot.get("rollback"):
         # Внешний апдейтер вернёт старую версию и перезапустит её.
-        return 0
-
-    lock = QLockFile(str(config.app_dir() / "nodexy.lock"))
-    if not lock.tryLock(100):
-        QMessageBox.information(None, "Nodexy", "Приложение уже запущено.")
         return 0
 
     # Отдельный QSplashScreen намеренно не используем: это самостоятельный
