@@ -43,12 +43,12 @@ _GAME_EXE_BLOCKLIST = (
 )
 
 # Кэш на время сеанса: повторное открытие страницы не пересканирует диск.
-_CACHE: list[InstalledApp] | None = None
+_STATIC_CACHE: list[InstalledApp] | None = None
 
 
 def invalidate_cache() -> None:
-    global _CACHE
-    _CACHE = None
+    global _STATIC_CACHE
+    _STATIC_CACHE = None
 
 
 def _as_str(value) -> str:
@@ -299,11 +299,46 @@ def _steam_games() -> list[InstalledApp]:
     return games
 
 
-def scan_installed_apps(use_cache: bool = True) -> list[InstalledApp]:
-    """Полное сканирование. Блокирующая функция — вызывать из потока."""
-    global _CACHE
-    if use_cache and _CACHE is not None:
-        return list(_CACHE)
+def _running_apps() -> list[InstalledApp]:
+    """Запущенные процессы как кандидаты (быстрый источник, без кэша)."""
+    import psutil
+
+    from ..win32_utils import get_file_description
+
+    windows_dir = os.path.normcase(os.getenv("SystemRoot", r"C:\Windows"))
+    apps: list[InstalledApp] = []
+    try:
+        for proc in psutil.process_iter(["name", "exe"]):
+            try:
+                exe = (proc.info.get("exe") or "").strip()
+            except Exception:
+                continue
+            if not exe or not os.path.isfile(exe):
+                continue
+            if os.path.normcase(exe).startswith(windows_dir + os.sep):
+                continue
+            if _looks_like_uninstaller(exe):
+                continue
+            base = os.path.basename(exe)
+            if base.lower() in ("explorer.exe", "searchhost.exe", "applicationframehost.exe"):
+                continue
+            try:
+                name = get_file_description(exe) or os.path.splitext(base)[0]
+            except Exception:
+                name = os.path.splitext(base)[0]
+            apps.append(InstalledApp(name=name, exe_path=exe, icon_path=exe, icon_index=0))
+    except Exception:
+        pass
+    return apps
+
+
+# Статические источники (реестр, ярлыки, Steam) кэшируются; запущенные
+# процессы перечитываются каждый раз — иначе список «худел» относительно
+# старой версии сканера.
+def _scan_static() -> list[InstalledApp]:
+    global _STATIC_CACHE
+    if _STATIC_CACHE is not None:
+        return list(_STATIC_CACHE)
 
     deadline = time.monotonic() + 20.0
     found: dict[str, InstalledApp] = {}
@@ -316,9 +351,27 @@ def scan_installed_apps(use_cache: bool = True) -> list[InstalledApp]:
         except Exception:
             continue
 
-    result = sorted(found.values(), key=lambda a: a.name.lower())
-    _CACHE = result
+    result = list(found.values())
+    _STATIC_CACHE = result
     return list(result)
+
+
+def scan_installed_apps(use_cache: bool = True) -> list[InstalledApp]:
+    """Полное сканирование. Блокирующая функция — вызывать из потока."""
+    global _STATIC_CACHE
+    if not use_cache:
+        _STATIC_CACHE = None
+
+    found: dict[str, InstalledApp] = {}
+    for app in _scan_static():
+        found.setdefault(os.path.normcase(app.exe_path), app)
+    try:
+        for app in _running_apps():
+            found.setdefault(os.path.normcase(app.exe_path), app)
+    except Exception:
+        pass
+
+    return sorted(found.values(), key=lambda a: a.name.lower())
 
 
 class ApplicationScanThread(QThread):

@@ -1,19 +1,18 @@
 """Страница «Добавить приложение» — внутри главного окна.
 
-Это НЕ модальное окно и НЕ отдельный HWND. Страница живёт в QStackedWidget
-главного окна, поэтому появление/исчезновение физически не может создать
-новое окно Windows (именно это и давало белую «кошку»).
+Это НЕ модальное окно и НЕ отдельный HWND: страница живёт в QStackedWidget
+главного окна, поэтому её открытие/закрытие физически не может создать
+второе окно Windows.
 
-Продумано из опыта прошлой версии:
-  * нет QListWidget — список на QScrollArea с обычными строками-виджетами;
-  * нет QFileDialog — выбор exe встроен прямо в страницу;
-  * нет QInputDialog — имя вводится в самой строке/панели;
-  * скан и иконки — в фоновых сервисах, UI никогда не блокируется;
-  * при уходе со страницы потоки отменяются, ссылки на виджеты не остаются.
+Интерфейс повторяет прежнюю панель добавления:
+  * верхняя строка: поиск + «Обзор» (в одной строке);
+  * список найденных программ строками (иконка, имя, путь, «Добавить»);
+  * внизу только «Готово»;
+  * «Обзор» переключает страницу в режим выбора файла прямо внутри неё
+    (никаких системных диалогов).
 """
 
 import os
-import sys
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFontMetrics
@@ -37,7 +36,7 @@ from .widgets import magnifier_icon, pixmap_from_png, rounded_pixmap, ui_icon
 
 
 class _AppRow(QFrame):
-    """Строка списка установленных программ."""
+    """Строка списка установленных программ (как в прежней панели)."""
 
     add_clicked = Signal(object)
 
@@ -49,29 +48,30 @@ class _AppRow(QFrame):
         self.setAttribute(Qt.WA_Hover, True)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(14, 9, 14, 9)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 7, 12, 7)
+        layout.setSpacing(11)
 
         self._icon = QLabel()
-        self._icon.setFixedSize(30, 30)
+        self._icon.setFixedSize(28, 28)
         layout.addWidget(self._icon)
 
         texts = QVBoxLayout()
-        texts.setSpacing(2)
+        texts.setSpacing(1)
         name = QLabel(app.name)
-        name.setObjectName("addRowName")
+        name.setObjectName("sideName")
         path = QLabel()
         path.setObjectName("pathLabel")
         fm = QFontMetrics(path.font())
-        path.setText(fm.elidedText(app.exe_path, Qt.ElideMiddle, 520))
+        path.setText(fm.elidedText(app.exe_path, Qt.ElideMiddle, 420))
         path.setToolTip(app.exe_path)
         texts.addWidget(name)
         texts.addWidget(path)
-        layout.addLayout(texts, 1)
+        layout.addLayout(texts)
+        layout.addStretch(1)
 
-        self._btn = QPushButton("Добавить")
+        self._btn = QPushButton("＋ Добавить")
         self._btn.setObjectName("rowAdd")
-        self._btn.setFixedHeight(30)
+        self._btn.setFixedHeight(28)
         self._btn.setCursor(Qt.PointingHandCursor)
         self._btn.clicked.connect(self._on_add)
         layout.addWidget(self._btn)
@@ -79,7 +79,7 @@ class _AppRow(QFrame):
     def set_icon(self, png: bytes) -> None:
         pm = pixmap_from_png(png)
         if pm is not None:
-            self._icon.setPixmap(rounded_pixmap(pm, 30, 8))
+            self._icon.setPixmap(rounded_pixmap(pm, 28, 7))
 
     def matches(self, lowered: str) -> bool:
         if not lowered:
@@ -89,8 +89,8 @@ class _AppRow(QFrame):
     def mark_added(self) -> None:
         self._added = True
         self._btn.setText("✓ Добавлено")
-        self._btn.setEnabled(False)
         self._btn.setObjectName("rowAddDone")
+        self._btn.setEnabled(False)
         self._btn.style().unpolish(self._btn)
         self._btn.style().polish(self._btn)
 
@@ -109,15 +109,34 @@ class AddApplicationPage(Page):
         self._existing = {os.path.normcase(p) for p in existing_paths}
         self._rows: list[_AppRow] = []
         self._scan_thread: ApplicationScanThread | None = None
-        self._icons = IconLoader(30, self)
+        self._icons = IconLoader(28, self)
         self._icons.ready.connect(self._on_icon_ready)
         self._scan_done = False
+        self._browsing = False
 
+        # Центрированная колонка фиксированной ширины — вид как у прежней
+        # панели добавления, а не растянутая на всё окно страница.
         body = self.body_layout()
-        body.setSpacing(12)
+        body.setContentsMargins(0, 0, 0, 0)
+        wrap = QWidget()
+        wrap_layout = QVBoxLayout(wrap)
+        wrap_layout.setContentsMargins(0, 4, 10, 4)
+        wrap_layout.addStretch(1)
+        holder = QHBoxLayout()
+        holder.addStretch(1)
+        column = QWidget()
+        column.setFixedWidth(700)
+        self._col = QVBoxLayout(column)
+        self._col.setContentsMargins(0, 0, 0, 0)
+        self._col.setSpacing(12)
+        holder.addWidget(column)
+        holder.addStretch(1)
+        wrap_layout.addLayout(holder)
+        wrap_layout.addStretch(2)
+        body.addWidget(wrap, 1)
 
-        # ---- поиск
-        search_row = QHBoxLayout()
+        # -------- верхняя строка: поиск + обзор (в одной строке)
+        top = QHBoxLayout()
         self._search = QLineEdit()
         self._search.setObjectName("searchEdit")
         self._search.setPlaceholderText("Поиск по названию или пути")
@@ -125,20 +144,21 @@ class AddApplicationPage(Page):
         self._search.addAction(magnifier_icon(), QLineEdit.LeadingPosition)
         self._search.setTextMargins(14, 0, 0, 0)
         self._search.textChanged.connect(self._apply_filter)
-        search_row.addWidget(self._search, 1)
+        top.addWidget(self._search, 1)
 
-        self._refresh_btn = QPushButton("Обновить список")
-        self._refresh_btn.setObjectName("ghost")
-        self._refresh_btn.setCursor(Qt.PointingHandCursor)
-        self._refresh_btn.clicked.connect(self._rescan)
-        search_row.addWidget(self._refresh_btn)
-        body.addLayout(search_row)
+        browse_btn = QPushButton("Обзор…")
+        browse_btn.setCursor(Qt.PointingHandCursor)
+        browse_btn.setToolTip("Выбрать exe-файл вручную")
+        browse_btn.setIcon(ui_icon("folder"))
+        browse_btn.clicked.connect(self._open_browse)
+        top.addWidget(browse_btn)
+        self._col.addLayout(top)
 
         self._hint = QLabel("Загрузка списка установленных программ…")
         self._hint.setObjectName("subtleLabel")
-        body.addWidget(self._hint)
+        self._col.addWidget(self._hint)
 
-        # ---- список
+        # -------- список
         self._scroll = QScrollArea()
         self._scroll.setObjectName("addScroll")
         self._scroll.setWidgetResizable(True)
@@ -147,52 +167,61 @@ class AddApplicationPage(Page):
         self._list_host = QWidget()
         self._list_host.setObjectName("addHost")
         self._list_layout = QVBoxLayout(self._list_host)
-        self._list_layout.setContentsMargins(6, 6, 6, 6)
+        self._list_layout.setContentsMargins(4, 4, 4, 4)
         self._list_layout.setSpacing(2)
         self._list_layout.addStretch(1)
         self._scroll.setWidget(self._list_host)
         theme.paint_background(self._scroll)
-        body.addWidget(self._scroll, 1)
+        self._col.addWidget(self._scroll, 1)
 
-        # ---- ручной путь (встроенная панель вместо QFileDialog)
-        manual = QFrame()
-        manual.setObjectName("manualBlock")
-        manual_layout = QVBoxLayout(manual)
-        manual_layout.setContentsMargins(16, 12, 16, 12)
-        manual_layout.setSpacing(8)
+        # -------- режим обзора файлов (внутри страницы)
+        self._browse_box = QWidget()
+        browse_layout = QVBoxLayout(self._browse_box)
+        browse_layout.setContentsMargins(0, 0, 0, 0)
+        browse_layout.setSpacing(8)
+        nav = QHBoxLayout()
+        self._up_btn = QPushButton("↑")
+        self._up_btn.setFixedSize(30, 30)
+        self._up_btn.setCursor(Qt.PointingHandCursor)
+        self._up_btn.setToolTip("На уровень выше")
+        self._up_btn.clicked.connect(self._go_up)
+        nav.addWidget(self._up_btn)
+        self._dir_label = QLineEdit()
+        self._dir_label.setReadOnly(True)
+        nav.addWidget(self._dir_label, 1)
+        back_btn = QPushButton("Назад к списку")
+        back_btn.setCursor(Qt.PointingHandCursor)
+        back_btn.clicked.connect(self._close_browse)
+        nav.addWidget(back_btn)
+        browse_layout.addLayout(nav)
 
-        manual_title = QLabel("Добавить по пути вручную")
-        manual_title.setObjectName("modalTitle")
-        manual_layout.addWidget(manual_title)
+        self._browse_scroll = QScrollArea()
+        self._browse_scroll.setObjectName("addScroll")
+        self._browse_scroll.setWidgetResizable(True)
+        self._browse_scroll.setFrameShape(QFrame.NoFrame)
+        self._browse_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._browse_host = QWidget()
+        self._browse_host.setObjectName("addHost")
+        self._browse_layout = QVBoxLayout(self._browse_host)
+        self._browse_layout.setContentsMargins(4, 4, 4, 4)
+        self._browse_layout.setSpacing(2)
+        self._browse_layout.addStretch(1)
+        self._browse_scroll.setWidget(self._browse_host)
+        theme.paint_background(self._browse_scroll)
+        browse_layout.addWidget(self._browse_scroll, 1)
+        self._browse_box.setVisible(False)
+        self._col.addWidget(self._browse_box, 1)
+        self._browse_dir = os.path.expanduser("~")
 
-        path_row = QHBoxLayout()
-        self._path_edit = QLineEdit()
-        self._path_edit.setPlaceholderText(r"Например: C:\Program Files\App\app.exe")
-        path_row.addWidget(self._path_edit, 1)
-
-        browse = QPushButton("Обзор…")
-        browse.setObjectName("ghost")
-        browse.setCursor(Qt.PointingHandCursor)
-        browse.setIcon(ui_icon("folder"))
-        browse.clicked.connect(self._browse_file)
-        path_row.addWidget(browse)
-
-        self._name_edit = QLineEdit()
-        self._name_edit.setPlaceholderText("Название (необязательно)")
-        path_row.addWidget(self._name_edit, 1)
-
-        add_manual = QPushButton("Добавить")
-        add_manual.setObjectName("primary")
-        add_manual.setCursor(Qt.PointingHandCursor)
-        add_manual.clicked.connect(self._add_manual)
-        path_row.addWidget(add_manual)
-        manual_layout.addLayout(path_row)
-
-        self._manual_status = QLabel("")
-        self._manual_status.setObjectName("subtleLabel")
-        manual_layout.addWidget(self._manual_status)
-
-        body.addWidget(manual)
+        # -------- низ: только «Готово» (как в прежней панели)
+        bottom = QHBoxLayout()
+        bottom.addStretch(1)
+        done_btn = QPushButton("Готово")
+        done_btn.setObjectName("primary")
+        done_btn.setCursor(Qt.PointingHandCursor)
+        done_btn.clicked.connect(self.close_requested)
+        bottom.addWidget(done_btn)
+        self._col.addLayout(bottom)
 
         self._start_scan(use_cache=True)
 
@@ -205,14 +234,6 @@ class AddApplicationPage(Page):
         self._scan_thread.scanned.connect(self._on_scanned)
         self._scan_thread.start()
 
-    def _rescan(self) -> None:
-        if self._scan_thread is not None and self._scan_thread.isRunning():
-            return
-        invalidate_cache()
-        self._rebuild_rows([])
-        self._scan_done = False
-        self._start_scan(use_cache=False)
-
     def _on_scanned(self, apps: list) -> None:
         self._scan_done = True
         visible = [
@@ -222,8 +243,8 @@ class AddApplicationPage(Page):
         self._rebuild_rows(visible)
 
     def _rebuild_rows(self, apps: list) -> None:
-        # Удаляем только строки (stretch остаётся последним).
         for row in self._rows:
+            row.hide()
             self._list_layout.removeWidget(row)
             row.deleteLater()
         self._rows.clear()
@@ -257,9 +278,7 @@ class AddApplicationPage(Page):
         elif lowered:
             self._hint.setText(f"Найдено: {shown}")
         elif not self._rows:
-            self._hint.setText(
-                "Новых программ не найдено — добавьте приложение по пути ниже."
-            )
+            self._hint.setText("Новых программ не найдено — добавьте через «Обзор».")
         else:
             self._hint.setText(f"Доступно приложений: {len(self._rows)}")
 
@@ -271,62 +290,100 @@ class AddApplicationPage(Page):
             if row.app is app:
                 row.mark_added()
 
-    def _browse_file(self) -> None:
-        # Никакого QFileDialog/QDialog: выбор пути выполняется через строку
-        # внутри страницы. Это исключает создание второго HWND Windows.
-        self._path_edit.setFocus()
-        self._manual_status.setText(
-            "Введите или вставьте полный путь к .exe в поле слева."
-        )
+    # ------------------------------------------------- обзор файлов (внутри)
+    def _open_browse(self) -> None:
+        self._browsing = True
+        self._scroll.setVisible(False)
+        self._browse_box.setVisible(True)
+        self._fill_browse(self._browse_dir)
 
-    def _on_file_selected(self, path: str) -> None:
-        self._path_edit.setText(path)
-        if not self._name_edit.text().strip():
-            try:
-                from ..win32_utils import get_file_description
+    def _close_browse(self) -> None:
+        self._browsing = False
+        self._browse_box.setVisible(False)
+        self._scroll.setVisible(True)
 
-                description = get_file_description(path)
-            except Exception:
-                description = ""
-            self._name_edit.setText(
-                description or os.path.splitext(os.path.basename(path))[0]
+    def _go_up(self) -> None:
+        parent = os.path.dirname(self._browse_dir)
+        if parent and parent != self._browse_dir:
+            self._fill_browse(parent)
+
+    def _fill_browse(self, directory: str) -> None:
+        self._browse_dir = directory
+        self._dir_label.setText(directory)
+        self._up_btn.setEnabled(os.path.dirname(directory) != directory)
+
+        while self._browse_layout.count() > 1:
+            item = self._browse_layout.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.deleteLater()
+
+        entries: list[tuple[str, bool]] = []
+        try:
+            for name in sorted(os.listdir(directory), key=str.lower):
+                full = os.path.join(directory, name)
+                try:
+                    is_dir = os.path.isdir(full)
+                except OSError:
+                    continue
+                if is_dir or name.lower().endswith(".exe"):
+                    entries.append((name, is_dir))
+        except OSError:
+            entries = []
+
+        if not entries:
+            empty = QLabel("Здесь нет папок и exe-файлов")
+            empty.setObjectName("subtleLabel")
+            self._browse_layout.insertWidget(0, empty)
+
+        for name, is_dir in entries[:3000]:
+            self._browse_layout.insertWidget(
+                self._browse_layout.count() - 1,
+                self._browse_row(name, is_dir, os.path.join(directory, name)),
             )
 
-    def _add_manual(self) -> None:
-        path = self._path_edit.text().strip().strip('"')
-        if not path:
-            self._manual_status.setText("Укажите путь к exe-файлу.")
-            return
-        if not os.path.isfile(path):
-            self._manual_status.setText("Файл не найден. Проверьте путь.")
-            return
-        if not path.lower().endswith(".exe"):
-            self._manual_status.setText("Нужен exe-файл приложения.")
-            return
-        norm = os.path.normcase(os.path.normpath(path))
+    def _browse_row(self, name: str, is_dir: bool, full: str) -> QWidget:
+        row = QFrame()
+        row.setObjectName("addRow")
+        row.setCursor(Qt.PointingHandCursor)
+        lay = QHBoxLayout(row)
+        lay.setContentsMargins(12, 7, 12, 7)
+        lay.setSpacing(10)
+        icon = QLabel("📁" if is_dir else "▸")
+        icon.setFixedSize(20, 20)
+        lay.addWidget(icon)
+        label = QLabel()
+        label.setObjectName("sideName")
+        fm = QFontMetrics(label.font())
+        label.setText(fm.elidedText(name, Qt.ElideMiddle, 560))
+        lay.addWidget(label, 1)
+
+        def on_click(_e, path=full, directory=is_dir):
+            if directory:
+                self._fill_browse(path)
+            else:
+                self._add_by_path(path)
+
+        row.mouseReleaseEvent = on_click
+        return row
+
+    def _add_by_path(self, path: str) -> None:
+        path = os.path.normpath(path)
+        norm = os.path.normcase(path)
         if norm in self._existing:
-            self._manual_status.setText("Это приложение уже добавлено.")
+            self._close_browse()
             return
+        try:
+            from ..win32_utils import get_file_description
 
-        name = self._name_edit.text().strip()
-        if not name:
-            try:
-                from ..win32_utils import get_file_description
-
-                name = get_file_description(path) or ""
-            except Exception:
-                name = ""
-            name = name or os.path.splitext(os.path.basename(path))[0]
-
-        app = InstalledApp(
-            name=name, exe_path=os.path.normpath(path),
-            icon_path=path, icon_index=0,
-        )
+            name = get_file_description(path) or ""
+        except Exception:
+            name = ""
+        name = name or os.path.splitext(os.path.basename(path))[0]
+        app = InstalledApp(name=name, exe_path=path, icon_path=path, icon_index=0)
         self.application_added.emit(app)
         self._existing.add(norm)
-        self._manual_status.setText(f"Добавлено: {name}")
-        self._path_edit.clear()
-        self._name_edit.clear()
+        self._close_browse()
 
     # ------------------------------------------------------------- жизненный
     def on_show(self) -> None:
@@ -334,9 +391,6 @@ class AddApplicationPage(Page):
             self._start_scan(use_cache=True)
 
     def on_hide(self) -> None:
-        # Отвязываем сигнал: поток может дожить свой скан сам, но уже без
-        # доступа к виджетам страницы. Объект потока должен жить до финиша —
-        # удалять QThread при работающем потоке нельзя (падение процесса).
         thread = self._scan_thread
         if thread is not None:
             self._scan_thread = None
@@ -348,9 +402,6 @@ class AddApplicationPage(Page):
         self._icons.cancel_all()
 
     def shutdown(self) -> None:
-        # Полный останов перед удалением страницы: ждём завершения потока
-        # сканирования и пула иконок, чтобы не было «QThread destroyed while
-        # running» и порчи кучи при сборке мусора.
         thread = self._scan_thread
         self._scan_thread = None
         if thread is not None:
