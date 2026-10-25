@@ -96,7 +96,7 @@ def build() -> dict:
             "title": meta["title"],
             "desc": meta["desc"],
             "opacity": 1.0,
-            "ready": len(icons) == 10,
+            "ready": len(icons) > 0,
             "icons": icons,
         })
     data["stats"] = {"total": total, "sets": len(data["sets"])}

@@ -282,12 +282,12 @@ function renderCards(){
   const host = $("sets"); host.innerHTML = "";
   DATA.sets.forEach(set => {
     const sec = document.createElement("section");
-    const ready = set.icons.length === 10;
+    const ready = set.icons.length > 0;
     sec.innerHTML = `
       <div class="sec-head">
         <h2>${set.title}</h2>
-        ${ready ? `<span class="cnt">${set.icons.length} / 10</span>`
-                : `<span class="soon">${set.icons.length} из 10 · в работе</span>`}
+        ${ready ? `<span class="cnt">${set.icons.length}${set.icons.length === 10 ? " / 10" : " шт."}</span>`
+                : `<span class="soon">0 из 10 · в работе</span>`}
       </div>
       <div class="sec-desc">${set.desc}</div>`;
     const grid = document.createElement("div");
