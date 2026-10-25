@@ -94,7 +94,7 @@ window.ICON_DATA = {
    "title": "Набор B — дуотон-силуэт",
    "desc": "Градиенты пинк→виолет, плоские силуэты. Самые яркие в панели задач.",
    "opacity": 1.0,
-   "ready": true,
+   "ready": false,
    "icons": [
     {
      "id": "B01",
@@ -175,6 +175,14 @@ window.ICON_DATA = {
      "small": "icons/B10-256.png",
      "big": "icons/B10-1024.png",
      "note": null
+    },
+    {
+     "id": "B11",
+     "name": "По фото",
+     "src": "icons/B11-512.png",
+     "small": "icons/B11-256.png",
+     "big": "icons/B11-1024.png",
+     "note": "восстановлена по фото пользователя из утерянной первой подборки"
     }
    ]
   },
@@ -188,7 +196,7 @@ window.ICON_DATA = {
   }
  ],
  "stats": {
-  "total": 20,
+  "total": 21,
   "sets": 3
  }
 };
