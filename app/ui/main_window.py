@@ -370,14 +370,16 @@ class MainWindow(QMainWindow):
         self._side_scroll.setWidget(side_container)
         layout.addWidget(self._side_scroll, 1)
 
-        # Кнопка добавления — в подвале панели, а не над списком: список
-        # приложений должен начинаться сразу под заголовком.
+        # Кнопка добавления — в подвале панели, по центру её ширины: список
+        # приложений должен начинаться сразу под заголовком, а кружок «+»
+        # стоит ровно посередине между краями панели.
         self._add_app_btn = AddAppButton()
         self._add_app_btn.clicked.connect(self._open_add)
         footer = QHBoxLayout()
-        footer.setContentsMargins(18, 2, 18, 0)
+        footer.setContentsMargins(0, 2, 0, 0)
         footer.setSpacing(0)
-        footer.addWidget(self._add_app_btn)
+        footer.addStretch(1)
+        footer.addWidget(self._add_app_btn, 0, Qt.AlignHCenter)
         footer.addStretch(1)
         layout.addLayout(footer)
 
