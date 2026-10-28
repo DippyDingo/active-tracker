@@ -14,9 +14,18 @@ function Fail($msg) {
     exit 1
 }
 
+# Интерпретатор: локальный .venv, а на CI (GitHub Actions) — python из PATH,
+# который ставится через actions/setup-python. Жёсткий .venv ломал релиз.
+$Py = ".venv\Scripts\python.exe"
+if (-not (Test-Path $Py)) {
+    $cmd = Get-Command python.exe -ErrorAction SilentlyContinue
+    if (-not $cmd) { Fail "Python не найден: нужен .venv или python.exe в PATH" }
+    $Py = $cmd.Source
+}
+
 # 1) Версия из единого источника: печатает версию и создаёт
 #    installer/version_info.txt для PyInstaller.
-$version = & ".venv\Scripts\python.exe" "tools\make_version_info.py"
+$version = & $Py "tools\make_version_info.py"
 if ($LASTEXITCODE -ne 0 -or -not $version) {
     Fail "Не удалось определить версию из app/version.py"
 }
@@ -29,7 +38,7 @@ if (-not $SkipExe) {
     # 54 МБ exe распаковывался в temp и на секунду показывал белое окно-хост;
     # кроме того в папке установки был только один exe. Теперь рядом лежит
     # папка _internal с библиотеками, а запуск происходит мгновенно.
-    & ".venv\Scripts\pyinstaller.exe" --noconfirm --onedir --noconsole `
+    & $Py -m PyInstaller --noconfirm --onedir --noconsole `
         --name Nodexy `
         --version-file installer\version_info.txt `
         --icon assets\app_icon.ico `
