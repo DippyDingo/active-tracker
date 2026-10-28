@@ -1863,6 +1863,7 @@ class CardHost(QWidget):
 
     def __init__(self, card: AppCard, parent=None):
         super().__init__(parent)
+        self.setObjectName("cardHost")
         self.card = card
         card.setParent(self)
         card.clicked.connect(self.clicked)
@@ -1978,7 +1979,6 @@ class SidebarItem(QFrame):
         name_label.setObjectName("sideName")
         fm = QFontMetrics(name_label.font())
         name_label.setText(fm.elidedText(name, Qt.ElideRight, 152))
-        name_label.setToolTip(name)
         layout.addWidget(name_label)
         layout.addStretch(1)
 

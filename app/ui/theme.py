@@ -359,6 +359,13 @@ QScrollArea {
     border: none;
     background: transparent;
 }
+QScrollArea#cardsScroll,
+QScrollArea#cardsScroll > QWidget,
+QScrollArea#cardsScroll > QWidget > QWidget,
+QScrollArea#cardsScroll QWidget#qt_scrollarea_viewport {
+    background: transparent;
+    border: none;
+}
 QScrollArea#sidebarScroll,
 QScrollArea#sidebarScroll > QWidget,
 QScrollArea#sidebarScroll > QWidget > QWidget,
@@ -602,10 +609,10 @@ QFrame#addRow:hover QPushButton#rowAdd {
     background: rgba($accent_rgb, 12%);
 }
 QPushButton#rowAddDone {
-    background: rgba(34, 197, 94, 10%);
-    border: 1px solid rgba(34, 197, 94, 40%);
+    background: rgba($accent_rgb, 12%);
+    border: 1px solid rgba($accent_rgb, 42%);
     border-radius: 8px;
-    color: #4ade80;
+    color: $accent;
     font-weight: 700;
     font-size: 12px;
     padding: 5px 10px;

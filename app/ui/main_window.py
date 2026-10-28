@@ -1,5 +1,6 @@
 import os
 from collections import defaultdict
+from dataclasses import replace
 from datetime import date, datetime, timedelta
 
 from PySide6.QtCore import (
@@ -374,7 +375,9 @@ class MainWindow(QMainWindow):
         # приложений должен начинаться сразу под заголовком, а кружок «+»
         # стоит ровно посередине между краями панели.
         self._add_app_btn = AddAppButton()
-        self._add_app_btn.clicked.connect(self._open_add)
+        # clicked передаёт checked(bool) — без лямбды это значение попадало в
+        # cat_id и добавление падало на внешнем ключе (cat_id=False → 0).
+        self._add_app_btn.clicked.connect(lambda: self._open_add())
         footer = QHBoxLayout()
         footer.setContentsMargins(0, 2, 0, 0)
         footer.setSpacing(0)
@@ -474,9 +477,14 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._banner)
 
         self._scroll = QScrollArea()
+        self._scroll.setObjectName("cardsScroll")
         self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QFrame.NoFrame)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         container = QWidget()
         container.setObjectName("cardsContainer")
+        self._cards_container = container
         self._grid = QGridLayout(container)
         self._grid.setContentsMargins(4, 4, 4, 4)
         self._grid.setSpacing(18)
@@ -556,7 +564,10 @@ class MainWindow(QMainWindow):
             card.delete_requested.connect(self._confirm_delete)
             card.clicked.connect(self._on_card_clicked)
             card.installEventFilter(self)
-            host = CardHost(card)
+            # Родитель сразу при создании: без него QGridLayout::addWidget
+            # показывал карточку отдельным top-level окном (белый прямоугольник
+            # 640×480 на секунду при добавлении приложения).
+            host = CardHost(card, self._cards_container)
             self._cards[row.id] = card
             self._hosts[row.id] = host
 
@@ -959,10 +970,50 @@ class MainWindow(QMainWindow):
         header.set_arrow(collapsed)
         self._apply_filter(self._filter)
 
+    def _refresh_after_category_move(self, app_id: int, new_cat: int | None) -> None:
+        """Обновляет категории без пересоздания окна и всех виджетов.
+
+        Перенос меняет только category_id. Полный refresh_apps уничтожает
+        сотни Qt-виджетов и вызывает белый кадр в некоторых конфигурациях
+        Windows; здесь перестраиваем только левую панель, а карточки и графики
+        оставляем на месте.
+        """
+        current = self._rows_meta.get(app_id)
+        if current is None:
+            return
+        self._rows_meta[app_id] = replace(current, category_id=new_cat)
+        self._rebuild_sidebar_only()
+        self._apply_filter(self._filter)
+        self._flash_move_result(app_id, new_cat)
+
+    def _rebuild_sidebar_only(self) -> None:
+        self._discard_inline()
+        side_scroll_value = self._side_scroll.verticalScrollBar().value()
+        self._side_scroll.setUpdatesEnabled(False)
+        try:
+            while self._side_layout.count():
+                item = self._side_layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.hide()
+                    widget.deleteLater()
+            rows = list(self._rows_meta.values())
+            self._side_items.clear()
+            self._cat_rows.clear()
+            self._cat_headers.clear()
+            self._uncat_header = None
+            self._build_side_sections(rows)
+        finally:
+            self._side_scroll.setUpdatesEnabled(True)
+            self._side_scroll.verticalScrollBar().setValue(side_scroll_value)
+            self._side_scroll.viewport().update()
+
     def _move_app(self, app_id: int, cat_id: int | None) -> None:
+        current = self._rows_meta.get(app_id)
+        if current is None or current.category_id == cat_id:
+            return
         self.db.set_app_category(app_id, cat_id)
-        self.refresh_apps()
-        self._flash_move_result(app_id, cat_id)
+        self._refresh_after_category_move(app_id, cat_id)
 
     def _flash_move_result(self, app_id: int, cat_id: int | None) -> None:
         if cat_id is not None:
@@ -1109,10 +1160,13 @@ class MainWindow(QMainWindow):
         cat_id = self.db.create_category(text)
         if for_app_id is not None:
             self.db.set_app_category(for_app_id, cat_id)
-        self.refresh_apps()
+        # Категории живут только в левой панели: карточки и графики при этом
+        # не меняются, поэтому полное перестроение здесь не нужно.
         if for_app_id is not None:
-            self._flash_move_result(for_app_id, cat_id)
+            self._refresh_after_category_move(for_app_id, cat_id)
         else:
+            self._rebuild_sidebar_only()
+            self._apply_filter(self._filter)
             self._flash_widget(self._cat_headers.get(cat_id))
 
     def _start_inline_rename(self, cat_id: int, current_name: str) -> None:
@@ -1393,8 +1447,7 @@ class MainWindow(QMainWindow):
         if meta.category_id == new_cat:
             return
         self.db.set_app_category(app_id, new_cat)
-        self.refresh_apps()
-        self._flash_move_result(app_id, new_cat)
+        self._refresh_after_category_move(app_id, new_cat)
 
     def _set_drop_hint(self, target) -> None:
         widget = None
@@ -1466,8 +1519,16 @@ class MainWindow(QMainWindow):
         except Exception:
             icon_bytes = None
         new_id = self.db.add_app(app.name, app.exe_path, icon_bytes)
-        if new_id is not None and cat_id is not None:
-            self.db.set_app_category(new_id, cat_id)
+        if new_id is None:
+            # Путь уже есть в базе — не создаём ещё одну карточку.
+            self.refresh_apps()
+            return
+        if cat_id is not None:
+            # Панель добавления может оставаться открытой после удаления или
+            # переноса категории. Не отправляем устаревший category_id в FK.
+            valid_categories = {category_id for category_id, _name in self.db.list_categories()}
+            if cat_id in valid_categories:
+                self.db.set_app_category(new_id, cat_id)
         self.refresh_apps()
 
     def _open_settings(self) -> None:

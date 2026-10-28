@@ -317,12 +317,22 @@ class AddPanel(QFrame):
         self._host.setAutoFillBackground(True)
 
     def _on_scanned(self, apps: list) -> None:
-        apps = [a for a in apps if os.path.normcase(a.exe_path) not in self._existing]
+        # Показываем весь найденный список при каждом открытии панели. Раньше
+        # уже добавленные приложения отфильтровывались здесь и «исчезали» при
+        # повторном открытии. Теперь они остаются в списке и помечаются как
+        # добавленные, чтобы пользователь видел полный каталог.
+        seen: set[str] = set()
         for app in apps:
+            key = os.path.normcase(app.exe_path)
+            if key in seen:
+                continue
+            seen.add(key)
             row = _Row(app)
             row.add_clicked.connect(self._on_row_add)
             self._list_layout.insertWidget(self._list_layout.count() - 1, row)
             self._rows.append(row)
+            if key in self._existing:
+                row.mark_added()
             self._schedule_icon(app, row)
         self._apply_filter(self._search.text())
 
@@ -357,12 +367,15 @@ class AddPanel(QFrame):
             match = row.matches(lowered)
             row.setVisible(match)
             shown += 1 if match else 0
+        added = sum(1 for row in self._rows if row.added)
         if self._worker.isRunning() and not self._rows:
             self._hint.setText("Загрузка списка установленных программ...")
         elif lowered:
-            self._hint.setText(f"Найдено: {shown}")
+            self._hint.setText(f"Найдено: {shown}  ·  уже добавлено: {added}")
         else:
-            self._hint.setText(f"Доступно приложений: {len(self._rows)}")
+            self._hint.setText(
+                f"Доступно приложений: {len(self._rows)}  ·  уже добавлено: {added}"
+            )
 
     def _pick_path(self) -> None:
         # Свой тёмный выбор файла вместо QFileDialog: системный диалог
