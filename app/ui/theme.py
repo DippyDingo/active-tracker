@@ -87,19 +87,27 @@ def _rgb_str(value: str) -> str:
     return f"{r},{g},{b}"
 
 
+def _button_colors(p: Palette) -> tuple[str, str, str, str]:
+    """Градиент главной (акцентной) кнопки: обычный и hover.
+
+    Один источник для QSS и для нарисованных вручную кнопок — чтобы кнопка
+    «добавить приложение» в панели и кнопки диалогов были одного цвета во всех
+    темах.
+    """
+    if p.key == "midnight":
+        return "#3b82f6", "#2563eb", "#60a5fa", "#3b82f6"
+    top = _mix_hex(p.accent, "#000000", 0.08)
+    bottom = _mix_hex(p.accent, "#000000", 0.28)
+    return top, bottom, p.accent, top
+
+
 def _derive(p: Palette) -> dict[str, str]:
     soft_rgb = "30,41,59" if p.is_light else "255,255,255"
 
     def soft(pct: int) -> str:
         return f"rgba({soft_rgb},{pct}%)"
 
-    if p.key == "midnight":
-        btn_top, btn_bottom = "#3b82f6", "#2563eb"
-        btn_hover_top, btn_hover_bottom = "#60a5fa", "#3b82f6"
-    else:
-        btn_top = _mix_hex(p.accent, "#000000", 0.08)
-        btn_bottom = _mix_hex(p.accent, "#000000", 0.28)
-        btn_hover_top, btn_hover_bottom = p.accent, btn_top
+    btn_top, btn_bottom, btn_hover_top, btn_hover_bottom = _button_colors(p)
 
     return {
         "bg": p.bg, "bg2": p.bg2, "sidebar": p.sidebar,
@@ -121,8 +129,10 @@ def _derive(p: Palette) -> dict[str, str]:
         "row_btn_border": _mix_hex(p.border, p.text3, 0.45),
         "btn_top": btn_top, "btn_bottom": btn_bottom,
         "btn_hover_top": btn_hover_top, "btn_hover_bottom": btn_hover_bottom,
-        "danger_hover_text": _mix_hex(p.danger, "#ffffff", 0.5),
-        "avatar_text": "#ffffff" if p.is_light else "#04121f",
+        "add_btn_top": btn_top, "add_btn_bottom": btn_bottom,
+        "add_btn_hover_top": btn_hover_top, "add_btn_hover_bottom": btn_hover_bottom,
+        "add_btn_border": _mix_hex(p.accent, p.border, 0.35),
+        "danger_hover_text": _mix_hex(p.danger, "#ffffff", 0.5),        "avatar_text": "#ffffff" if p.is_light else "#04121f",
         "soft2": soft(2), "soft3": soft(3), "soft4": soft(4), "soft5": soft(5),
         "soft6": soft(6), "soft8": soft(8),
     }
@@ -148,7 +158,9 @@ QWidget#mainRoot {
 QFrame#sidebar {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
         stop:0 $sidebar, stop:1 $bg);
-    border-right: 1px solid $sidebar_edge;
+    /* Боковая панель вплотную примыкает к контенту: отдельная граница
+       превращалась в заметную вертикальную полоску после смены темы. */
+    border: none;
 }
 QLabel {
     background: transparent;
@@ -347,6 +359,33 @@ QScrollArea {
     border: none;
     background: transparent;
 }
+QScrollArea#sidebarScroll,
+QScrollArea#sidebarScroll > QWidget,
+QScrollArea#sidebarScroll > QWidget > QWidget,
+QScrollArea#sidebarScroll QWidget#sidebarContainer,
+QScrollArea#sidebarScroll QWidget#qt_scrollarea_viewport {
+    background: transparent;
+    border: none;
+}
+QScrollArea#sidebarScroll QScrollBar:vertical,
+QScrollArea#sidebarScroll QScrollBar:horizontal {
+    width: 0px;
+    height: 0px;
+    background: transparent;
+    border: none;
+    margin: 0px;
+}
+QScrollArea#sidebarScroll QScrollBar::handle:vertical,
+QScrollArea#sidebarScroll QScrollBar::handle:horizontal,
+QScrollArea#sidebarScroll QScrollBar::add-line:vertical,
+QScrollArea#sidebarScroll QScrollBar::sub-line:vertical,
+QScrollArea#sidebarScroll QScrollBar::add-line:horizontal,
+QScrollArea#sidebarScroll QScrollBar::sub-line:horizontal {
+    width: 0px;
+    height: 0px;
+    background: transparent;
+    border: none;
+}
 QWidget#cardsContainer {
     background: transparent;
 }
@@ -433,6 +472,25 @@ QPushButton#primary:hover {
 }
 QPushButton#primary:pressed {
     background: $btn_bottom;
+}
+QPushButton#addAppBtn {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 $add_btn_top, stop:1 $add_btn_bottom);
+    border: 1px solid $add_btn_border;
+    border-radius: 18px;
+    color: #ffffff;
+    padding: 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+QPushButton#addAppBtn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 $add_btn_hover_top, stop:1 $add_btn_hover_bottom);
+    border-color: $add_btn_border;
+    color: #ffffff;
+}
+QPushButton#addAppBtn:pressed {
+    background: $add_btn_bottom;
 }
 QPushButton#danger {
     color: $danger;
@@ -850,7 +908,13 @@ def _paint_all_scrollareas(app) -> None:
 
         def walk(widget):
             for child in widget.findChildren(QAbstractScrollArea):
-                paint_background(child)
+                # Сайдбар намеренно прозрачный: его viewport должен показывать
+                # фон mainRoot, иначе при смене темы появляется полоса на стыке.
+                if child.objectName() == "sidebarScroll":
+                    child.setAutoFillBackground(False)
+                    child.viewport().setAutoFillBackground(False)
+                else:
+                    paint_background(child)
             for child in widget.findChildren(QAbstractScrollArea):
                 walk(child)
 
@@ -874,6 +938,7 @@ def _make_color(token: str) -> QColor:
         "popup": p.popup, "chart_dim": p.text3, "tooltip_border": p.border,
         "tooltip_text": p.text, "point_ring": p.card, "popup_bg": p.popup,
         "popup_border": p.border, "popup_sep": p.card, "icon": p.text2,
+        "add_btn_border": _mix_hex(p.accent, p.border, 0.35),
     }
     if token in simple:
         return QColor(simple[token])
@@ -909,6 +974,11 @@ def color(token: str) -> QColor:
         cached = _make_color(token)
         _COLOR_CACHE[token] = cached
     return cached
+
+
+def button_colors() -> tuple[str, str, str, str]:
+    """Градиент акцентной кнопки текущей темы (обычный / hover)."""
+    return _button_colors(_current)
 
 
 _ICON_PATH = Path(__file__).resolve().parents[2] / "assets" / "app_icon.ico"

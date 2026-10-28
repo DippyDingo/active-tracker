@@ -60,6 +60,7 @@ from .settings_dialog import SettingsPanel
 from .stats_panel import StatsPanel
 from .update_dialog import UpdatePanel, WhatsNewPanel
 from .widgets import (
+    AddAppButton,
     AppCard,
     CardHost,
     CategoryHeader,
@@ -349,6 +350,14 @@ class MainWindow(QMainWindow):
         layout.addLayout(title_wrap)
 
         self._side_scroll = QScrollArea()
+        self._side_scroll.setObjectName("sidebarScroll")
+        # Полоса прокрутки сайдбара не нужна визуально и создавала заметную
+        # вертикальную линию на границе панели во всех темах. Прокрутка колёсиком
+        # продолжает работать, но сам системный скроллбар не занимает место.
+        self._side_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._side_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._side_scroll.setFrameShape(QFrame.NoFrame)
+        self._side_scroll.setStyleSheet("QScrollBar { width: 0px; height: 0px; }")
         self._side_scroll.setWidgetResizable(True)
         side_container = QWidget()
         side_container.setObjectName("sidebarContainer")
@@ -360,6 +369,17 @@ class MainWindow(QMainWindow):
         self._side_layout.setSpacing(3)
         self._side_scroll.setWidget(side_container)
         layout.addWidget(self._side_scroll, 1)
+
+        # Кнопка добавления — в подвале панели, а не над списком: список
+        # приложений должен начинаться сразу под заголовком.
+        self._add_app_btn = AddAppButton()
+        self._add_app_btn.clicked.connect(self._open_add)
+        footer = QHBoxLayout()
+        footer.setContentsMargins(18, 2, 18, 0)
+        footer.setSpacing(0)
+        footer.addWidget(self._add_app_btn)
+        footer.addStretch(1)
+        layout.addLayout(footer)
 
         root_layout.addWidget(sidebar)
 
@@ -1520,6 +1540,7 @@ class MainWindow(QMainWindow):
 
     def _retheme(self) -> None:
         self._search.retheme()
+        self._add_app_btn.retheme()
         self._profile_btn.setIcon(menu_icon())
         self._badge.setStyleSheet(
             f"background: {theme.pal().accent}; border-radius: 4px;"
@@ -1547,10 +1568,22 @@ class MainWindow(QMainWindow):
         pal.setColor(QPalette.Window, bg)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-        # Все прокручиваемые области окна: главная сетка карточек и сайдбар.
+        # Основные области должны оставаться прозрачными, чтобы под ними был
+        # единый градиент mainRoot. Если залить viewport сплошным цветом,
+        # после смены темы появляется вертикальная полоса на его границе.
         for scroll in (getattr(self, "_scroll", None), getattr(self, "_side_scroll", None)):
-            if scroll is not None:
-                theme.paint_background(scroll, bg)
+            if scroll is None:
+                continue
+            scroll.setAutoFillBackground(False)
+            viewport = scroll.viewport()
+            viewport.setAutoFillBackground(False)
+            for widget in (scroll, viewport):
+                palette = widget.palette()
+                palette.setColor(QPalette.Window, bg)
+                palette.setColor(QPalette.Base, bg)
+                widget.setPalette(palette)
+            scroll.update()
+            viewport.update()
 
     # ------------------------------------------------------------- updates
     def _autoupdate_on(self) -> bool:

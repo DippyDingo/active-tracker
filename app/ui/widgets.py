@@ -10,6 +10,7 @@ from PySide6.QtCore import (
     QSize,
     Qt,
     QPropertyAnimation,
+    QTimer,
     QVariantAnimation,
     Signal,
 )
@@ -235,6 +236,130 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
     painter.end()
     pm.setDevicePixelRatio(scale)
     return QIcon(pm)
+
+
+class AddAppButton(QAbstractButton):
+    """Кнопка «добавить приложение»: круглая «+», раскрывающаяся при наведении.
+
+    В покое это компактный кружок с плюсом, при наведении ширина плавно
+    увеличивается и проявляется подпись. Рисуется целиком вручную, а не через
+    QSS: так подпись можно проявлять постепенно, а градиент и скругление не
+    «прыгают» на промежуточных кадрах анимации.
+    """
+
+    COLLAPSED_WIDTH = 36
+    EXPANDED_WIDTH = 192
+    EXPAND_MS = 300
+    COLLAPSE_MS = 240
+    # Пауза перед сворачиванием: курсор, соскользнувший с края, не должен
+    # заставлять кнопку дёргаться туда-обратно.
+    COLLAPSE_DELAY_MS = 110
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setCursor(Qt.PointingHandCursor)
+        # Подсказку не ставим: подпись появляется сама при наведении,
+        # а тултип дублировал бы её и перекрывал соседние элементы.
+        self.setFixedHeight(self.COLLAPSED_WIDTH)
+        self.setFixedWidth(self.COLLAPSED_WIDTH)
+        self.setFocusPolicy(Qt.NoFocus)
+        self._progress = 0.0
+        self._hover = False
+        self._anim = None
+        self._collapse_timer = QTimer(self)
+        self._collapse_timer.setSingleShot(True)
+        self._collapse_timer.setInterval(self.COLLAPSE_DELAY_MS)
+        self._collapse_timer.timeout.connect(self._collapse)
+
+    def retheme(self) -> None:
+        self.update()
+
+    # --- геометрия и анимация -------------------------------------------------
+    def _apply(self, progress: float) -> None:
+        self._progress = max(0.0, min(1.0, progress))
+        width = self.COLLAPSED_WIDTH + (
+            self.EXPANDED_WIDTH - self.COLLAPSED_WIDTH
+        ) * self._progress
+        self.setFixedWidth(round(width))
+        self.update()
+
+    def _animate_to(self, target: float, duration: int) -> None:
+        if self._anim is not None:
+            self._anim.stop()
+        anim = QVariantAnimation(self)
+        anim.setStartValue(float(self._progress))
+        anim.setEndValue(float(target))
+        anim.setDuration(duration)
+        # InOutCubic: мягкий разгон и мягкое торможение — движение не
+        # обрывается на последнем кадре.
+        anim.setEasingCurve(QEasingCurve.InOutCubic)
+        anim.valueChanged.connect(lambda v: self._apply(float(v)))
+        self._anim = anim
+        anim.start()
+
+    def _expand(self) -> None:
+        self._collapse_timer.stop()
+        self._animate_to(1.0, self.EXPAND_MS)
+
+    def _collapse(self) -> None:
+        self._animate_to(0.0, self.COLLAPSE_MS)
+
+    def enterEvent(self, event) -> None:
+        self._hover = True
+        self._expand()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self._hover = False
+        self.update()
+        self._collapse_timer.start()
+        super().leaveEvent(event)
+
+    # --- отрисовка ------------------------------------------------------------
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        w = float(self.width())
+        h = float(self.height())
+        radius = h / 2.0
+
+        path = QPainterPath()
+        path.addRoundedRect(QRectF(0.5, 0.5, w - 1.0, h - 1.0), radius, radius)
+
+        top, bottom, hover_top, hover_bottom = theme.button_colors()
+        if self.isDown():
+            top, bottom = bottom, top
+        elif self._hover:
+            top, bottom = hover_top, hover_bottom
+        grad = QLinearGradient(0.0, 0.0, 0.0, h)
+        grad.setColorAt(0.0, QColor(top))
+        grad.setColorAt(1.0, QColor(bottom))
+        painter.fillPath(path, grad)
+        painter.setPen(QPen(theme.color("add_btn_border"), 1.0))
+        painter.drawPath(path)
+
+        # Плюс едет от центра кружка к левому краю по мере раскрытия.
+        icon_cx = w / 2.0 - self._progress * (w / 2.0 - 20.0)
+        cy = h / 2.0
+        painter.setPen(QPen(QColor("#ffffff"), 2.0, Qt.SolidLine, Qt.RoundCap))
+        painter.drawLine(QPointF(icon_cx - 6.5, cy), QPointF(icon_cx + 6.5, cy))
+        painter.drawLine(QPointF(icon_cx, cy - 6.5), QPointF(icon_cx, cy + 6.5))
+
+        # Подпись проявляется на второй половине раскрытия.
+        alpha = (self._progress - 0.35) / 0.65
+        if alpha > 0.0:
+            font = QFont(self.font())
+            font.setBold(True)
+            font.setPixelSize(12)
+            painter.setFont(font)
+            painter.setOpacity(min(1.0, alpha))
+            painter.setPen(QColor("#ffffff"))
+            text_rect = QRectF(icon_cx + 15.0, 0.0, w - icon_cx - 22.0, h)
+            painter.drawText(
+                text_rect, Qt.AlignLeft | Qt.AlignVCenter, "Добавить приложение"
+            )
+        painter.end()
 
 
 class InlineEdit(QFrame):
