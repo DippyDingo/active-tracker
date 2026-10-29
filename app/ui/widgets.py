@@ -432,7 +432,7 @@ class MiniChart(QWidget):
     view_changed = Signal(int, int)
     clicked = Signal()
 
-    AXIS_H = 14.0  # высота полосы подписей под графиком (рисуются самим виджетом)
+    AXIS_H = 18.0  # высота полосы подписей под графиком (рисуются самим виджетом)
     PAD_L = 6.0
     PAD_R = 6.0
     PAD_T = 5.0
@@ -552,7 +552,10 @@ class MiniChart(QWidget):
             if same_len:
                 self._offset = self._clamp_offset(self._offset)
             else:
-                self._offset = max(0, n - self._visible)
+                # Суточный график открывается с первой половины суток (00–11),
+                # а вторую половину можно пролистать мышью. Остальные длинные
+                # ряды по-прежнему открываются с последних точек.
+                self._offset = 0 if len(self._axis) == 24 else max(0, n - self._visible)
         if not same_len:
             self._hover = -1
         if animate and n >= 2:
@@ -710,21 +713,45 @@ class MiniChart(QWidget):
             fm = QFontMetrics(font)
             visible_axis = [(idx, text) for idx, text in self._axis if 0 <= idx - off < vis and text]
             if visible_axis:
-                slot_w = (w - self.PAD_L - self.PAD_R) / max(vis, 1)
-                label_w = max((fm.horizontalAdvance(t) for _i, t in visible_axis), default=20) + 8
-                step = max(1, int(ceil(label_w / max(slot_w, 1.0))))
-                # Собираем индексы видимых подписей с учётом прореживания
-                visible_indices = list(range(0, len(visible_axis), step))
-                for enum_k, k in enumerate(visible_indices):
-                    idx, text = visible_axis[k]
-                    local = idx - off
-                    x = self._x_at(local, vis) if vis > 1 else w / 2.0
-                    # Используем RangeChart._axis_label_rect для правильного размещения
-                    rect, align = RangeChart._axis_label_rect(
-                        enum_k, len(visible_indices), x, w,
-                        self.PAD_L, self.PAD_R, 60.0, self.AXIS_H, h
-                    )
-                    painter.drawText(rect, align, text)
+                # Для суточного графика оставляем все 24 часа. Раньше общая
+                # логика прореживания скрывала часть подписей (например, 01,
+                # 03 и 23), а крайние подписи прижимались к краям и выглядели
+                # неравномерно. У каждого часа теперь своя точка и одинаковый
+                # центрированный слот.
+                is_hour_axis = (
+                    len(self._axis) == 24
+                    and all(text.isdigit() and 1 <= len(text) <= 2 for _idx, text in self._axis)
+                )
+                if is_hour_axis:
+                    font.setPointSizeF(8.0)
+                    painter.setFont(font)
+                    # Окно показывает 12 часов. Подписи остаются крупными и
+                    # равномерными, а второй диапазон (12–23) открывается
+                    # перетаскиванием графика мышью.
+                    slot_w = (w - self.PAD_L - self.PAD_R) / max(vis - 1, 1)
+                    for idx, text in visible_axis:
+                        local = idx - off
+                        x = self._x_at(local, vis) if vis > 1 else w / 2.0
+                        # h — нижняя граница области графика. Подписи должны
+                        # начинаться уже после неё, а не поверх линии.
+                        rect = QRectF(x - max(8.0, slot_w / 2.0), h + 1.0,
+                                      max(16.0, slot_w), self.AXIS_H - 1.0)
+                        painter.drawText(rect, Qt.AlignCenter | Qt.AlignVCenter, text)
+                else:
+                    slot_w = (w - self.PAD_L - self.PAD_R) / max(vis, 1)
+                    label_w = max((fm.horizontalAdvance(t) for _i, t in visible_axis), default=20) + 8
+                    step = max(1, int(ceil(label_w / max(slot_w, 1.0))))
+                    # Собираем индексы видимых подписей с учётом прореживания
+                    visible_indices = list(range(0, len(visible_axis), step))
+                    for enum_k, k in enumerate(visible_indices):
+                        idx, text = visible_axis[k]
+                        local = idx - off
+                        x = self._x_at(local, vis) if vis > 1 else w / 2.0
+                        rect, align = RangeChart._axis_label_rect(
+                            enum_k, len(visible_indices), x, w,
+                            self.PAD_L, self.PAD_R, 60.0, self.AXIS_H, h
+                        )
+                        painter.drawText(rect, align, text)
 
         if anchor is not None and self._progress >= 0.99 and anchor_idx >= 0:
             p = anchor

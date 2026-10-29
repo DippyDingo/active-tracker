@@ -622,7 +622,9 @@ class MainWindow(QMainWindow):
             self._live_slot = -1
             self._base = {}
             self._axis_idx = list(range(24))
-            self._axis_labels = [f"{h:02d}" for h in range(24)]
+            # Короткие подписи позволяют показать каждый час 0–23 даже на
+            # компактной карточке без наложения цифр.
+            self._axis_labels = [str(h) for h in range(24)]
             self._axis_tips = [f"{h:02d}:00–{(h + 1) % 24:02d}:00" for h in range(24)]
             win = self._card_window(24)
             for card in self._cards.values():
@@ -732,8 +734,9 @@ class MainWindow(QMainWindow):
         """
         key = PERIOD_KEYS[self._period_idx]
         if key == "day":
-            # Для часов — показываем все 24
-            return None
+            # В карточке помещаем 12 часов: 00–11 или 12–23. Вторую
+            # половину можно пролистать мышью так же, как длинный график.
+            return 12
         elif key == "week":
             # Для недели — показываем все 7 дней
             return None
