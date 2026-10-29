@@ -1079,6 +1079,13 @@ class MainWindow(QMainWindow):
                 menu.addSeparator()
                 none_action = menu.addAction(ui_icon("minus"), "Убрать из категории")
                 none_action.triggered.connect(lambda: self._move_app(app_id, None))
+        # Удаление прямо из левой панели: искать приложение в ACTIVITY, чтобы
+        # убрать его из отслеживания, не нужно.
+        menu.addSeparator()
+        delete_action = menu.addAction(
+            ui_icon("trash", theme.pal().danger), "Удалить из отслеживания"
+        )
+        delete_action.triggered.connect(lambda: self._confirm_delete(app_id))
         return menu
 
     def _category_menu(self, cat_id: int, cat_name: str) -> QMenu:
@@ -1913,6 +1920,12 @@ class MainWindow(QMainWindow):
         panel = getattr(self._overlay, "_panel", None)
         return panel if isinstance(panel, SettingsPanel) else None
 
+    def _stats_panel(self):
+        if self._overlay is None:
+            return None
+        panel = getattr(self._overlay, "_panel", None)
+        return panel if isinstance(panel, StatsPanel) else None
+
     def _settings_status(self, text: str) -> None:
         panel = self._settings_panel()
         if panel is not None:
@@ -2042,7 +2055,43 @@ class MainWindow(QMainWindow):
                 self._confirm_delete(aid),
             )
         )
+        panel.path_changed.connect(self._change_app_path)
         self._show_modal(panel)
+
+    def _change_app_path(self, app_id: int, new_path: str) -> None:
+        row = self._rows_meta.get(app_id)
+        if row is None:
+            return
+        normalized = os.path.normpath(new_path)
+        if normalized.lower().endswith(".lnk"):
+            try:
+                import pythoncom
+                from win32com.client import Dispatch
+
+                pythoncom.CoInitialize()
+                shortcut = Dispatch("WScript.Shell").CreateShortCut(normalized)
+                normalized = os.path.normpath((shortcut.TargetPath or "").strip())
+                del shortcut
+            except Exception:
+                return
+        if not normalized.lower().endswith(".exe") or not os.path.isfile(normalized):
+            return
+        if self.db.app_path_taken(normalized, except_id=app_id):
+            return
+        if not self.db.update_app_path(app_id, normalized):
+            return
+        self.tracker.flush()
+        updated = replace(row, exe_path=normalized)
+        self._rows_meta[app_id] = updated
+        self._names[app_id] = updated.name
+        card = self._cards.get(app_id)
+        if card is not None:
+            card.exe_path = normalized
+        self.tracker.set_tracked({item.exe_path: item.id for item in self._rows_meta.values()})
+        panel = self._stats_panel()
+        if panel is not None:
+            panel.set_path(normalized)
+        self._update_values()
 
     def _confirm_delete(self, app_id: int) -> None:
         name = self._names.get(app_id, "приложение")

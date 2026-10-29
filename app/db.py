@@ -215,6 +215,31 @@ class Database:
             for r in rows
         ]
 
+    def update_app_path(self, app_id: int, exe_path: str) -> bool:
+        """Меняет exe-путь приложения, не затрагивая id и статистику."""
+        normalized = str(Path(exe_path).expanduser())
+        if not normalized:
+            return False
+        try:
+            with self._conn:
+                cur = self._conn.execute(
+                    "UPDATE apps SET exe_path=? WHERE id=?", (normalized, app_id)
+                )
+            return cur.rowcount > 0
+        except sqlite3.IntegrityError:
+            # Путь уже привязан к другому приложению.
+            return False
+
+    def app_path_taken(self, exe_path: str, except_id: int | None = None) -> bool:
+        """Проверяет путь без учёта регистра Windows."""
+        normalized = os.path.normcase(os.path.normpath(exe_path))
+        rows = self._conn.execute("SELECT id, exe_path FROM apps").fetchall()
+        return any(
+            int(row["id"]) != except_id
+            and os.path.normcase(os.path.normpath(row["exe_path"])) == normalized
+            for row in rows
+        )
+
     def set_app_category(self, app_id: int, category_id: int | None) -> None:
         with self._conn:
             self._conn.execute(

@@ -2,7 +2,9 @@ from datetime import date, datetime, timedelta
 
 from PySide6.QtCore import QEasingCurve, QSize, Qt, QVariantAnimation, Signal
 from PySide6.QtGui import QFontMetrics
+from PySide6.QtWidgets import QButtonGroup
 from PySide6.QtWidgets import (
+    QFileDialog,
     QButtonGroup,
     QFrame,
     QHBoxLayout,
@@ -188,6 +190,7 @@ HELP_LINES = [
 class StatsPanel(QFrame):
     close_requested = Signal()
     delete_requested = Signal(int)
+    path_changed = Signal(int, str)
 
     def __init__(
         self,
@@ -246,13 +249,15 @@ class StatsPanel(QFrame):
         titles.setSpacing(2)
         name_label = QLabel(name)
         name_label.setObjectName("modalTitle")
-        path_label = QLabel()
-        path_label.setObjectName("pathLabel")
-        fm = QFontMetrics(path_label.font())
-        path_label.setText(fm.elidedText(exe_path, Qt.ElideMiddle, 400))
-        path_label.setToolTip(exe_path)
+        self._path_label = QPushButton()
+        self._path_label.setObjectName("pathLink")
+        self._path_label.setCursor(Qt.PointingHandCursor)
+        self._path_label.setFlat(True)
+        self._path = exe_path
+        self._set_path_text(exe_path)
+        self._path_label.clicked.connect(self._choose_path)
         titles.addWidget(name_label)
-        titles.addWidget(path_label)
+        titles.addWidget(self._path_label)
         top.addLayout(titles)
         top.addStretch(1)
 
@@ -392,6 +397,26 @@ class StatsPanel(QFrame):
         self._next_btn.setIcon(ui_icon("chevron_right", None, 18))
         self._delete_btn.setIcon(ui_icon("trash", theme.pal().danger))
         self._chart.update()
+
+    def _set_path_text(self, path: str) -> None:
+        fm = QFontMetrics(self._path_label.font())
+        self._path_label.setText(fm.elidedText(path, Qt.ElideMiddle, 400))
+        self._path_label.setToolTip("")
+
+    def _choose_path(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Выберите новый exe-файл или ярлык",
+            self._path,
+            "Приложения и ярлыки (*.exe *.lnk);;Все файлы (*.*)",
+        )
+        if not path:
+            return
+        self.path_changed.emit(self._app_id, str(path))
+
+    def set_path(self, path: str) -> None:
+        self._path = path
+        self._set_path_text(path)
 
     # ------------------------------------------------------------------ help
     def _build_help_box(self) -> QFrame:

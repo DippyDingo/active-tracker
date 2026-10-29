@@ -212,8 +212,20 @@ QLabel#sideName {
     font-weight: 600;
 }
 QLabel#pathLabel {
-    color: $text3;
-    font-size: 11px;
+    color: $text2;
+    font-size: 12px;
+}
+QPushButton#pathLink {
+    background: transparent;
+    border: none;
+    color: $text2;
+    font-size: 12px;
+    text-align: left;
+    padding: 0px;
+}
+QPushButton#pathLink:hover {
+    color: $accent;
+    background: transparent;
 }
 QLabel#statBig {
     color: $text;
