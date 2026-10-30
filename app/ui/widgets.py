@@ -548,6 +548,11 @@ class MiniChart(QWidget):
         n = len(self._values)
         if self._visible is not None:
             self._visible = max(2, min(self._visible, max(n, 2)))
+            # Если длина ряда или период изменились, компактный график
+            # возвращается в начало окна. Движение колёсиком не смешивает
+            # карточки и не превращает 00–23 в наложенную кучу.
+            if not same_len:
+                self._offset = 0
             # На тике (та же длина) сохраняем позицию прокрутки; иначе — к концу.
             if same_len:
                 self._offset = self._clamp_offset(self._offset)
@@ -555,7 +560,7 @@ class MiniChart(QWidget):
                 # Суточный график открывается с первой половины суток (00–11),
                 # а вторую половину можно пролистать мышью. Остальные длинные
                 # ряды по-прежнему открываются с последних точек.
-                self._offset = 0 if len(self._axis) == 24 else max(0, n - self._visible)
+                self._offset = 0 if len(self._axis) in (12, 24) else max(0, n - self._visible)
         if not same_len:
             self._hover = -1
         if animate and n >= 2:
@@ -738,19 +743,28 @@ class MiniChart(QWidget):
                                       max(16.0, slot_w), self.AXIS_H - 1.0)
                         painter.drawText(rect, Qt.AlignCenter | Qt.AlignVCenter, text)
                 else:
-                    slot_w = (w - self.PAD_L - self.PAD_R) / max(vis, 1)
-                    label_w = max((fm.horizontalAdvance(t) for _i, t in visible_axis), default=20) + 8
-                    step = max(1, int(ceil(label_w / max(slot_w, 1.0))))
-                    # Собираем индексы видимых подписей с учётом прореживания
-                    visible_indices = list(range(0, len(visible_axis), step))
-                    for enum_k, k in enumerate(visible_indices):
-                        idx, text = visible_axis[k]
+                    # Неделя и шестимесячное окно используют равномерные
+                    # подписи. Для крайних точек выравниваем текст внутрь,
+                    # чтобы первый/последний месяц не обрезался.
+                    is_week_axis = len(self._axis) == 7 and len(visible_axis) == 7
+                    is_half_year_axis = len(visible_axis) == 6 and vis == 6
+                    slot_w = (w - self.PAD_L - self.PAD_R) / max(vis - 1, 1)
+                    label_w = max((fm.horizontalAdvance(t) for _i, t in visible_axis), default=20) + 4
+                    step = 1 if is_week_axis else (
+                        1 if label_w <= slot_w else max(1, int(ceil(label_w / max(slot_w, 1.0))))
+                    )
+                    for pos, (idx, text) in enumerate(visible_axis[::step]):
                         local = idx - off
                         x = self._x_at(local, vis) if vis > 1 else w / 2.0
-                        rect, align = RangeChart._axis_label_rect(
-                            enum_k, len(visible_indices), x, w,
-                            self.PAD_L, self.PAD_R, 60.0, self.AXIS_H, h
-                        )
+                        if (is_week_axis or is_half_year_axis) and pos == 0:
+                            rect = QRectF(x - 2.0, h + 1.0, label_w, self.AXIS_H - 1.0)
+                            align = Qt.AlignLeft | Qt.AlignVCenter
+                        elif (is_week_axis or is_half_year_axis) and pos == len(visible_axis) - 1:
+                            rect = QRectF(x - label_w + 2.0, h + 1.0, label_w, self.AXIS_H - 1.0)
+                            align = Qt.AlignRight | Qt.AlignVCenter
+                        else:
+                            rect = QRectF(x - label_w / 2.0, h + 1.0, label_w, self.AXIS_H - 1.0)
+                            align = Qt.AlignCenter | Qt.AlignVCenter
                         painter.drawText(rect, align, text)
 
         if anchor is not None and self._progress >= 0.99 and anchor_idx >= 0:
