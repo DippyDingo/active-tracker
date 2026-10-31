@@ -34,6 +34,16 @@ Write-Host "Версия: $version"
 
 # 2) Сборка exe теми же параметрами, что и build_exe.bat (без pause).
 if (-not $SkipExe) {
+    # 2a) Отдельный helper обновления. Он запускает установщик и перезапускает
+    # приложение, поэтому собирается своей командой (без _internal: тянет
+    # только psutil из стандартного окружения).
+    & $Py -m PyInstaller --noconfirm --onefile --noconsole `
+        --name NodexyUpdater `
+        --icon assets\app_icon.ico `
+        --hidden-import psutil `
+        nodexy_updater_helper.py
+    if ($LASTEXITCODE -ne 0) { Fail "PyInstaller: сборка NodexyUpdater.exe не удалась" }
+
     # --onedir: без распаковки в %TEMP% при каждом старте. Раньше (--onefile)
     # 54 МБ exe распаковывался в temp и на секунду показывал белое окно-хост;
     # кроме того в папке установки был только один exe. Теперь рядом лежит
@@ -51,6 +61,10 @@ if (-not $SkipExe) {
         --hidden-import win32con `
         main.py
     if ($LASTEXITCODE -ne 0) { Fail "PyInstaller: сборка exe не удалась" }
+
+    # Helper собирается раньше, но --onedir пересоздаёт dist\Nodexy целиком,
+    # поэтому копируем его рядом с Nodexy.exe только теперь.
+    Copy-Item -LiteralPath "dist\NodexyUpdater.exe" -Destination "dist\Nodexy\NodexyUpdater.exe" -Force
 }
 # --onedir: exe и _internal лежат в dist\Nodexy\. Старый onefile-файл
 # dist\Nodexy.exe намеренно не используется (может остаться от прошлых сборок).

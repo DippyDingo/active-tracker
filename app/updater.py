@@ -423,6 +423,15 @@ def current_exe() -> Path | None:
     return Path(sys.executable)
 
 
+def helper_exe() -> Path | None:
+    """Путь к отдельному скрытому обновлятору рядом с Nodexy.exe."""
+    exe = current_exe()
+    if exe is None:
+        return None
+    candidate = exe.parent / "NodexyUpdater.exe"
+    return candidate if candidate.is_file() else None
+
+
 def can_self_update() -> tuple[bool, str]:
     """Возможность тихого самообновления через установщик.
 
@@ -457,206 +466,10 @@ def backup_path() -> Path | None:
     return exe.with_name(exe.name + ".old") if exe else None
 
 
-# ---------------------------------------------------------------- updater script
-# Помощник (стратегия B): дожидается полного выхода приложения и запускает
-# установщик Inno Setup тихо. Никакого переноса файлов — файлы заменяет сам
-# установщик, он же правит версию в «Приложениях и компонентах» и (с
-# /RESTARTAPP) перезапускает приложение. Тот же шаблон служит для отката.
-#
-# Ключевые защиты (выстраданы на реальных сбоях):
-# - ожидание идёт по ИМЕНИ процесса, а не по PID: если пользователь снова
-#   запустил приложение во время установки, помощник дождётся его закрытия
-#   (иначе Inno отменяется из-за AppMutex с кодом 1);
-# - маркер install.lock вокруг запуска установщика: стартовавшее в этот
-#   момент приложение подождёт завершения установки и перезапустится уже
-#   новой версией (см. wait_for_ongoing_install в main.py);
-# - код возврата установщика проверяется вместе с Err (пустой rc раньше
-#   выдавал ложное «finished OK»);
-# - до трёх попыток установки с повторным ожиданием между ними.
-_SETUP_VBS = r"""On Error Resume Next
-Set args = WScript.Arguments
-If args.Count < 5 Then WScript.Quit 1
-appName = args(0)
-setupPath = args(1)
-setupFlags = args(2)
-logPath = args(3)
-lockPath = args(4)
-Set fso = CreateObject("Scripting.FileSystemObject")
-Set oShell = CreateObject("WScript.Shell")
-' Lock marker is set RIGHT AWAY: an app instance launched by the user at any
-' point while this helper works will wait and then relaunch as new version.
-WriteLock
-installed = False
-For attempt = 1 To 3
-    ' Wait until no app process remains (child + PyInstaller bootloader parent
-    ' share the exe name; also catches the app being relaunched mid-update).
-    waited = 0
-    Do While waited < 120
-        If Not AppRunning(appName) Then Exit Do
-        WScript.Sleep 500
-        waited = waited + 1
-    Loop
-    If AppRunning(appName) Then
-        Log "app still running after 60s (attempt " & attempt & "); aborted, nothing changed"
-        RemoveLock
-        WScript.Quit 0
-    End If
-    ' Grace pause: let file handles and the _MEI cleanup settle.
-    WScript.Sleep 2000
-    If Not fso.FileExists(setupPath) Then
-        Log "setup missing: " & setupPath & "; aborted"
-        RemoveLock
-        WScript.Quit 1
-    End If
-    If Not WaitFileReadable(setupPath, 15000) Then
-        Log "setup not readable in time; aborted"
-        RemoveLock
-        WScript.Quit 1
-    End If
-    WScript.Sleep 1000
-    ' Re-check right before running: the user may have relaunched the app.
-    If AppRunning(appName) Then
-        Log "app relaunched before install (attempt " & attempt & "); retrying"
-        WScript.Sleep 3000
-    Else
-        Err.Clear
-        ' Log path is quoted here, in the helper: the app passes it as a
-        ' separate argument, so quotes survive (unlike quotes nested inside
-        ' the setupFlags argument, which WScript would mangle).
-        fullCmd = Chr(34) & setupPath & Chr(34) & " " & setupFlags & " /LOG=" & Chr(34) & logPath & Chr(34)
-        rc = oShell.Run(fullCmd, 0, True)
-        runErr = Err.Number
-        runDesc = Err.Description
-        Err.Clear
-        If runErr <> 0 Then
-            Log "run failed (attempt " & attempt & "): " & runDesc
-            WScript.Sleep 4000
-        ElseIf rc = 0 Then
-            Log "installer finished OK (attempt " & attempt & "): " & setupPath
-            installed = True
-            Exit For
-        Else
-            Log "installer FAILED rc=" & rc & " (attempt " & attempt & ")"
-            WScript.Sleep 4000
-        End If
-    End If
-Next
-RemoveLock
-If Not installed Then
-    Log "install gave up after retries; will retry on next app exit"
-    WScript.Quit 1
-End If
-WScript.Quit 0
-Function AppRunning(procName)
-    On Error Resume Next
-    ' Fail-safe: on WMI failure assume the app IS running (better to wait
-    ' than to run the installer over a live app and get an AppMutex abort).
-    AppRunning = True
-    Set wmi = GetObject("winmgmts:\\.\root\cimv2")
-    If Err.Number <> 0 Then
-        Err.Clear
-        Exit Function
-    End If
-    Dim escaped
-    escaped = Replace(procName, "'", "''")
-    Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name='" & escaped & "'")
-    If Err.Number <> 0 Then
-        Err.Clear
-        Exit Function
-    End If
-    AppRunning = (procs.Count > 0)
-End Function
-Function WaitFileReadable(exePath, maxMs)
-    On Error Resume Next
-    Dim waited
-    waited = 0
-    Do While waited < maxMs
-        Err.Clear
-        Dim chk
-        Set chk = CreateObject("Scripting.FileSystemObject").OpenTextFile(exePath, 1, False)
-        If Err.Number = 0 Then
-            chk.Close
-            WaitFileReadable = True
-            Exit Function
-        End If
-        Err.Clear
-        WScript.Sleep 500
-        waited = waited + 500
-    Loop
-    WaitFileReadable = False
-End Function
-Sub WriteLock()
-    On Error Resume Next
-    Dim lf
-    Set lf = CreateObject("Scripting.FileSystemObject").CreateTextFile(lockPath, True)
-    If Err.Number = 0 Then
-        lf.WriteLine Now
-        lf.Close
-    End If
-    Err.Clear
-End Sub
-Sub RemoveLock()
-    On Error Resume Next
-    CreateObject("Scripting.FileSystemObject").DeleteFile lockPath, True
-    Err.Clear
-End Sub
-Sub Log(msg)
-    On Error Resume Next
-    Dim lf
-    Set lf = CreateObject("Scripting.FileSystemObject").OpenTextFile(logPath, 8, True)
-    If Err.Number = 0 Then
-        lf.WriteLine Now & " | " & msg
-        lf.Close
-    End If
-    Err.Clear
-End Sub
-"""
-
-
-_WAIT_VBS = r"""On Error Resume Next
-Set args = WScript.Arguments
-If args.Count < 4 Then WScript.Quit 1
-lockPath = args(0)
-exePath = args(1)
-appName = args(2)
-extraArgs = args(3)
-Set fso = CreateObject("Scripting.FileSystemObject")
-Set oShell = CreateObject("WScript.Shell")
-' Wait until the install helper clears its marker (max ~16 min: helper may
-' legitimately take 3 attempts with 2-minute waits each).
-waited = 0
-Do While waited < 960
-    If Not fso.FileExists(lockPath) Then Exit Do
-    WScript.Sleep 1000
-    waited = waited + 1
-Loop
-' Grace pause, then launch the (now updated) app unless it is already running
-' (the installer may have relaunched it via /RESTARTAPP).
-WScript.Sleep 2000
-If Not AppRunning(appName) Then
-    oShell.CurrentDirectory = fso.GetParentFolderName(exePath)
-    oShell.Run Chr(34) & exePath & Chr(34) & extraArgs, 1, False
-End If
-WScript.Quit 0
-Function AppRunning(procName)
-    On Error Resume Next
-    ' Fail-safe: on WMI failure assume the app IS running.
-    AppRunning = True
-    Set wmi = GetObject("winmgmts:\\.\root\cimv2")
-    If Err.Number <> 0 Then
-        Err.Clear
-        Exit Function
-    End If
-    Dim escaped
-    escaped = Replace(procName, "'", "''")
-    Set procs = wmi.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name='" & escaped & "'")
-    If Err.Number <> 0 Then
-        Err.Clear
-        Exit Function
-    End If
-    AppRunning = (procs.Count > 0)
-End Function
-"""
+# ---------------------------------------------------------------- helper
+# Установку выполняет отдельный процесс NodexyUpdater.exe: он ждёт выхода
+# приложения по PID, запускает Inno Setup тихо и сам стартует новую версию.
+# VBS-помощник удалён: кавычки в путях и аргументах ломали установку.
 
 
 def build_silent_setup_args(restart: bool, log_path: str | Path | None = None) -> list[str]:
@@ -691,13 +504,12 @@ def _helper_alive() -> bool:
         import psutil
     except Exception:
         return False
-    markers = ("nodexy_update", "nodexy_rollback")
+    markers = ("nodexy_update", "nodexy_rollback", "nodexyupdater")
     for proc in psutil.process_iter(["name", "cmdline"]):
         try:
-            if (proc.info["name"] or "").lower() != "wscript.exe":
-                continue
+            name = (proc.info["name"] or "").lower()
             cmdline = " ".join(proc.info["cmdline"] or []).lower()
-            if any(m in cmdline for m in markers):
+            if name == "nodexyupdater.exe" or any(m in cmdline for m in markers):
                 return True
         except Exception:
             continue
@@ -705,10 +517,7 @@ def _helper_alive() -> bool:
 
 
 def install_in_progress() -> bool:
-    """Прямо сейчас помощник ставит обновление (свежий маркер + живой помощник).
-
-    Протухший маркер (помощник погиб) молча удаляется.
-    """
+    """Есть ли свежий lock от отдельного обновляющего helper."""
     import time
 
     lock = install_lock_path()
@@ -722,61 +531,6 @@ def install_in_progress() -> bool:
         _remove_quiet(lock)
         return False
     return True
-
-
-def spawn_relaunch_waiter(extra_args: list[str]) -> bool:
-    """Оставляет лёгкий wscript-процесс: дождётся конца установки и запустит
-    приложение новой версией. Само приложение при этом сразу выходит, чтобы
-    не мешать установщику (Inno отменяется, пока жив хоть один наш процесс).
-    """
-    exe = current_exe()
-    if exe is None:
-        return False
-    try:
-        script = config.app_dir() / "nodexy_wait.vbs"
-        script.write_text(_WAIT_VBS, encoding="ascii")
-    except Exception:
-        config.log_error("updater.spawn_relaunch_waiter")
-        return False
-    joined = (" " + " ".join(extra_args)) if extra_args else ""
-    return launch_script(
-        script,
-        [str(install_lock_path()), str(exe), exe.name, joined],
-    )
-
-
-def write_updater_script() -> Path:
-    """VBS-помощник: WScript — GUI-подсистема, консольных окон не бывает."""
-    script = config.app_dir() / "nodexy_update.vbs"
-    script.write_text(_SETUP_VBS, encoding="ascii")
-    return script
-
-
-def write_rollback_script() -> Path:
-    script = config.app_dir() / "nodexy_rollback.vbs"
-    script.write_text(_SETUP_VBS, encoding="ascii")
-    return script
-
-
-def launch_script(script: Path, args: list[str]) -> bool:
-    """Полностью скрытый запуск помощника.
-
-    //B — батч-режим WScript: запрещены ЛЮБЫЕ окна (ошибки, запросы).
-    //nologo — без баннера. Потоки заглушены. CREATE_NO_WINDOW на всякий случай.
-    """
-    try:
-        subprocess.Popen(
-            ["wscript.exe", "//B", "//nologo", str(script), *args],
-            creationflags=0x08000000,  # CREATE_NO_WINDOW
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            close_fds=True,
-        )
-        return True
-    except Exception:
-        config.log_error("updater.launch_script")
-        return False
 
 
 def update_log_path() -> Path:
@@ -794,7 +548,7 @@ def cleanup_orphan_helpers() -> int:
         import psutil
     except Exception:
         return 0
-    markers = ("nodexy_update", "nodexy_rollback", "nodexy_wait")
+    markers = ("nodexy_update", "nodexy_rollback", "nodexy_wait", "nodexyupdater")
     my_pid = os.getpid()
     try:
         my_create = psutil.Process(my_pid).create_time()
@@ -835,7 +589,7 @@ def cleanup_orphan_helpers() -> int:
 
     # Старые скрипты больше не нужны (рабочий помощник уже загрузил свой в память).
     for name in ("nodexy_update.bat", "nodexy_rollback.bat",
-                 "nodexy_update.vbs", "nodexy_rollback.vbs", "nodexy_wait.vbs"):
+                  "nodexy_update.vbs", "nodexy_rollback.vbs", "nodexy_wait.vbs"):
         _remove_quiet(config.app_dir() / name)
     return killed
 
@@ -844,13 +598,14 @@ _APPLY_SCHEDULED = False
 
 
 def schedule_apply(restart: bool) -> bool:
-    """Запускает скрытый помощник: дождётся выхода и тихо поставит установщик."""
+    """Запускает отдельный exe-helper, ждёт PID и ставит обновление."""
     global _APPLY_SCHEDULED
     if _APPLY_SCHEDULED and not restart:
         return True
     pending = get_pending()
     exe = current_exe()
-    if not pending or exe is None:
+    helper = helper_exe()
+    if not pending or exe is None or helper is None:
         return False
     if pending.get("kind") != "installer":
         return False
@@ -858,49 +613,54 @@ def schedule_apply(restart: bool) -> bool:
     if not setup.is_file():
         set_pending(None)
         return False
+    command = [
+        str(helper),
+        "--pid", str(os.getpid()),
+        "--setup", str(setup),
+        "--target", str(exe.parent),
+        "--restart", str(exe),
+        "--log", str(update_log_path()),
+        "--lock", str(install_lock_path()),
+    ]
     try:
-        script = write_updater_script()
+        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+        subprocess.Popen(
+            command,
+            cwd=str(exe.parent),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=creationflags,
+            close_fds=True,
+        )
     except Exception:
-        config.log_error("updater.write_updater_script")
+        config.log_error("updater.schedule_apply")
         return False
-    flags = " ".join(build_silent_setup_args(restart, install_log_path()))
-    ok = launch_script(
-        script,
-        [
-            exe.name,
-            str(setup),
-            flags,
-            str(update_log_path()),
-            str(install_lock_path()),
-        ],
-    )
-    if ok:
-        _APPLY_SCHEDULED = True
-    return ok
+    _APPLY_SCHEDULED = True
+    return True
 
 
 def schedule_rollback() -> bool:
-    """Тихая установка кэша предыдущего установщика (понижение версии)."""
+    """Устанавливает кэш предыдущей версии через тот же helper."""
     prev = prev_installer()
     exe = current_exe()
-    if prev is None or exe is None:
+    helper = helper_exe()
+    if prev is None or exe is None or helper is None:
         return False
+    command = [
+        str(helper), "--pid", str(os.getpid()), "--setup", str(prev),
+        "--target", str(exe.parent), "--restart", str(exe),
+        "--log", str(update_log_path()), "--lock", str(install_lock_path()),
+    ]
     try:
-        script = write_rollback_script()
+        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+        subprocess.Popen(command, cwd=str(exe.parent), stdin=subprocess.DEVNULL,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         creationflags=creationflags, close_fds=True)
+        return True
     except Exception:
-        config.log_error("updater.write_rollback_script")
+        config.log_error("updater.schedule_rollback")
         return False
-    flags = " ".join(build_silent_setup_args(True, install_log_path()))
-    return launch_script(
-        script,
-        [
-            exe.name,
-            str(prev),
-            flags,
-            str(update_log_path()),
-            str(install_lock_path()),
-        ],
-    )
 
 
 # ---------------------------------------------------------------- boot control

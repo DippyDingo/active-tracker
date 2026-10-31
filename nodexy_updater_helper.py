@@ -1,0 +1,153 @@
+"""Hidden Windows updater helper for Nodexy.
+
+This process is intentionally separate from the main application. It waits for
+one exact PID, runs the downloaded Inno Setup installer without a shell, then
+starts the updated executable. No console or visible window is created.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+
+def log(path: Path, message: str) -> None:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as stream:
+            stream.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} | {message}\n")
+    except OSError:
+        pass
+
+
+def pid_alive(pid: int) -> bool:
+    try:
+        import psutil
+        return psutil.pid_exists(pid)
+    except Exception:
+        try:
+            os.kill(pid, 0)
+            return True
+        except OSError:
+            return False
+
+
+def target_running(exe: Path) -> bool:
+    try:
+        import psutil
+        wanted = str(exe.resolve()).casefold()
+        for process in psutil.process_iter(["pid", "exe"]):
+            try:
+                if process.info["exe"] and str(Path(process.info["exe"]).resolve()).casefold() == wanted:
+                    return True
+            except (OSError, psutil.Error):
+                continue
+    except Exception:
+        return False
+    return False
+
+
+def run(args: argparse.Namespace) -> int:
+    log_path = Path(args.log)
+    lock_path = Path(args.lock)
+    setup = Path(args.setup)
+    restart = Path(args.restart)
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path.write_text(str(os.getpid()), encoding="ascii")
+    except OSError as exc:
+        log(log_path, f"helper cannot create lock: {exc}")
+        return 2
+
+    try:
+        log(log_path, f"helper started pid={args.pid} setup={setup} target={restart}")
+        deadline = time.monotonic() + 120
+        while pid_alive(args.pid) and time.monotonic() < deadline:
+            time.sleep(0.25)
+        if pid_alive(args.pid):
+            log(log_path, "target pid did not exit within 120 seconds")
+            return 3
+        time.sleep(1.0)
+
+        # A manual relaunch of the same installed executable must not race the
+        # installer. Wait briefly for it to finish rather than replacing files
+        # under a live process.
+        deadline = time.monotonic() + 30
+        while target_running(restart) and time.monotonic() < deadline:
+            time.sleep(0.5)
+        if target_running(restart):
+            log(log_path, "target executable is still running")
+            return 4
+        if not setup.is_file():
+            log(log_path, f"installer missing: {setup}")
+            return 5
+
+        install_log = log_path.with_name("nodexy_install.log")
+        command = [
+            str(setup),
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART",
+            "/SP-",
+            "/LOG=" + str(install_log),
+        ]
+        log(log_path, "starting installer")
+        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+        completed = subprocess.run(
+            command,
+            cwd=str(setup.parent),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=creationflags,
+            check=False,
+        )
+        log(log_path, f"installer exit code={completed.returncode}")
+        if completed.returncode != 0:
+            return int(completed.returncode) or 1
+
+        # The installer may still be finishing file operations when it returns.
+        # Start only after the target exists again.
+        deadline = time.monotonic() + 30
+        while not restart.is_file() and time.monotonic() < deadline:
+            time.sleep(0.25)
+        if not restart.is_file():
+            log(log_path, f"updated executable missing: {restart}")
+            return 6
+        subprocess.Popen(
+            [str(restart)],
+            cwd=str(restart.parent),
+            creationflags=creationflags,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+        )
+        log(log_path, "updated application launched")
+        return 0
+    except Exception as exc:
+        log(log_path, f"helper failed: {type(exc).__name__}: {exc}")
+        return 7
+    finally:
+        try:
+            lock_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--pid", type=int, required=True)
+    parser.add_argument("--setup", required=True)
+    parser.add_argument("--target", required=True)
+    parser.add_argument("--restart", required=True)
+    parser.add_argument("--log", required=True)
+    parser.add_argument("--lock", required=True)
+    return run(parser.parse_args())
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

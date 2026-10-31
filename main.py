@@ -181,10 +181,9 @@ def main() -> int:
     # процесса нельзя: живой Nodexy блокирует установщик (AppMutex).
     # Проверка делается ДО мьютекса, чтобы не мешать установке.
     if getattr(sys, "frozen", False) and not skip_update:
+        # Старый процесс уже передал установку отдельному helper. В этом
+        # случае не запускаем вторую копию: helper сам стартует новый exe.
         if updater.install_in_progress():
-            updater.spawn_relaunch_waiter(
-                [a for a in sys.argv[1:] if a != "--skip-update"]
-            )
             return 0
 
     if sys.platform == "win32":

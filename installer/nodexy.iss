@@ -72,6 +72,7 @@ Name: "autostart"; Description: "Запускать при входе в Windows
 ; «папкой», а не одним файлом — и запуск без распаковки в temp (нет белого
 ; окна на старте), и в каталоге программы лежат все файлы приложения.
 Source: "..\dist\Nodexy\Nodexy.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\NodexyUpdater.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\dist\Nodexy\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
