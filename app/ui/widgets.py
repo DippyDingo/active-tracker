@@ -377,6 +377,7 @@ class InlineEdit(QFrame):
         self._edit.setText(initial)
         self._edit.setPlaceholderText(placeholder)
         self._edit.setAttribute(Qt.WA_InputMethodEnabled, False)
+        self._edit.setWindowFlags(Qt.Widget)
         self._edit.installEventFilter(self)
         layout.addWidget(self._edit)
 

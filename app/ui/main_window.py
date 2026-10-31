@@ -1092,14 +1092,27 @@ class MainWindow(QMainWindow):
         delete_action.triggered.connect(lambda: self._confirm_delete(app_id))
         return menu
 
+    def _category_name(self, cat_id: int, fallback: str = "") -> str:
+        """Возвращает актуальное имя категории, а не имя из старого меню."""
+        for current_id, current_name in self.db.list_categories():
+            if current_id == cat_id:
+                return current_name
+        return fallback
+
     def _category_menu(self, cat_id: int, cat_name: str) -> QMenu:
         menu = QMenu(self)
         add_here_action = menu.addAction(ui_icon("plus"), "Добавить приложение сюда")
         add_here_action.triggered.connect(lambda: self._open_add(cat_id))
         rename_action = menu.addAction(ui_icon("pen"), "Переименовать")
         delete_action = menu.addAction(ui_icon("trash", theme.pal().danger), "Удалить")
-        rename_action.triggered.connect(lambda: self._start_inline_rename(cat_id, cat_name))
-        delete_action.triggered.connect(lambda: self._delete_category(cat_id, cat_name))
+        # Меню категории создаётся один раз. Имя для переименования берём в
+        # момент клика, иначе после первого rename здесь оставалось старое имя.
+        rename_action.triggered.connect(
+            lambda: self._start_inline_rename(cat_id, self._category_name(cat_id, cat_name))
+        )
+        delete_action.triggered.connect(
+            lambda: self._delete_category(cat_id, self._category_name(cat_id, cat_name))
+        )
         return menu
 
     def _remove_inline(self) -> None:
@@ -1149,7 +1162,7 @@ class MainWindow(QMainWindow):
 
     def _start_inline_create(self, for_app_id: int | None = None) -> None:
         self._cancel_active_inline()
-        edit = InlineEdit(placeholder="Имя категории, затем Enter")
+        edit = InlineEdit(placeholder="Имя категории, затем Enter", parent=self._side_container)
         edit.accepted.connect(lambda text: self._finish_create(text, for_app_id))
         edit.cancelled.connect(self._remove_inline)
         self._inline = edit
@@ -1185,7 +1198,7 @@ class MainWindow(QMainWindow):
         if header is None:
             return
         self._cancel_active_inline()
-        edit = InlineEdit(initial=current_name)
+        edit = InlineEdit(initial=current_name, parent=self._side_container)
         edit.setFixedHeight(header.height())
         edit.accepted.connect(lambda text: self._finish_rename(cat_id, text))
         edit.cancelled.connect(lambda: (self._remove_inline(), self._apply_filter(self._filter)))
