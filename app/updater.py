@@ -520,7 +520,11 @@ For attempt = 1 To 3
         WScript.Sleep 3000
     Else
         Err.Clear
-        rc = oShell.Run(Chr(34) & setupPath & Chr(34) & " " & setupFlags, 0, True)
+        ' Log path is quoted here, in the helper: the app passes it as a
+        ' separate argument, so quotes survive (unlike quotes nested inside
+        ' the setupFlags argument, which WScript would mangle).
+        fullCmd = Chr(34) & setupPath & Chr(34) & " " & setupFlags & " /LOG=" & Chr(34) & logPath & Chr(34)
+        rc = oShell.Run(fullCmd, 0, True)
         runErr = Err.Number
         runDesc = Err.Description
         Err.Clear
@@ -661,12 +665,15 @@ def build_silent_setup_args(restart: bool, log_path: str | Path | None = None) -
     /DIR намеренно НЕ передаётся: при апгрейде Inno берёт прежний путь из
     реестра. /RESTARTAPP включает перезапуск приложения записью [Run]
     с Check: RestartAfterSilentUpdate.
+
+    /LOG намеренно НЕ добавляется здесь: путь к логу может содержать пробелы,
+    а вложенные кавычки внутри единственного аргумента setupFlags теряются
+    при передаче через WScript. Лог подключает VBS-помощник, который получает
+    путь отдельным аргументом и сам ставит кавычки.
     """
     flags = ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-"]
     if restart:
         flags.append("/RESTARTAPP")
-    if log_path is not None:
-        flags.append(f'/LOG="{log_path}"')
     return flags
 
 
