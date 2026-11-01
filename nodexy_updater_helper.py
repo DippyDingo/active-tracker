@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -55,6 +57,29 @@ def run(args: argparse.Namespace) -> int:
     lock_path = Path(args.lock)
     setup = Path(args.setup)
     restart = Path(args.restart)
+    # Helper нельзя обновлять, пока он запущен из каталога приложения. Перед
+    # основной работой перенесём выполнение во временную копию.
+    if getattr(sys, "frozen", False) and os.environ.get("NODEXY_HELPER_TEMP") != "1":
+        temp_copy = Path(tempfile.gettempdir()) / f"NodexyUpdater-{os.getpid()}.exe"
+        try:
+            shutil.copy2(Path(sys.executable), temp_copy)
+            child_env = os.environ.copy()
+            child_env["NODEXY_HELPER_TEMP"] = "1"
+            subprocess.Popen(
+                [str(temp_copy), *sys.argv[1:]],
+                cwd=str(temp_copy.parent),
+                env=child_env,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                close_fds=True,
+            )
+            return 0
+        except Exception as exc:
+            log(log_path, f"cannot relaunch helper from temp: {exc}")
+            return 8
+
     try:
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         lock_path.write_text(str(os.getpid()), encoding="ascii")
@@ -96,6 +121,8 @@ def run(args: argparse.Namespace) -> int:
         ]
         log(log_path, "starting installer")
         creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+        # Этот процесс уже работает из %TEMP% (см. перенос выше), поэтому
+        # файлы в каталоге приложения никто не удерживает.
         completed = subprocess.run(
             command,
             cwd=str(setup.parent),
