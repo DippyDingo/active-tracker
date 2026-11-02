@@ -58,9 +58,15 @@ PALETTES: dict[str, Palette] = {
             "#ffffff", (30, 41, 59, 110), (100, 116, 139, 90), 130, 30,
             is_light=True,
         ),
+        Palette(
+            "redis", "REDIS",
+            "#0A0B16", "#0D0F1C", "#0F111E", "#161824", "#1D1F2E", "#2D2F44",
+            "#FFFFFF", "#94A3B8", "#64748B", "#8B5CF6", "#C026D3", "#FB7185",
+            "#121426", (7, 8, 22, 175), (4, 3, 18, 185), 82, 8,
+        ),
     )
 }
-DEFAULT_THEME = "midnight"
+DEFAULT_THEME = "redis"
 
 
 def _hx(value: str) -> tuple[int, int, int]:
@@ -96,6 +102,8 @@ def _button_colors(p: Palette) -> tuple[str, str, str, str]:
     """
     if p.key == "midnight":
         return "#3b82f6", "#2563eb", "#60a5fa", "#3b82f6"
+    if p.key == "redis":
+        return "#C026D3", "#8B5CF6", "#E879F9", "#A855F7"
     top = _mix_hex(p.accent, "#000000", 0.08)
     bottom = _mix_hex(p.accent, "#000000", 0.28)
     return top, bottom, p.accent, top
@@ -175,6 +183,12 @@ QLabel#pageTitle {
     color: $text;
     font-size: 23px;
     font-weight: 800;
+}
+QLabel#redisBrand {
+    color: #E879F9;
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 1px;
 }
 QLabel#pageSub {
     color: $text2;

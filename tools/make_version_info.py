@@ -25,11 +25,11 @@ _TEMPLATE = """VSVersionInfo(
     StringFileInfo([
       StringTable('041904b0', [
         StringStruct('CompanyName', 'DippyDingo'),
-        StringStruct('FileDescription', 'Nodexy \\u2014 \\u0443\\u0447\\u0451\\u0442 \\u0432\\u0440\\u0435\\u043c\\u0435\\u043d\\u0438 \\u0432 \\u043f\\u0440\\u0438\\u043b\\u043e\\u0436\\u0435\\u043d\\u0438\\u044f\\u0445'),
+        StringStruct('FileDescription', 'REDIS \\u2014 \\u0443\\u0447\\u0451\\u0442 \\u0432\\u0440\\u0435\\u043c\\u0435\\u043d\\u0438 \\u0432 \\u043f\\u0440\\u0438\\u043b\\u043e\\u0436\\u0435\\u043d\\u0438\\u044f\\u0445'),
         StringStruct('FileVersion', '{ver_str}'),
         StringStruct('InternalName', 'Nodexy'),
         StringStruct('OriginalFilename', 'Nodexy.exe'),
-        StringStruct('ProductName', 'Nodexy'),
+        StringStruct('ProductName', 'REDIS'),
         StringStruct('ProductVersion', '{ver_str}')
       ])
     ]),

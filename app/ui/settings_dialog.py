@@ -161,7 +161,7 @@ class SettingsPanel(QFrame):
         row7.addWidget(self._update_status, 1)
         layout.addLayout(row7)
 
-        version_label = QLabel(f"Nodexy v{APP_VERSION}")
+        version_label = QLabel(f"REDIS v{APP_VERSION}")
         version_label.setObjectName("mutedLabel")
         layout.addWidget(version_label)
 

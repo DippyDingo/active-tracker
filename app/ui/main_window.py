@@ -31,11 +31,23 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPalette, QPixmap
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QFont,
+    QIcon,
+    QLinearGradient,
+    QPainter,
+    QPainterPath,
+    QPalette,
+    QPen,
+    QPixmap,
+)
 
 from .. import config, updater, win32_utils
 from ..db import Database
@@ -74,6 +86,36 @@ from .widgets import (
 
 # Подпись «АКТИВНОСТЬ ЗА …» в шапке для каждого периода (индексы = PERIOD_KEYS).
 PERIOD_GENITIVE = ["СЕГОДНЯ", "НЕДЕЛЮ", "МЕСЯЦ", "ГОД", "ВСЁ ВРЕМЯ"]
+
+
+class RedisBrand(QLabel):
+    """Брендовый заголовок с мягким градиентом REDIS (розовый → фиолетовый)."""
+
+    def __init__(self, parent=None):
+        super().__init__("REDIS", parent)
+        self.setObjectName("redisBrand")
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setMinimumHeight(44)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        font = QFont("Segoe UI")
+        font.setPixelSize(30)
+        font.setWeight(QFont.Weight.Black)
+        font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, 1.2)
+        self.setFont(font)
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+        gradient = QLinearGradient(0, 0, self.width(), 0)
+        gradient.setColorAt(0.0, QColor("#F472B6"))
+        gradient.setColorAt(0.45, QColor("#E879F9"))
+        gradient.setColorAt(0.75, QColor("#C026D3"))
+        gradient.setColorAt(1.0, QColor("#8B5CF6"))
+        painter.setPen(QPen(QBrush(gradient), 0))
+        painter.setFont(self.font())
+        painter.drawText(self.rect(), Qt.AlignLeft | Qt.AlignVCenter, self.text())
+        painter.end()
 
 
 class SearchEdit(QLineEdit):
@@ -146,7 +188,7 @@ class AppMenuPopup(QFrame):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(4)
 
-        self._version_label = QLabel(f"Nodexy v{APP_VERSION}")
+        self._version_label = QLabel(f"REDIS v{APP_VERSION}")
         self._version_label.setObjectName("popupVersion")
         layout.addWidget(self._version_label)
 
@@ -292,7 +334,7 @@ class MainWindow(QMainWindow):
         self._tray_update_hint_shown = False
         self._tray_progress_cache: dict[int, QIcon] = {}
 
-        self.setWindowTitle("Nodexy")
+        self.setWindowTitle("REDIS")
         self.setWindowIcon(theme.load_app_icon())
         self.resize(1210, 780)
         self.setMinimumSize(1020, 680)
@@ -399,8 +441,7 @@ class MainWindow(QMainWindow):
         header.setSpacing(12)
         titles = QVBoxLayout()
         titles.setSpacing(2)
-        page_title = QLabel("ACTIVITY")
-        page_title.setObjectName("pageTitle")
+        page_title = RedisBrand()
         self._header_sub = QLabel("")
         self._header_sub.setObjectName("pageSub")
         titles.addWidget(page_title)
@@ -1747,7 +1788,7 @@ class MainWindow(QMainWindow):
             self._banner.setVisible(True)
         if self._tray is not None and not self._tray_update_hint_shown:
             self._tray.showMessage(
-                "Nodexy",
+                "REDIS",
                 f"Доступно обновление {release.tag}. Подробности — в меню.",
                 QSystemTrayIcon.Information,
                 4000,
@@ -1807,7 +1848,7 @@ class MainWindow(QMainWindow):
             return
         if fraction is None:
             self._tray.setIcon(theme.load_app_icon())
-            self._tray.setToolTip("Nodexy — учёт времени идёт")
+            self._tray.setToolTip("REDIS — учёт времени идёт")
             return
         step = max(0, min(10, int(fraction * 10)))
         icon = self._tray_progress_cache.get(step)
@@ -1815,7 +1856,7 @@ class MainWindow(QMainWindow):
             icon = self._progress_icon(step / 10)
             self._tray_progress_cache[step] = icon
         self._tray.setIcon(icon)
-        self._tray.setToolTip(f"Nodexy — скачивание обновления {int(fraction * 100)}%")
+        self._tray.setToolTip(f"REDIS — скачивание обновления {int(fraction * 100)}%")
 
     def _progress_icon(self, fraction: float) -> QIcon:
         base = theme.load_app_icon().pixmap(QSize(64, 64))
@@ -2199,7 +2240,7 @@ class MainWindow(QMainWindow):
             return
         self._tray = QSystemTrayIcon(self)
         self._tray.setIcon(theme.load_app_icon())
-        self._tray.setToolTip("Nodexy — учёт времени идёт")
+        self._tray.setToolTip("REDIS — учёт времени идёт")
         self._tray_menu = QMenu()
         show_action = self._tray_menu.addAction("Показать окно")
         show_action.triggered.connect(self._show_window)
@@ -2227,7 +2268,7 @@ class MainWindow(QMainWindow):
             self.hide()
             if not self._tray_hint_shown:
                 self._tray.showMessage(
-                    "Nodexy",
+                    "REDIS",
                     "Программа свёрнута в трей и продолжает учитывать время.",
                     QSystemTrayIcon.Information,
                     3000,

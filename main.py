@@ -129,13 +129,13 @@ def _make_splash():
         pm.fill(QColor(p.bg))
         painter = QPainter(pm)
         painter.setRenderHint(QPainter.Antialiasing)
-        icon = theme.make_clock_icon().pixmap(QSize(72, 72))
+        icon = theme.load_app_icon().pixmap(QSize(72, 72))
         painter.drawPixmap((w - 72) // 2, 26, icon)
         font = QFont("Segoe UI", 14, QFont.Bold)
         painter.setFont(font)
         painter.setPen(QColor(p.text))
         painter.drawText(
-            QRectF(0, 106, w, 26), Qt.AlignCenter, "Nodexy"
+            QRectF(0, 106, w, 26), Qt.AlignCenter, "REDIS"
         )
         small = QFont("Segoe UI", 9)
         painter.setFont(small)
@@ -153,7 +153,7 @@ def main() -> int:
     if sys.platform == "win32":
         try:
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                "DippyDingo.Nodexy"
+                "DippyDingo.REDIS"
             )
         except Exception:
             pass
@@ -162,8 +162,8 @@ def main() -> int:
     # Раньше при занятом mutex создавался отдельный QApplication без темы,
     # из-за чего появлялось белое окно с заголовком Nodexy.
     qt = QApplication(sys.argv)
-    qt.setApplicationName("Nodexy")
-    qt.setOrganizationName("Nodexy")
+    qt.setApplicationName("REDIS")
+    qt.setOrganizationName("REDIS")
     qt.setStyle("Fusion")
     qt.setPalette(theme.build_palette(theme.pal()))
     qt.setStyleSheet(theme.QSS)
@@ -193,7 +193,7 @@ def main() -> int:
         from app import win32_utils
 
         if not win32_utils.acquire_instance_mutex():
-            QMessageBox.information(None, "Nodexy", "Приложение уже запущено.")
+            QMessageBox.information(None, "REDIS", "Приложение уже запущено.")
             return 0
 
     # Бут-контроль и применение ожидающего обновления — до появления окна.
@@ -204,7 +204,7 @@ def main() -> int:
 
     lock = QLockFile(str(config.app_dir() / "nodexy.lock"))
     if not lock.tryLock(100):
-        QMessageBox.information(None, "Nodexy", "Приложение уже запущено.")
+        QMessageBox.information(None, "REDIS", "Приложение уже запущено.")
         return 0
 
     # Отдельный QSplashScreen намеренно не используем: это самостоятельный
