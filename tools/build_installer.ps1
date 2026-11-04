@@ -1,4 +1,4 @@
-﻿# Сборка артефактов релиза Nodexy: exe → установщик Inno → portable-zip → SHA256.
+﻿# Сборка артефактов релиза REDIS: exe → установщик Inno → portable-zip → SHA256.
 # Запуск: powershell -NoProfile -ExecutionPolicy Bypass -File tools\build_installer.ps1
 # Параметр -SkipExe позволяет собрать только установщик, если exe уже готов.
 param(
@@ -38,18 +38,18 @@ if (-not $SkipExe) {
     # приложение, поэтому собирается своей командой (без _internal: тянет
     # только psutil из стандартного окружения).
     & $Py -m PyInstaller --noconfirm --onefile --noconsole `
-        --name NodexyUpdater `
+        --name REDISUpdater `
         --icon assets\app_icon.ico `
         --hidden-import psutil `
         nodexy_updater_helper.py
-    if ($LASTEXITCODE -ne 0) { Fail "PyInstaller: сборка NodexyUpdater.exe не удалась" }
+    if ($LASTEXITCODE -ne 0) { Fail "PyInstaller: сборка REDISUpdater.exe не удалась" }
 
     # --onedir: без распаковки в %TEMP% при каждом старте. Раньше (--onefile)
     # 54 МБ exe распаковывался в temp и на секунду показывал белое окно-хост;
     # кроме того в папке установки был только один exe. Теперь рядом лежит
     # папка _internal с библиотеками, а запуск происходит мгновенно.
     & $Py -m PyInstaller --noconfirm --onedir --noconsole `
-        --name Nodexy `
+        --name REDIS `
         --version-file installer\version_info.txt `
         --icon assets\app_icon.ico `
         --add-data "assets;assets" `
@@ -62,14 +62,14 @@ if (-not $SkipExe) {
         main.py
     if ($LASTEXITCODE -ne 0) { Fail "PyInstaller: сборка exe не удалась" }
 
-    # Helper собирается раньше, но --onedir пересоздаёт dist\Nodexy целиком,
-    # поэтому копируем его рядом с Nodexy.exe только теперь.
-    Copy-Item -LiteralPath "dist\NodexyUpdater.exe" -Destination "dist\Nodexy\NodexyUpdater.exe" -Force
+    # Helper собирается раньше, но --onedir пересоздаёт dist\REDIS целиком,
+    # поэтому копируем его рядом с REDIS.exe только теперь.
+    Copy-Item -LiteralPath "dist\REDISUpdater.exe" -Destination "dist\REDIS\REDISUpdater.exe" -Force
 }
-# --onedir: exe и _internal лежат в dist\Nodexy\. Старый onefile-файл
-# dist\Nodexy.exe намеренно не используется (может остаться от прошлых сборок).
-$exeFile = Join-Path $root "dist\Nodexy\Nodexy.exe"
-if (-not (Test-Path $exeFile)) { Fail "dist\Nodexy\Nodexy.exe не найден (нужна сборка exe)" }
+# --onedir: exe и _internal лежат в dist\REDIS\. Старый onefile-файл
+# dist\REDIS.exe намеренно не используется (может остаться от прошлых сборок).
+$exeFile = Join-Path $root "dist\REDIS\REDIS.exe"
+if (-not (Test-Path $exeFile)) { Fail "dist\REDIS\REDIS.exe не найден (нужна сборка exe)" }
 
 # 3) Поиск ISCC: PATH → Program Files (x86) → Program Files.
 $iscc = $null
@@ -90,20 +90,20 @@ if (-not $iscc) {
 & $iscc "/DMyAppVersion=$version" "installer\nodexy.iss"
 if ($LASTEXITCODE -ne 0) { Fail "ISCC: компиляция установщика не удалась" }
 
-# 5) Портативный архив: вся папка dist\Nodexy (exe + _internal), чтобы
+# 5) Портативный архив: вся папка dist\REDIS (exe + _internal), чтобы
 #    портативная версия запускалась без распаковки в temp.
 $distInstaller = Join-Path $root "dist-installer"
-$zipPath = Join-Path $distInstaller "Nodexy-portable-$version.zip"
+$zipPath = Join-Path $distInstaller "REDIS-portable-$version.zip"
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-Compress-Archive -Path "dist\Nodexy\*" -DestinationPath $zipPath -Force
+Compress-Archive -Path "dist\REDIS\*" -DestinationPath $zipPath -Force
 
 # 6) Контрольные суммы всех артефактов.
-$setup = Join-Path $distInstaller "Nodexy-Setup-$version.exe"
+$setup = Join-Path $distInstaller "REDIS-Setup-$version.exe"
 if (-not (Test-Path $setup)) { Fail "Установщик не создан: $setup" }
 $shaSetup = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLower()
-# --onedir: exe лежит в dist\Nodexy\Nodexy.exe (не dist\Nodexy.exe — тот
+# --onedir: exe лежит в dist\REDIS\REDIS.exe (не dist\REDIS.exe — тот
 # остаётся от старых onefile-сборок и вводит в заблуждение).
-$exeFile = Join-Path (Join-Path $root "dist") "Nodexy\Nodexy.exe"
+$exeFile = Join-Path (Join-Path $root "dist") "REDIS\REDIS.exe"
 $shaExe = (Get-FileHash $exeFile -Algorithm SHA256).Hash.ToLower()
 $shaZip = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLower()
 Set-Content -Path "$setup.sha256" -Value $shaSetup -Encoding ascii
@@ -117,12 +117,12 @@ Write-Host $exeFile
 Write-Host $zipPath
 Write-Host ""
 Write-Host "=== Контрольные суммы ==="
-Write-Host "Nodexy.exe:                 $shaExe"
-Write-Host "Nodexy-Setup-$version.exe:  $shaSetup"
-Write-Host "Nodexy-portable-$version.zip: $shaZip"
+Write-Host "REDIS.exe:                 $shaExe"
+Write-Host "REDIS-Setup-$version.exe:  $shaSetup"
+Write-Host "REDIS-portable-$version.zip: $shaZip"
 Write-Host ""
 # ВАЖНО (стратегия B): апдейтер скачивает УСТАНОВЩИК и сверяет сумму из тела
-# релиза, поэтому в тело релиза идёт сумма Nodexy-Setup-<версия>.exe.
+# релиза, поэтому в тело релиза идёт сумма REDIS-Setup-<версия>.exe.
 Write-Host "В ТЕЛО РЕЛИЗА (одна строка):"
 Write-Host "sha256: $shaSetup"
 Write-Host "В ФАЙЛ $setup.sha256 (дубль для ручной проверки):"

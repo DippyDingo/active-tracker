@@ -1,4 +1,4 @@
-"""Hidden Windows updater helper for Nodexy.
+"""Hidden Windows updater helper for REDIS.
 
 This process is intentionally separate from the main application. It waits for
 one exact PID, runs the downloaded Inno Setup installer without a shell, then
@@ -60,7 +60,7 @@ def run(args: argparse.Namespace) -> int:
     # Helper нельзя обновлять, пока он запущен из каталога приложения. Перед
     # основной работой перенесём выполнение во временную копию.
     if getattr(sys, "frozen", False) and os.environ.get("NODEXY_HELPER_TEMP") != "1":
-        temp_copy = Path(tempfile.gettempdir()) / f"NodexyUpdater-{os.getpid()}.exe"
+        temp_copy = Path(tempfile.gettempdir()) / f"REDISUpdater-{os.getpid()}.exe"
         try:
             shutil.copy2(Path(sys.executable), temp_copy)
             child_env = os.environ.copy()
@@ -136,14 +136,24 @@ def run(args: argparse.Namespace) -> int:
         if completed.returncode != 0:
             return int(completed.returncode) or 1
 
-        # The installer may still be finishing file operations when it returns.
-        # Start only after the target exists again.
+        # Переходный период: до переименования в REDIS обновление могло
+        # выполняться для Nodexy.exe. После установки имя могло измениться,
+        # поэтому ждём любой из двух вариантов и запускаем тот, что есть.
+        candidates = [restart, restart.with_name("REDIS.exe")]
         deadline = time.monotonic() + 30
-        while not restart.is_file() and time.monotonic() < deadline:
+        while time.monotonic() < deadline and not any(p.is_file() for p in candidates):
             time.sleep(0.25)
-        if not restart.is_file():
-            log(log_path, f"updated executable missing: {restart}")
+        restart = next((p for p in candidates if p.is_file()), None)
+        if restart is None:
+            log(log_path, f"updated executable missing: {candidates[0]}")
             return 6
+        # Маркер установки снимается ДО запуска приложения: иначе новая копия
+        # видит свежий lock и живой helper, считает, что установка идёт, и
+        # сразу выходит — обновление оставалось бы без запущенного приложения.
+        try:
+            lock_path.unlink(missing_ok=True)
+        except OSError:
+            pass
         subprocess.Popen(
             [str(restart)],
             cwd=str(restart.parent),

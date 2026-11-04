@@ -1,4 +1,5 @@
 import os
+import sys
 from collections import defaultdict
 from dataclasses import replace
 from datetime import date, datetime, timedelta
@@ -275,6 +276,105 @@ class AppMenuPopup(QFrame):
         group.start()
 
 
+class TitleBarButton(QPushButton):
+    """Кнопка управления окном (свернуть/развернуть/закрыть) в тайтлбаре."""
+
+    def __init__(self, kind: str, parent=None):
+        super().__init__(parent)
+        self._kind = kind
+        glyph = {"min": "–", "max": "❐", "close": "✕"}.get(kind, "")
+        self.setText(glyph)
+        self.setObjectName("winBtn" if kind != "close" else "winBtnClose")
+        self.setFixedSize(46, 34)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setFocusPolicy(Qt.NoFocus)
+        self.setToolTip(
+            {"min": "Свернуть", "max": "Развернуть", "close": "Закрыть"}.get(kind, "")
+        )
+
+
+class RedisTitleBar(QFrame):
+    """Кастомная верхняя панель окна: бренд + кнопки управления окном."""
+
+    HEIGHT = 44
+
+    def __init__(self, window: "MainWindow", parent=None):
+        super().__init__(parent)
+        self._window = window
+        self.setObjectName("titleBar")
+        self.setFixedHeight(self.HEIGHT)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(14, 0, 0, 0)
+        layout.setSpacing(10)
+
+        icon_label = QLabel()
+        icon_label.setObjectName("titleBarIcon")
+        icon_label.setPixmap(
+            theme.load_app_icon().pixmap(QSize(20, 20))
+        )
+        icon_label.setFixedSize(20, 20)
+        layout.addWidget(icon_label)
+
+        brand = QLabel("REDIS")
+        brand.setObjectName("titleBarBrand")
+        layout.addWidget(brand)
+
+        self._version_btn = QPushButton(f"ⓘ  v{APP_VERSION}")
+        self._version_btn.setObjectName("versionBadge")
+        self._version_btn.setCursor(Qt.PointingHandCursor)
+        self._version_btn.setToolTip("Версия REDIS")
+        self._version_btn.clicked.connect(window._open_whats_new)
+        layout.addWidget(self._version_btn)
+        layout.addStretch(1)
+
+        self._max_btn = TitleBarButton("max")
+        self._max_btn.clicked.connect(self._toggle_maximize)
+        min_btn = TitleBarButton("min")
+        min_btn.clicked.connect(self._window.showMinimized)
+        close_btn = TitleBarButton("close")
+        close_btn.clicked.connect(self._window.close)
+        layout.addWidget(min_btn)
+        layout.addWidget(self._max_btn)
+        layout.addWidget(close_btn)
+        self._buttons = (min_btn, self._max_btn, close_btn)
+
+    def sync_maximize(self) -> None:
+        self._max_btn.setToolTip("Свернуть в окно" if self.window().isMaximized() else "Развернуть")
+
+    def set_whatsnew_visible(self, visible: bool) -> None:
+        """Кнопка «Что нового» в тайтлбаре: показывается до первого просмотра."""
+        self._version_btn.setProperty("attention", bool(visible))
+        self._version_btn.setText(
+            f"ⓘ  v{APP_VERSION} — что нового?" if visible else f"ⓘ  v{APP_VERSION}"
+        )
+        self._version_btn.setToolTip(
+            "Что нового в обновлении" if visible else f"Версия REDIS {APP_VERSION}"
+        )
+        self._version_btn.style().unpolish(self._version_btn)
+        self._version_btn.style().polish(self._version_btn)
+
+    def _toggle_maximize(self) -> None:
+        window = self.window()
+        if window.isMaximized():
+            window.showNormal()
+        else:
+            window.showMaximized()
+        self.sync_maximize()
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton:
+            handle = self.window().windowHandle()
+            if handle is not None:
+                handle.startSystemMove()
+        super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton:
+            self._toggle_maximize()
+        super().mouseDoubleClickEvent(event)
+
+
 class MainWindow(QMainWindow):
     def __init__(self, db: Database, tracker: Tracker, boot: dict | None = None):
         super().__init__()
@@ -336,18 +436,28 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("REDIS")
         self.setWindowIcon(theme.load_app_icon())
+        self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
         self.resize(1210, 780)
         self.setMinimumSize(1020, 680)
         # Нативный фон окна под цвет темы: без этого при первом показе и при
         # перестроении карточек мелькает белый HWND/QAbstractScrollArea.
         self._apply_window_palette()
+        self._apply_window_chrome()
 
         root = QWidget()
         root.setObjectName("mainRoot")
         self.setCentralWidget(root)
-        root_layout = QHBoxLayout(root)
+        outer = QVBoxLayout(root)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+
+        self._title_bar = RedisTitleBar(self)
+        outer.addWidget(self._title_bar)
+
+        root_layout = QHBoxLayout()
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
+        outer.addLayout(root_layout, 1)
 
         self._build_sidebar(root_layout)
         self._build_content(root_layout)
@@ -364,8 +474,9 @@ class MainWindow(QMainWindow):
 
         self._popup.update_requested.connect(self._open_update_panel)
         self._popup.whatsnew_requested.connect(self._open_whats_new)
-        if updater.get_last_update():
+        if updater.whatsnew_unseen():
             self._popup.set_whatsnew(True)
+            self._title_bar.set_whatsnew_visible(True)
         if self._boot.get("failed_url"):
             self._update_failed_url = self._boot["failed_url"]
         QApplication.instance().aboutToQuit.connect(self._apply_pending_on_exit)
@@ -877,8 +988,61 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
+        if hasattr(self, "_title_bar"):
+            self._title_bar.sync_maximize()
         if hasattr(self, "_grid") and self._current_cols() != self._cols:
             self._relayout_grid()
+
+    _RESIZE_MARGIN = 6
+
+    def _resize_edges(self, pos) -> Qt.Edges:
+        """Стороны окна под курсором для смены размера (frameless)."""
+        if self.isMaximized():
+            return Qt.Edges()
+        m = self._RESIZE_MARGIN
+        edges = Qt.Edges()
+        if pos.x() <= m:
+            edges |= Qt.Edge.LeftEdge
+        if pos.x() >= self.width() - m:
+            edges |= Qt.Edge.RightEdge
+        if pos.y() <= m:
+            edges |= Qt.Edge.TopEdge
+        if pos.y() >= self.height() - m:
+            edges |= Qt.Edge.BottomEdge
+        return edges
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton:
+            edges = self._resize_edges(event.position().toPoint())
+            if edges:
+                handle = self.windowHandle()
+                if handle is not None and handle.startSystemResize(edges):
+                    return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:
+        edges = self._resize_edges(event.position().toPoint())
+        if edges:
+            cursors = {
+                (True, False, False, False): Qt.SizeHorCursor,
+                (False, True, False, False): Qt.SizeHorCursor,
+                (False, False, True, False): Qt.SizeVerCursor,
+                (False, False, False, True): Qt.SizeVerCursor,
+                (True, False, True, False): Qt.SizeFDiagCursor,
+                (False, True, False, True): Qt.SizeFDiagCursor,
+                (False, True, True, False): Qt.SizeBDiagCursor,
+                (True, False, False, True): Qt.SizeBDiagCursor,
+            }
+            key = (
+                bool(edges & Qt.Edge.LeftEdge),
+                bool(edges & Qt.Edge.RightEdge),
+                bool(edges & Qt.Edge.TopEdge),
+                bool(edges & Qt.Edge.BottomEdge),
+            )
+            self.setCursor(cursors.get(key, Qt.ArrowCursor))
+        else:
+            self.unsetCursor()
+        super().mouseMoveEvent(event)
 
     def _apply_filter(self, text: str) -> None:
         self._filter = (text or "").strip().lower()
@@ -1712,6 +1876,14 @@ class MainWindow(QMainWindow):
                 widget.setPalette(palette)
             scroll.update()
             viewport.update()
+        self._apply_window_chrome()
+
+    def _apply_window_chrome(self) -> None:
+        """Системный заголовок окна — в цвет темы (DWM)."""
+        if sys.platform != "win32":
+            return
+        p = theme.pal()
+        win32_utils.set_window_chrome(int(self.winId()), p.bg, p.text, p.border)
 
     # ------------------------------------------------------------- updates
     def _autoupdate_on(self) -> bool:
@@ -1802,7 +1974,7 @@ class MainWindow(QMainWindow):
         pending = updater.get_pending()
         if pending and pending.get("version") == release.tag:
             return
-        # Имя файла — как у ассета в релизе (Nodexy-Setup-<версия>.exe).
+        # Имя файла — как у ассета в релизе (REDIS-Setup-<версия>.exe).
         dest = str(updater.updates_dir() / (release.asset_name or f"Nodexy-{release.tag}.exe"))
         task = updater.DownloadTask(release.asset_url, dest, self)
         task.progress.connect(self._on_silent_progress)
@@ -1959,7 +2131,17 @@ class MainWindow(QMainWindow):
         if not info:
             return
         panel = WhatsNewPanel(str(info.get("version", "")), str(info.get("notes", "")), self)
-        self._show_modal(panel)
+        self._show_modal(panel, on_closed=self._whatsnew_seen)
+
+    def _whatsnew_seen(self) -> None:
+        """После просмотра «Что нового» убираем подсказку и из тайтлбара, и из меню."""
+        self._popup.set_whatsnew(False)
+        self._title_bar.set_whatsnew_visible(False)
+        # Помечаем, что пользователь уже видел notes текущего обновления,
+        # чтобы при следующем запуске не показывать снова.
+        info = updater.get_last_update()
+        if info:
+            updater.mark_whatsnew_seen(str(info.get("version") or ""))
 
     def _apply_pending_on_exit(self) -> None:
         if self._updater_launched:
@@ -2008,6 +2190,8 @@ class MainWindow(QMainWindow):
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
+        # Окно уже имеет HWND — самое время применить цвет системного заголовка.
+        self._apply_window_chrome()
         if self._pending_plate is not None:
             version, _notes = self._pending_plate
             self._pending_plate = None

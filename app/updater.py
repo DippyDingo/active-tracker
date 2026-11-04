@@ -341,6 +341,25 @@ def get_last_update() -> dict | None:
     return data if isinstance(data, dict) and data.get("version") else None
 
 
+def mark_whatsnew_seen(version: str) -> None:
+    """Отмечает, что заметки версии уже показаны («Что нового» просмотрено)."""
+    cfg = config.read_config()
+    data = cfg.get("last_update")
+    if not isinstance(data, dict) or data.get("version") != version:
+        return
+    if data.get("seen"):
+        return
+    data["seen"] = True
+    cfg["last_update"] = data
+    config.write_config(cfg)
+
+
+def whatsnew_unseen() -> bool:
+    """Есть ли непросмотренные заметки последнего обновления."""
+    info = get_last_update()
+    return bool(info) and not info.get("seen")
+
+
 def set_last_update(version: str, notes: str, file: str | None = None) -> None:
     cfg = config.read_config()
     data = {"version": version, "notes": notes}
@@ -371,7 +390,7 @@ def store_prev_installer(src: Path | str, version: str) -> Path | None:
         src = Path(src)
         if not src.is_file():
             return None
-        dest = prev_dir() / f"Nodexy-Setup-{version}.exe"
+        dest = prev_dir() / f"REDIS-Setup-{version}.exe"
         for old in prev_dir().glob("*.exe"):
             _remove_quiet(old)
         shutil.move(str(src), str(dest))
@@ -424,12 +443,16 @@ def current_exe() -> Path | None:
 
 
 def helper_exe() -> Path | None:
-    """Путь к отдельному скрытому обновлятору рядом с Nodexy.exe."""
+    """Путь к отдельному скрытому обновлятору рядом с REDIS.exe."""
     exe = current_exe()
     if exe is None:
         return None
-    candidate = exe.parent / "NodexyUpdater.exe"
-    return candidate if candidate.is_file() else None
+    candidate = exe.parent / "REDISUpdater.exe"
+    if candidate.is_file():
+        return candidate
+    # Совместимость с установками до переименования файлов.
+    legacy = exe.parent / "NodexyUpdater.exe"
+    return legacy if legacy.is_file() else None
 
 
 def can_self_update() -> tuple[bool, str]:
@@ -467,7 +490,7 @@ def backup_path() -> Path | None:
 
 
 # ---------------------------------------------------------------- helper
-# Установку выполняет отдельный процесс NodexyUpdater.exe: он ждёт выхода
+# Установку выполняет отдельный процесс REDISUpdater.exe: он ждёт выхода
 # приложения по PID, запускает Inno Setup тихо и сам стартует новую версию.
 # VBS-помощник удалён: кавычки в путях и аргументах ломали установку.
 
@@ -504,12 +527,13 @@ def _helper_alive() -> bool:
         import psutil
     except Exception:
         return False
-    markers = ("nodexy_update", "nodexy_rollback", "nodexyupdater")
+    markers = ("nodexy_update", "nodexy_rollback", "nodexyupdater", "redisupdater")
+    helper_names = ("nodexyupdater.exe", "redisupdater.exe")
     for proc in psutil.process_iter(["name", "cmdline"]):
         try:
             name = (proc.info["name"] or "").lower()
             cmdline = " ".join(proc.info["cmdline"] or []).lower()
-            if name == "nodexyupdater.exe" or any(m in cmdline for m in markers):
+            if name in helper_names or any(m in cmdline for m in markers):
                 return True
         except Exception:
             continue
@@ -531,6 +555,25 @@ def install_in_progress() -> bool:
         _remove_quiet(lock)
         return False
     return True
+
+
+def wait_for_install(timeout: float = 180.0, interval: float = 0.5) -> bool:
+    """Ждёт окончания чужой установки. True — установка завершилась.
+
+    Нужно при переходе с версий 1.4.1 и ниже: их помощник запускает установщик,
+    а тот поднимает уже новое приложение (REDIS.exe) ещё до выхода помощника.
+    Если сразу выйти по install_in_progress(), обновление осталось бы без
+    запущенной программы. Мьютекс при ожидании намеренно НЕ захватывается,
+    иначе установщик не смог бы заменить файлы.
+    """
+    import time
+
+    deadline = time.monotonic() + max(0.0, timeout)
+    while time.monotonic() < deadline:
+        if not install_in_progress():
+            return True
+        time.sleep(interval)
+    return not install_in_progress()
 
 
 def update_log_path() -> Path:

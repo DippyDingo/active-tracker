@@ -1,4 +1,4 @@
-"""Smoke-test подсистемы обновлений: без сети, чистая логика (не часть приложения)."""
+﻿"""Smoke-test подсистемы обновлений: без сети, чистая логика (не часть приложения)."""
 import os
 import sys
 import tempfile
@@ -61,12 +61,12 @@ release_json = {
     "prerelease": False,
     "assets": [
         {"name": "checksums.txt", "browser_download_url": "u0", "size": 10},
-        {"name": "Nodexy-Setup-1.2.0.exe", "browser_download_url": "u1", "size": 1234},
+        {"name": "REDIS-Setup-1.2.0.exe", "browser_download_url": "u1", "size": 1234},
     ],
 }
 info = updater.parse_release(release_json)
 check(info is not None and info.tag == "v1.2.0", "разбор релиза")
-check(info.asset_name == "Nodexy-Setup-1.2.0.exe" and info.asset_url == "u1",
+check(info.asset_name == "REDIS-Setup-1.2.0.exe" and info.asset_url == "u1",
       "выбран установщик")
 check(info.asset_size == 1234, "размер ассета")
 check(info.sha256 == sha, "sha256 из body")
@@ -81,7 +81,7 @@ check(no_exe is not None and no_exe.asset_url is None, "релиз без асс
 # апдейтер не должен скачивать его по старой памяти.
 plain_only = updater.parse_release({
     **release_json,
-    "assets": [{"name": "Nodexy.exe", "browser_download_url": "u-plain", "size": 1}],
+    "assets": [{"name": "REDIS.exe", "browser_download_url": "u-plain", "size": 1}],
 })
 check(plain_only is not None and plain_only.asset_url is None,
       "голый exe без установщика не выбирается")
@@ -91,15 +91,15 @@ check(plain_only is not None and plain_only.asset_url is None,
 two_assets = {
     **release_json,
     "assets": [
-        {"name": "Nodexy.exe", "browser_download_url": "u-plain", "size": 1234},
-        {"name": "Nodexy-Setup-1.2.0.exe", "browser_download_url": "u-setup", "size": 999},
+        {"name": "REDIS.exe", "browser_download_url": "u-plain", "size": 1234},
+        {"name": "REDIS-Setup-1.2.0.exe", "browser_download_url": "u-setup", "size": 999},
     ],
 }
 info2 = updater.parse_release(two_assets)
-check(info2.asset_name == "Nodexy-Setup-1.2.0.exe", "при двух ассетах выбран установщик")
+check(info2.asset_name == "REDIS-Setup-1.2.0.exe", "при двух ассетах выбран установщик")
 two_assets_rev = {**two_assets, "assets": list(reversed(two_assets["assets"]))}
 info3 = updater.parse_release(two_assets_rev)
-check(info3.asset_name == "Nodexy-Setup-1.2.0.exe", "порядок ассетов не влияет на выбор")
+check(info3.asset_name == "REDIS-Setup-1.2.0.exe", "порядок ассетов не влияет на выбор")
 
 # --- 5. Выбор обновления и суммарные заметки ------------------------------------
 def mk(tag: str, body: str, exe: bool = True, **kw):
@@ -112,7 +112,7 @@ def mk(tag: str, body: str, exe: bool = True, **kw):
         "draft": False,
         "prerelease": False,
         "assets": [
-            {"name": f"Nodexy-Setup-{tag}.exe", "browser_download_url": f"u-{tag}", "size": 100}
+            {"name": f"REDIS-Setup-{tag}.exe", "browser_download_url": f"u-{tag}", "size": 100}
         ] if exe else [],
     }
     d.update(kw)
@@ -136,7 +136,7 @@ check(latest is not None and latest.tag == "v1.5.0", "черновик не сч
 
 # Релиз только с голым exe (без установщика) — обновления нет вообще.
 plain_release = {**mk("v2.0.0", "z"), "assets": [
-    {"name": "Nodexy.exe", "browser_download_url": "u", "size": 1},
+    {"name": "REDIS.exe", "browser_download_url": "u", "size": 1},
 ]}
 latest, _ = updater.select_update([plain_release], current="1.0.0")
 check(latest is None, "релиз без установщика не предлагается")
@@ -343,7 +343,7 @@ from app.ui.update_dialog import UpdatePanel, WhatsNewPanel  # noqa: E402
 
 rel = updater.ReleaseInfo(
     tag="v1.2.0", name="1.2.0", body="заметки", published_at="2026-10-12",
-    html_url="https://example.com", asset_name="Nodexy.exe",
+    html_url="https://example.com", asset_name="REDIS.exe",
     asset_url="https://example.com/f.exe", asset_size=1000, sha256=None,
 )
 panel = UpdatePanel(rel, "заметки", install_possible=False, reason="тест")

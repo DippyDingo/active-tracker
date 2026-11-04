@@ -48,7 +48,7 @@ jobs:
         shell: pwsh
         run: |
           $ver = (& python tools\make_version_info.py).Trim()
-          $setup = Get-ChildItem "dist-installer\Nodexy-Setup-$ver.exe"
+          $setup = Get-ChildItem "dist-installer\REDIS-Setup-$ver.exe"
           $sha = (Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLower()
           "sha256: $sha" | Set-Content release_body.txt -Encoding utf8
 
@@ -57,5 +57,5 @@ jobs:
         with:
           body_path: release_body.txt
           files: |
-            dist-installer/Nodexy-Setup-*.exe
-            dist-installer/Nodexy-portable-*.zip
+            dist-installer/REDIS-Setup-*.exe
+            dist-installer/REDIS-portable-*.zip

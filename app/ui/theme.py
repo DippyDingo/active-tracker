@@ -123,6 +123,7 @@ def _derive(p: Palette) -> dict[str, str]:
         "text": p.text, "text2": p.text2, "text3": p.text3,
         "accent": p.accent, "cyan": p.cyan, "danger": p.danger, "popup": p.popup,
         "accent_rgb": _rgb_str(p.accent), "danger_rgb": _rgb_str(p.danger),
+        "cyan_rgb": _rgb_str(p.cyan),
         "sidebar_edge": _mix_hex(p.border, p.bg, 0.55),
         "card2": _mix_hex(p.card, p.bg, 0.35),
         "card_border": _mix_hex(p.border, p.card, 0.45),
@@ -728,6 +729,64 @@ QStatusBar QLabel {
     color: $text3;
     background: transparent;
     font-size: 12px;
+}
+
+/* Кастомная верхняя панель окна: единый тёмный фон без системной рамки. */
+QFrame#titleBar {
+    background: $sidebar;
+    border: none;
+    border-bottom: 1px solid $sidebar_edge;
+}
+QLabel#titleBarBrand {
+    color: $text;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+QPushButton#versionBadge {
+    background: rgba($accent_rgb, 14%);
+    color: $text2;
+    border: 1px solid rgba($accent_rgb, 36%);
+    border-radius: 10px;
+    padding: 4px 10px;
+    min-width: 74px;
+    font-size: 12px;
+    font-weight: 600;
+}
+QPushButton#versionBadge:hover {
+    background: rgba($accent_rgb, 25%);
+    border-color: $accent;
+    color: $text;
+}
+QPushButton#versionBadge[attention="true"] {
+    background: rgba($cyan_rgb, 22%);
+    border: 1px solid $cyan;
+    color: $text;
+    font-weight: 700;
+}
+QPushButton#versionBadge[attention="true"]:hover {
+    background: rgba($cyan_rgb, 34%);
+    border-color: $hover_border;
+}
+QPushButton#winBtn, QPushButton#winBtnClose {
+    background: transparent;
+    color: $text2;
+    border: none;
+    border-radius: 0;
+    font-size: 13px;
+    padding: 0;
+}
+QPushButton#winBtn:hover {
+    background: $soft3;
+    color: $text;
+}
+QPushButton#winBtnClose:hover {
+    background: #E81123;
+    color: #ffffff;
+}
+QPushButton#winBtn:pressed, QPushButton#winBtnClose:pressed {
+    background: $soft5;
 }
 
 QToolTip {

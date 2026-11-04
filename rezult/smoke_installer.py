@@ -1,4 +1,4 @@
-"""Smoke-test установочной инфраструктуры (не часть приложения)."""
+﻿"""Smoke-test установочной инфраструктуры (не часть приложения)."""
 import importlib.util
 import os
 import sys
@@ -24,14 +24,14 @@ def check(cond: bool, msg: str) -> None:
 
 # --- 1. Детектор ассета-установщика -------------------------------------------
 for name in (
-    "Nodexy-Setup-1.2.3.exe",
+    "REDIS-Setup-1.2.3.exe",
     "nodexy_setup_2.0.exe",
-    "Setup-Nodexy.exe",
+    "Setup-REDIS.exe",
     "Nodexy-Installer.exe",
     "my_installer_x.exe",
 ):
     check(updater.is_installer_asset(name), f"должен быть установщиком: {name}")
-for name in ("Nodexy.exe", "nodexy-portable.exe", "app.exe"):
+for name in ("REDIS.exe", "nodexy-portable.exe", "app.exe"):
     check(not updater.is_installer_asset(name), f"не должен быть установщиком: {name}")
 
 # --- 2. Выбор ассета: голый exe и setup в обоих порядках ----------------------
@@ -39,26 +39,26 @@ def mk_asset(name: str) -> dict:
     return {"name": name, "browser_download_url": f"u/{name}", "size": 100}
 
 both_orders = (
-    [mk_asset("Nodexy.exe"), mk_asset("Nodexy-Setup-1.0.0.exe")],
-    [mk_asset("Nodexy-Setup-1.0.0.exe"), mk_asset("Nodexy.exe")],
+    [mk_asset("REDIS.exe"), mk_asset("REDIS-Setup-1.0.0.exe")],
+    [mk_asset("REDIS-Setup-1.0.0.exe"), mk_asset("REDIS.exe")],
 )
 for assets in both_orders:
     name, url, size = updater._pick_asset(assets, prefer_installer=False)
-    check(name == "Nodexy.exe", f"prefer_installer=False должен взять голый exe, а не {name}")
+    check(name == "REDIS.exe", f"prefer_installer=False должен взять голый exe, а не {name}")
     name, url, size = updater._pick_asset(assets, prefer_installer=True)
-    check(name == "Nodexy-Setup-1.0.0.exe", f"prefer_installer=True должен взять установщик, а не {name}")
+    check(name == "REDIS-Setup-1.0.0.exe", f"prefer_installer=True должен взять установщик, а не {name}")
 
 # Только установщик — голый exe выбирает его как запасной вариант
-name, _u, _s = updater._pick_asset([mk_asset("Nodexy-Setup-2.0.0.exe")], prefer_installer=False)
-check(name == "Nodexy-Setup-2.0.0.exe", "нет голого exe — берём установщик")
+name, _u, _s = updater._pick_asset([mk_asset("REDIS-Setup-2.0.0.exe")], prefer_installer=False)
+check(name == "REDIS-Setup-2.0.0.exe", "нет голого exe — берём установщик")
 # Только голый при предпочтении установщика: стратегия B строга — без
 # установщика релиз непригоден (иначе апдейтер скачал бы голый exe).
-name, _u, _s = updater._pick_asset([mk_asset("Nodexy.exe")], prefer_installer=True)
+name, _u, _s = updater._pick_asset([mk_asset("REDIS.exe")], prefer_installer=True)
 check(name is None, "нет установщика — голый exe НЕ берём (стратегия B)")
 check(updater._pick_asset([], prefer_installer=False) == (None, None, None), "пустой список ассетов")
 
 # .zip не считается ассетом для установки
-name, _u, _s = updater._pick_asset([mk_asset("Nodexy-portable-1.0.0.zip")], prefer_installer=True)
+name, _u, _s = updater._pick_asset([mk_asset("REDIS-portable-1.0.0.zip")], prefer_installer=True)
 check(name is None, "zip не должен выбираться")
 
 # --- 3. Разбиение версии на 4 компонента ----------------------------------------

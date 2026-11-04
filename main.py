@@ -184,7 +184,11 @@ def main() -> int:
         # Старый процесс уже передал установку отдельному helper. В этом
         # случае не запускаем вторую копию: helper сам стартует новый exe.
         if updater.install_in_progress():
-            return 0
+            # Старый helper (до REDIS.exe) мог запустить новую копию ещё до
+            # собственного выхода. Ждём снятия lock, затем продолжаем запуск.
+            updater.wait_for_install()
+            if updater.install_in_progress():
+                return 0
 
     if sys.platform == "win32":
         # Именованный мьютекс нужен установщику Inno (AppMutex): по нему он

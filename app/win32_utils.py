@@ -40,6 +40,36 @@ version_dll.VerQueryValueW.argtypes = [
 ]
 
 
+def set_window_chrome(hwnd: int, background: str, text: str, border: str | None = None) -> bool:
+    """Красит системную верхнюю панель Windows в палитру приложения (DWM).
+
+    Возвращает True, если атрибуты применились. На старых Windows 10 часть
+    атрибутов не поддерживается — тогда остаётся стандартный заголовок.
+    """
+    try:
+        def colorref(value: str) -> int:
+            rgb = value.lstrip("#")
+            r, g, b = (int(rgb[i:i + 2], 16) for i in (0, 2, 4))
+            return r | (g << 8) | (b << 16)
+
+        dwm = ctypes.WinDLL("dwmapi")
+        set_attr = dwm.DwmSetWindowAttribute
+        set_attr.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD]
+        set_attr.restype = wintypes.HRESULT
+        handle = wintypes.HWND(int(hwnd))
+        dark = ctypes.c_int(1)
+        # 20 — Windows 11/новые 10, 19 — ранние сборки Windows 10.
+        for attribute in (19, 20):
+            set_attr(handle, attribute, ctypes.byref(dark), ctypes.sizeof(dark))
+        # 35 — цвет заголовка, 36 — цвет текста, 34 — цвет рамки.
+        for attribute, value in ((35, background), (36, text), (34, border or background)):
+            raw = ctypes.c_uint(colorref(value))
+            set_attr(handle, attribute, ctypes.byref(raw), ctypes.sizeof(raw))
+        return True
+    except Exception:
+        return False
+
+
 class _LANGANDCODEPAGE(ctypes.Structure):
     _fields_ = [("wLanguage", wintypes.WORD), ("wCodePage", wintypes.WORD)]
 
@@ -231,6 +261,9 @@ _INSTANCE_MUTEX_HANDLE = None
 
 # Имя должно совпадать с AppMutex в installer/nodexy.iss — по нему Inno
 # Setup определяет, что приложение запущено (закрытие перед установкой).
+# Имя сохранено от прежнего названия приложения: установленные версии 1.4.x
+# держат ровно этот мьютекс, и смена имени сломала бы тихое обновление
+# («приложение запущено») для всех, кто обновляется с этих версий.
 INSTANCE_MUTEX_NAME = "NodexySingleInstanceMutex"
 
 
