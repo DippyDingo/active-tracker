@@ -246,8 +246,10 @@ with tempfile.TemporaryDirectory() as tmp:
 helper_src = (Path(__file__).resolve().parents[1] / "nodexy_updater_helper.py")
 check(helper_src.is_file(), "отдельный помощник собран как исходник рядом с проектом")
 htext = helper_src.read_text(encoding="utf-8")
-check("--pid" in htext and "--setup" in htext and "--restart" in htext,
-      "помощник принимает PID, установщик и путь перезапуска")
+check("--pid" in htext and "--setup" in htext and "--restart" in htext and "--dir" in htext,
+      "помощник принимает PID, установщик, каталог и путь перезапуска")
+check("/DIR=" in htext and "/DISABLEDIRPAGE" in htext,
+      "помощник принудительно устанавливает в каталог текущего приложения")
 check("pid_alive" in htext, "ждём завершения конкретного PID, а не имени процесса")
 check("subprocess.run" in htext, "установщик запускается без shell")
 check("CREATE_NO_WINDOW" in htext, "помощник не показывает консоль")

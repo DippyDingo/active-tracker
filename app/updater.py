@@ -662,6 +662,10 @@ def schedule_apply(restart: bool) -> bool:
         "--setup", str(setup),
         "--target", str(exe.parent),
         "--restart", str(exe),
+        # Inno may remember another installation directory by AppId. The
+        # helper passes the live executable directory explicitly to prevent
+        # updating a stale parallel installation.
+        "--dir", str(exe.parent),
         "--log", str(update_log_path()),
         "--lock", str(install_lock_path()),
     ]
@@ -693,6 +697,7 @@ def schedule_rollback() -> bool:
     command = [
         str(helper), "--pid", str(os.getpid()), "--setup", str(prev),
         "--target", str(exe.parent), "--restart", str(exe),
+        "--dir", str(exe.parent),
         "--log", str(update_log_path()), "--lock", str(install_lock_path()),
     ]
     try:

@@ -57,6 +57,7 @@ def run(args: argparse.Namespace) -> int:
     lock_path = Path(args.lock)
     setup = Path(args.setup)
     restart = Path(args.restart)
+    target_dir = Path(args.dir).resolve()
     # Helper нельзя обновлять, пока он запущен из каталога приложения. Перед
     # основной работой перенесём выполнение во временную копию.
     if getattr(sys, "frozen", False) and os.environ.get("NODEXY_HELPER_TEMP") != "1":
@@ -118,6 +119,13 @@ def run(args: argparse.Namespace) -> int:
             "/NORESTART",
             "/SP-",
             "/LOG=" + str(install_log),
+            # Установщик запоминает каталог по AppId и при тихом обновлении
+            # подхватывает путь из реестра. Если рядом осталась старая
+            # параллельная установка, файлы уезжали туда, а запускалась
+            # прежняя копия — версия «не менялась». Каталог задаём явно и
+            # отключаем страницу выбора, чтобы /DIR не игнорировался.
+            "/DIR=" + str(target_dir),
+            "/DISABLEDIRPAGE",
         ]
         log(log_path, "starting installer")
         creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
@@ -139,13 +147,20 @@ def run(args: argparse.Namespace) -> int:
         # Переходный период: до переименования в REDIS обновление могло
         # выполняться для Nodexy.exe. После установки имя могло измениться,
         # поэтому ждём любой из двух вариантов и запускаем тот, что есть.
-        candidates = [restart, restart.with_name("REDIS.exe")]
+        # Запускаем именно то, что установилось в целевой каталог: путь из
+        # параметров мог устареть, если установщик переехал в другую папку.
+        candidates = [
+            target_dir / "REDIS.exe",
+            target_dir / restart.name,
+            restart,
+            restart.with_name("REDIS.exe"),
+        ]
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline and not any(p.is_file() for p in candidates):
             time.sleep(0.25)
         restart = next((p for p in candidates if p.is_file()), None)
         if restart is None:
-            log(log_path, f"updated executable missing: {candidates[0]}")
+            log(log_path, f"updated executable missing in {target_dir}")
             return 6
         # Маркер установки снимается ДО запуска приложения: иначе новая копия
         # видит свежий lock и живой helper, считает, что установка идёт, и
@@ -181,6 +196,7 @@ def main() -> int:
     parser.add_argument("--setup", required=True)
     parser.add_argument("--target", required=True)
     parser.add_argument("--restart", required=True)
+    parser.add_argument("--dir", required=True)
     parser.add_argument("--log", required=True)
     parser.add_argument("--lock", required=True)
     return run(parser.parse_args())
