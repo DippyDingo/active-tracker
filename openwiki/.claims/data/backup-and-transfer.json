@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:175024bc3630468c56a40ce755b85279e6f0d4155587f7b7ff03e6fe32b08269",
+  "claims": [
+    {
+      "id": "claim_68200306302d43da8ee41f1b762df660",
+      "statement": "Бэкап выполняется автоматически при старте, не чаще раза в сутки, в backup/tracker_<дата>.db, с хранением трёх последних копий; день последнего бэкапа хранится в settings под ключом last_backup.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L135-L176",
+          "version": "repo-lines-v1:sha256:891546f92f1d319baab6cde08fb2218920028407eaee52febd213bce2fe86c53:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNDQwZTI5OWVmYzMxMzc2ZDQyOGFjODE4YzA4ZTc4MWM3OTg3ODA5ZGNmNDBlY2E3M2E4NjQ5YjRiYTk0NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMmJjNTRiMDQ0MGE5NWQwMmE0ZDRhZmI4MGEzN2UyNmY3ZWM0YWVhMmNmYzA1NGQwMTIzZjBmZmNiMmJhNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmMzUyMWY1Njk1NDBlYTlmNjdhZTdhYjdiN2FhMjI3N2YxOTUzNjZkMTNlYzQxZjQ1MjQ1MTNhY2Q0ZmVkYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1YTllN2ViZWFiMDdkMGMzNDE0ODAyODRlMjRiZjRkMWI5ZTA2NjFjMzhiN2YzNmIyNjgxYmY4M2RkMjczZjAifQ"
+        },
+        {
+          "resource": "repo://main.py#L80-L103",
+          "version": "repo-lines-v1:sha256:26b6374cdafa52a846b3acb122fbe70f815bf23555fe87f21aa6ca1bc10436ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0YWIxMDVjMGRmYjA2OWJmNDYwMmRmNzg4NGQ0YmMzN2Y2MjFhMzljNjE3N2RlYzRhZjI4YmRmZDFkOTkyM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMTMyMmE0ZGM4OGRmOTgxZDBhNDA3YzlmNTgyY2M3ZjlkZDA1MjM1NGM2YjgyYjI0NGU2MjkwOTUxMzE0MzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxMmVkYWZjOGRiODNhZGY2ODYzZjFiYmZiNzU1ODI0OTYzZjFiMzdhYTIzODhkYmQ4NTE3NzQxODFmZjgzNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ZmU3ODE5ZTAyZDA2ZWFhZTNjMjdlN2MzMjE4N2YyZWVlNTkwNWE3MzIxZWE5NGQ0MzQyY2Y5YWU4MjVlYWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3eb20b46fa394e2c9ef3a95859ce8871",
+      "statement": "Консистентный снапшот снимается через commit(), wal_checkpoint(TRUNCATE) и sqlite3 API backup во временный .part-файл с переименованием в цель; запасной вариант — shutil.copy2.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L142-L156",
+          "version": "repo-lines-v1:sha256:b5405562745ff774c28e8acb1331d6e725a82991e2d3c605afd5e08424ef05ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMmExYjRlZGM5YTFiYjA5YzkzODg3NjA1N2VmZWI3NDRlYWMwZmU1Y2RiNjY1MTk4OTc3YzJhODkxMjIyMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MzI0ZGZiYjhhMDdiN2U0M2QzY2Q0Yjk0MDRhNDRjZTA3MTJjMDg0OTk0NmY5ZGIwY2MyMjE3MzFlOWI5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwNTgxN2VkNmIyNjg2MzBhNzFkN2RhODZkNWIyYTQyMmNmYTExYWRiNDFiNjVkMDEzMDQ1MjA4MTFjZGJhYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMWU5OWM1MjMzZjJjYmIwNDBmNjQ0NTBjMjE5N2U2NTExZWE2NTk1MWQyMjNhY2UyNzIwOTlhYjBhYTQxNGMifQ"
+        },
+        {
+          "resource": "repo://main.py#L86-L88",
+          "version": "repo-lines-v1:sha256:8714b4e259c337934a8da46753befc577dea05fc8dc9ef646098ba7b2242ac79:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM2YTQ3OGNiMzZlNzJmYWNkYjdlYmI2N2RmN2FjZmMzYmZiN2RjZmVjMTQ5Yjk4OWU2MmZhMGM2OTQ1NzExZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTIyNWEzMGFiYTg4OWM4MjFmNmM5MDg2YWJkMzZjZjdkNzg5MzVlZDg2YWRhNjk0ZDZhZWM2ZjdmZmZjMmFjNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWY5YTUxMjBjODQ3NWY1NjIyZGMzNDA0Y2U3NzI0OWJkMjk0NGZjZDAwYWE0M2NkYjA0NWEzNTAwMDlhYjNiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTA5NTE0YjAyZGQxNzkwOTIzNDEyZWYyMDAwMGJmMTljMTE4MjkzNTAzZGY0NjgzODg0ODA1MDlkZDhhZjNkYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_22c93d8a16df4413990cbed3d06ee3f6",
+      "statement": "Резервные копии появились из-за отсутствия бэкапов ранее: повреждение файла или неудачная миграция означали безвозвратную потерю статистики.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L85-L92",
+          "version": "repo-lines-v1:sha256:5f561d58c4b8c648ab68543ee53190f9287bd66fa4c80d6978f5be669248b559:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWY4NzNlOGVkMDU3ZGJmYzlkYmRlMDc1YjVlNDcyZTk1YTcyMzNmYmM4MGJjNjg0Mjc5MmEyZDIxYmJmY2ZmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE5NmIzN2U3ZDQ1MTJmOTkyNzJhZDg2MzQzNjNkMGI0MDBhMWM4YzQxYTgzYjJhZGUwODFiZDc3ZGE3MmY4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI4NmQwMjIxMzQ4YTE4MmNhNjI1MjhlZTFhZDA2MjY3MzhkODlkYTJjOWRhZWVmZjg3Y2JmNmRiODgwNWFlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDU4MjZiNDIxYzk1ZGFmNjEzNjhkMzJhOTgzODIzYjA0NjNjOWM3NjBiMjRlNjJhYTUyYWJmNmMyNzIxNjAwMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_74e265a07e4942ec8592e0170d2ae7fc",
+      "statement": "Экспорт использует VACUUM INTO во временный .part с переименованием; операция отклоняется, если целевой путь совпадает с текущей базой.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L109-L130",
+          "version": "repo-lines-v1:sha256:6859669b0fdbee4e1c4a6ccbf5aed41cd88acb647a26946ffa60b1626fd0aa09:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZTA3NzMyMzczZDE3N2I1YmZlODFhOWE1ZDE3NjBlNjFmYTdiNzQ5ZTJlMWEwNGQ5YjFhYjQyNTBlMTFiNzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMmJjNTRiMDQ0MGE5NWQwMmE0ZDRhZmI4MGEzN2UyNmY3ZWM0YWVhMmNmYzA1NGQwMTIzZjBmZmNiMmJhNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4OGI3MzFjNDE5Y2I3NzIwYzc2NDk3ZTQ2NjAyYTk3ZWE5MGM0MjNhMDJlYWJiZmFkZGM1ZWVhNmUzYzBlYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5ZTQyZWExZjNiNjFhMTU1OGE2Mzk2NDc4ZjYwMzdkODg5NmM3MWUxNmUxZDZlM2FkYTAwZGNhOGM3MWQ1ZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9478b7006fd34e7db402fed16bc6ce49",
+      "statement": "Временные .part-файлы гарантируют целостность: файл по целевому пути — либо старый целый, либо новый целый, прерывание оставляет только мусор в .part.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L109-L130",
+          "version": "repo-lines-v1:sha256:6859669b0fdbee4e1c4a6ccbf5aed41cd88acb647a26946ffa60b1626fd0aa09:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZTA3NzMyMzczZDE3N2I1YmZlODFhOWE1ZDE3NjBlNjFmYTdiNzQ5ZTJlMWEwNGQ5YjFhYjQyNTBlMTFiNzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMmJjNTRiMDQ0MGE5NWQwMmE0ZDRhZmI4MGEzN2UyNmY3ZWM0YWVhMmNmYzA1NGQwMTIzZjBmZmNiMmJhNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY4OGI3MzFjNDE5Y2I3NzIwYzc2NDk3ZTQ2NjAyYTk3ZWE5MGM0MjNhMDJlYWJiZmFkZGM1ZWVhNmUzYzBlYmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5ZTQyZWExZjNiNjFhMTU1OGE2Mzk2NDc4ZjYwMzdkODg5NmM3MWUxNmUxZDZlM2FkYTAwZGNhOGM3MWQ1ZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_570f2955a2e2429c95766a23a4cb82e5",
+      "statement": "Перед экспортом базы выполняется tracker.flush(), чтобы последние накопленные секунды попали в файл.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L220-L224",
+          "version": "repo-lines-v1:sha256:fbebd73c8050b785454f0a09d6877076b36a4cd8c97be31ef1e57e0dae1a746a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmFhZWY3MjQ1OGJkNjUyN2U5NmQxMDVlZDRhMjNlOTczYTkzYWM5OTMyYjZlNTU1NWE0NDUyMGE1NjUxY2Q3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ViNzAyNTc1OTNkYTA2ZjY4MmEzZGRkYTU0YTlkMjYwZDRmYzUxNGY2NDUyMzdmNWNhNzRiMDhmOGRhNjFhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjcyZWJlZTI0NThiMzczMGQ5YjJhZTA5ZTU3MmM2NzI5YzM1Y2Y3ZjNkZTA1YjZjYWIyZDI5NTllMGExNDczOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2I2ZTc0NzIwNjRkNmQ1MDk4OWRmMmMwN2I1ZGI5YzNhMTJmYjI2ZTcwM2QyYWJjZTM0OWY3MjM4YmYwYTAzNiJ9"
+        },
+        {
+          "resource": "repo://main.py#L261-L263",
+          "version": "repo-lines-v1:sha256:4a9224a0c5c39f9b8742f29624df3fe0c3a94520e4d74bcfa9e51887dc440bc0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFlODIxYTZkMzg3MmQ5MWExYWExNTg3M2U4Nzc3M2M2YWExZDhjMGU0ZmYyMDAwMjIxNDkxYjI3MTAzOGE4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWMwOTQxNjFiZWI2OGJhNTA1ZjdiZGU3NzFkMDMwNmYyM2VmM2QzZDhjZjdmNjQyODYzODlmMzVjMzQzNmJjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGE3OWQ5MWE0NmI5MWJhYTliZmNhZDVlMWE4MDdjYzI0ZTIyYjIzN2E2MTAxYTM1Zjg5MzQ5MGNhZmY1ODY0MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTE1NGM5MTE5ZTAzMjdlYzg1YjRhODliYWRiYWUzMTIzMjdlOTI0MWU3Y2ZmMDU3ZGE5YmUwZGNlNjNiOGI1YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6da3e5104a384c05986185218c31bb57",
+      "statement": "Загрузка внешней базы проверяет файл через Database.validate и предупреждает, что текущая статистика останется в прежнем файле; только после согласия переключает базу.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L1223-L1260",
+          "version": "repo-lines-v1:sha256:0532e2e8cfe70fbdea17a5adafc87c5d15d4a5be5bfaadbaf94594d18e1e18bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhOTZiMzdlN2Q0NTEyZjk5MjcyYWQ4NjM0MzYzZDBiNDAwYTFjOGM0MWE4M2IyYWRlMDgxYmQ3N2RhNzJmODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1YzY3NjMwNTNiNWM2NDMwNDZjMDE0NjU1OTU3NTk2MDkxZjdkOWU5NTQ4NzFhYTEwZGU1NjJjNWZiNjZmY2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkZmRhNzhlNDc4YWNiODI4ZjAyZWRkYjRiMDkyODYwNWZiZjIxYTY4NWYzYzJmYzMxYTIwMjczMjA2Y2I5ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYjQ2ZmZjZWUxNzc1MmM2ODA2OTZmMGZjY2Q4MzkzODY3Mzg0YTA5NmNhMGJlZGRkODVmZThkNWFjMGViYzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_224aaa4dc975471f99a2830450b8bf34",
+      "statement": "Database.validate требует наличия таблиц apps и stats с колонками id/name/exe_path и app_id/day/seconds соответственно.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L83-L107",
+          "version": "repo-lines-v1:sha256:a627db5317503c2b6b83f396f50d52a6e7fb807d9d8c8b4b62d535880069ae57:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4N2Y4MjUyN2E3NjA1ZTBmZWFlNWExYmE3ODBjNDY0ZjEyYjhkZDA3YTY0NjE5OGE4NGFiMjY0NzY5ZGY1ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMmJjNTRiMDQ0MGE5NWQwMmE0ZDRhZmI4MGEzN2UyNmY3ZWM0YWVhMmNmYzA1NGQwMTIzZjBmZmNiMmJhNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkZjAyMjQzOTRmYzE4ZGMzNWNlMmNmYmM4MjdiZjMyMzM4Y2E0ZDBjNjg1ZWZjNTVmMDQxNWE3MWQ0YWQwYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1OWFkMTQ0YjhhMDVlYzgwODk0OGUwNjQ2OTBmYzA1Yjg5YzAxYjMzZDQyNzEzZWM0YTJkMmI0OTEyZWY4NGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_46fcfba434f24de1b4de8c9c574c4a26",
+      "statement": "Переключение базы сначала сбрасывает буфер в старую базу, затем меняет ссылку и перечитывает настройки порога простоя и фонового учёта из новой базы.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L52-L65",
+          "version": "repo-lines-v1:sha256:d6546a310dc62db92a624b331ca9456b4b12cb37cc0b54bfeae656994a0f77b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNzEyNDRlNmQ4NjIzYzI4MjZhOWIxMzExYzI5ODZlZTVkODg0MWFlYTcwNjI1MTJkOGQxYTAyNTAzMWQ3YzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyODZlMGJjNDdkZGZjYmU4NGI0Y2Q3YzAwN2E0NzM1OTAwMmQ1OWI2NmRkMDM4YWM5YTRjY2M3NGNkZDQxZmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2Njc0YzA5NmJiMDVjMWJiNmRiNjY0ZDg0Mjc2OThkODY4OWZiMTc0M2YwZWMyOTkzYzIzYjEzZTQzMjA3N2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3YmE4ODA2NzE5M2U3MTFjOTVmYjE3NjRjMDAyNzgxMTVmNjdjNDYyZTVkMjgxNzM4MjAyOTI1MjkyODc4MWMifQ"
+        },
+        {
+          "resource": "repo://app/ui/main_window.py#L1282-L1300",
+          "version": "repo-lines-v1:sha256:88135d4a280ebc8638cf96bf0ff75c38e82cf3b447837c23efca80c832f0b61f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkYTFkN2EyMzg2NzEyMzg3N2MzNTY1ZjQyMTJmNjU1ZGM3NDAyY2M0Y2JmYjhlMzAwNTNkYzJmODQ4NzMzZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzRmODUwMmM3YzI3Y2EyZThhNzkwODdjN2VlMTA0MDAxZTNiZGFjNzIyODAwMDhmZDI1NzNlNDkyMGE2ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiNzZmYmM3ZDQwNWJkZjY4MWFlYmQ5ZGE3NTdlM2RhZTliYmQzZGRhZWU0MjNhMjg3M2VmODBlMzYwMWEwN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlZTU4NTIwNDY0NTdlN2JiOWE1ODU1ZmJjZTU4YmQ4NGI1MjBlOTI4NjdiNjExMzQ3NWJkNTk3MjA5NGM2MzgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

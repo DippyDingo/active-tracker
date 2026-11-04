@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0309bba608719ced158dc265a33354f759adc703019e2179989f3fbfd0f4a7d3",
+  "claims": [
+    {
+      "id": "claim_7f19917f86fa4326b1c72a69618c3348",
+      "statement": "GRACE_SECONDS равен 5.0 секундам и определяет активность «прямо сейчас», а порог простоя — настройка idle_threshold_minutes от 1 до 240 минут с умолчанием 30, определяющая, засчитывать ли закончившийся перерыв.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L10-L11",
+          "version": "repo-lines-v1:sha256:c141b3a7c5b79a19936dbd5cbead789b41e369bc46c92f254dfe0eace8a99e82:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2I2OTMxYzkxOWJkNWZmMTU1MDUxNTg5MDRhYjUxYzU2ZjI4ZjcxNjYzM2NhNTU3ZWU5NTVhMWRiNjExYWM0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTYxMjA4YjY0ZjU2NjdmOWNkZTA0ZDcyM2Y3MDdiZTQzOTAyMTgxN2IyZWIwYjJjMjUwYmY1NmRmNjA2MDA3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmQ4NzJkMjY5MThkNzZiOTI1ZmJhYzY3NGEyYzk4OTI5MmZhOWI3ZGZlMmM4ZDcwMjM5ZTQxNDA4YWI5ZTAzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVjZGVmOGI0NDQ0MjY5MTAyYjg3YTg5OTI1OTYyNjU0OTYzM2U5NWRiZjNlMmJhNWYxODM1NjVlNzRmMGE0MSJ9"
+        },
+        {
+          "resource": "repo://app/tracker.py#L22-L22",
+          "version": "repo-lines-v1:sha256:859efd62baa05ac30d8fb0806f4a01fe28cc278d03f0cea0b759b18acc75fb7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODU5ZWZkNjJiYWEwNWFjMzBkOGZiMDgwNmY0YTAxZmUyOGNjMjc4ZDAzZjBjZWEwYjc1OWIxOGFjYzc1ZmI3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU5ZWZkNjJiYWEwNWFjMzBkOGZiMDgwNmY0YTAxZmUyOGNjMjc4ZDAzZjBjZWEwYjc1OWIxOGFjYzc1ZmI3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGEyMjNmODgzMjY3N2ZlNDZiM2U3OTBhM2I4MDEyMzFmYmU1NmVlZTcwM2YyODNiNzUyMzM5ODA4NTJkZGEyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTkxZGQ5OTdlNjNkN2U2ODZmZTE4M2E1NmEzNWIzMWEwYjczZDE5MTYxMTA4NGQ2NWI2MDlhZDYyODY3YzI2NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e5d8b3868c9841e6900b8b1da1646e37",
+      "statement": "Свойство is_idle возвращает last_idle_seconds > GRACE_SECONDS и используется интерфейсом для индикации, но не для начисления времени.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L109-L111",
+          "version": "repo-lines-v1:sha256:0893426b489dc5d031c1c50696230cdecb7787e4bf822a05131531a6c52f8139:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzhiZGEyMDNhNmIyZDQyOTk2MDJhOWU0N2YxYmJmMmQxMzZmZWE4NDc0Nzc0NDc4M2E5NGFjZjdiN2U4NTdhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2ZiNzllNTI0ZDFhMjg4NzJhZGZkOTFjNDA5N2VlMDE1MzQxN2NkNmI1NmVhMzZhY2Q3ZGU2OWEwNTRiNTgxZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQ3NWM3NmM1YTYxYTkxNDFkOTkzOGVjNmIyMGVmMTUwNzU2MWJiNDg3NmUzZjc2YzQ2N2Y1Yjg2ZmYwMTM5YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmVkZTczY2QzMGJlNzU3ZGVjYjYxYjM4ZDUzMTAyMDM3YzVmMTM0YjlmMmMzYjdkNGVmZWRlMjU2YzYwMmJmNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_679618b0ef9949bc860892fce665c78f",
+      "statement": "При возвращении из простоя время начисляется только если gap больше нуля, не превышает порог и набор _idle_apps не пуст; начисление производится ретроактивно за весь период простоя.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L190-L198",
+          "version": "repo-lines-v1:sha256:7082154ecd3c3550f92227421867df737e7226da1ca9d829941f878b41bc95ea:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODM1YjVlZTlkNDY5MzY0YTkwOWU5YzdlZGU2Nzc0ZjhkYmU4MWNhZGFiMGQxMzQzOTViYzMwOGRmOTAxNTljZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2FmN2ZkMTEwNTE1NzQxYWJkYjgxMzllZjM3YzlhOGM3M2U5MjY4Y2FlOGI4OGM2OTdmMzkzZDFhYmE0N2UzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODNhZTlmMjBkMTY3YzUyYjNlZDQ0MTc4NGQ3MjAzNjZjZGNlNTk4ODRmNDJiYmY5MmE4YmM2MTcyYmI4Y2I5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTM5Y2QzZjRkOTZkMGY1ZGIyMGQ0MTJiMDgyNjIxOWIxMGU5MjQwYmQ3ZDI5MWQ2YzgxOTMzOTc0ZThlMjVmZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc5679b93ced40e2bfe5c5d672b7f722",
+      "statement": "В обычной активности интервал с прошлого раза ограничен сверху GRACE_SECONDS + 2.0, чтобы приостановка процесса или срыв тика не привели к начислению часов за один тик.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L200-L203",
+          "version": "repo-lines-v1:sha256:b21e9325c8e677fa52bcb1526cb39d40b0b78f817840fe4a4cfdd7cbd0523968:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWNhZmI1MTE4NGEyNDk4MmMzZDczODhjZjA2YTdkZTE2YjlkNDBjMTlhMTRkMGIxYmEzMDE3OGQzMjM3OTY3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjFmODM2ZWJkMWM5NDY2ODg2MzJjYTVkMGRkNzQ5ZmEzOGRhMGU5YTlhMjRhYjBlMzlmZDM1MTMzMGM3MDkwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE4ZjI0MDJlOWNkYmJiYzAzMDdlZDE5YjcyNDg4ZGQ4NGVmMmJlZjUxY2NiY2E1ZWVjODVhMjJiODRhYjMwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGNjMTE5ZjUwN2FmOWJlNTMxY2I4ODk1OWRlY2ZmYWIyMWU0ZDcwMjkyMDlmYTNhYTdkZmI0MjdmZjNhYmVlOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5efcc1da8a0141a49c66cea7aacc568c",
+      "statement": "Начало простоя определяется как max(now - idle_s, _last_active_at), что предотвращает двойное начисление одного и того же периода.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L207-L209",
+          "version": "repo-lines-v1:sha256:186a0fd7c3c8b1f81f4f4ae810340a8ee0203d7f73f85093443cab9c3d82dbbb:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU0NTc0OTJhMWQ0ZmVjMGEyMWExZWYxNDU4NjY3NGEwZGEyOWYyZDY2YWQ0NTQzMDczYzk5ZGJiZmExODUxMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2FjYzJmMmRiOGNmNzBmNDYzMDgzYzMwNjY0YTdkM2Y2Zjc1NGFjMzljMmU0MTcyNzQ4MmM4Y2M2MzM4YTcyYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGNjMTE5ZjUwN2FmOWJlNTMxY2I4ODk1OWRlY2ZmYWIyMWU0ZDcwMjkyMDlmYTNhYTdkZmI0MjdmZjNhYmVlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTg3NWZmNzJmOGQ2OWNjMGIxN2FlMTA5ZGZlODkzMjJkM2FiMzJjZWU0NDk2YzI2ODZjMzAxNmVkMzM5Y2I1NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c36b4de61954159ab0f7426485d9bd7",
+      "statement": "_resolve_apps добавляет приложение в фокусе в набор, а при включённом фоновом учёте добавляет все отслеживаемые приложения, чей exe найден среди запущенных процессов.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L90-L99",
+          "version": "repo-lines-v1:sha256:6ce3cbe9dd693a3ac66345281579a6acb680521e1d6f1f4a4cf8a76fd5fe10d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjNmQ5YzdlZmM3NWU1YzI1ZjY2M2U3OWNkOGNjODE4YmUxMzM2YTkzOTdhNjJkZWQ2OGMxNjQ3NGZlMmNmMWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiN2JmMmNjMDUyM2Y2OTZlMGRlMmFiNDVjODVkMTIwOWY1YjA0NTk4ZjQzMTU4NDY0MTI3ZmYwZGVjYzJkMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMTE3OGRkYzMxMGZjYjJhOTczMWQ3MDg0MjE0MzgwY2RiZTc1ZTUzZWU1MThkNjU0NzcwN2JmYmEzYzg4MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkZmEyMjJlMWVjY2I2NWM3MjY4ODlmZTFhMjk1MzM4YzU5ODkwNzIxNzQyYjljMzg0MDQ2MGJiMDQ5MDQ0N2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_37fdf595700a45379d59be5555983d20",
+      "statement": "set_tracked нормализует ключи через os.path.normcase, а поиск приложения в фокусе выполняется по нормализованному пути.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L39-L58",
+          "version": "repo-lines-v1:sha256:7d6fe2d0afff28b143167e8eefe9de705175e22203cacc567b4531f47928aa61:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5Y2NkYWM2YmNhYTE0MzkxYmE4NWE2MTQ1YWQ4OTU3NzIyMzNlYTgxYzk3ZmNhYzY5ZTllODFiMDdjY2E0NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2ODY0ZjY5NmU4NDAzMTU4NWVlNDdhMGM0NDRjM2VmNDkxMTlmMzdhMzVjZmFhMjRmZGYwYTdiZjBhZjYyMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5ODI4MTY1MWIwMjdjMjI5M2YwNWE1MzZmOGQyNmJkY2NmY2I2M2M1OGZiN2U5N2QwNjcxMWJhYzY1MTcyYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhNmU1OTMyYmFmNjQ3MWYwYzg4MjRmMDkxZjdlODBlNWM3YzI3MDNjNjY3MGJmOTlkNTdhYzVkYmMxMzNlZjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f98f6d4a19b242c8898cd5899d14fc71",
+      "statement": "Кеш запущенных процессов живёт две секунды, поэтому новый запущенный процесс начинает учитываться в фоновом режиме с задержкой до двух секунд.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L82-L88",
+          "version": "repo-lines-v1:sha256:73430320bd178113399f19d74c0a6cdcec72d2a43588cf90c5aa866bb7552c61:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYxMDNiMjI4NTMxZjdkMmViYjcxN2U0NmYyMjQ4ODI4ZWU2OGIzNTFhODdhMDczNmVkZDM3MjkwYjNmMGMxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY2NTE0MTY5OWY4ZmFiMWUyNGMwZDVlM2U5Yjc3NjkzNTM3YzQxMzA0YmViZDE3OWJiYWZhNmU4NzcyOTMwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWU2MDNkOTcyMDhjMTdlYThlZjFmYmI5MTM4ZDk2ZTMwMTEzMDU2YmIwODI1MjAwNWIyNDUzYThhODhkMGIzYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjY5YmI0NGNlNjJhMGE4M2M2OGQ2ODdjMmVhMzMzYzNjNzJkMmFlOWQzZTY5MTcwMDA3OTA1NWNlNTI5OGUwYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe171eeafc81428f9a106caab9b5f9e0",
+      "statement": "В начале каждого тика проверяется смена суток и при смене выполняется flush, при этом _credit_interval сам разрезает интервал по границе суток.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L180-L184",
+          "version": "repo-lines-v1:sha256:1646cb7cc75835f58f6ca8f24fb9d2beb890cea2a1d77f675eabe861e2e9c016:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODhhNDM0Y2VmZTc4ZjMwMGIwOGZkMzMyYmE3NDA5NTExMjg2MmQ4OGQ4NDRlOGI2NDJhN2U4YWUzYTA4ZmZmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ViNzAyNTc1OTNkYTA2ZjY4MmEzZGRkYTU0YTlkMjYwZDRmYzUxNGY2NDUyMzdmNWNhNzRiMDhmOGRhNjFhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTFhYWU3MDk4Y2FkYzIyZTE2OWEyNjFlOWY2OWJhY2U3NGVhMTg2OTRjNDhiNDY5MTVjYTQzNDkwZmQ5MDQyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGU5MTM0ZDhmODM5MmE1ODIxMWI1ZjgyNzgyZDk1ZDAzOWNlNmUwZTBhY2ZjZWExYmQxNDZmOGI4YzAyYWMyZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_06263230da85449d8bf3ab1ff3d3b8a8",
+      "statement": "forget_app удаляет приложение из буфера, из _tracked, из _idle_apps и из current_ids, чтобы при возвращении не начислить время удалённому приложению.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L42-L51",
+          "version": "repo-lines-v1:sha256:717b45b9b93c59492846312a594df45bad47a65154f38d768d17067d70175e16:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMGQ4YmRmMmU1ZDQ0N2FkY2FhOTRhY2JjOTE5ZWUwMTVjODFjMDU4MzJlYzY1ZmQ0MjdjM2QyYWMwM2MzOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkMzUyYzcxMGMxYjdiZjljZDY0MDBlNWZiMjJkZTcxOTQ4MjdlNGRjYWI3MjkxOGJjNzhlMTVlZjIwOGYzNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmNTc3OTk0YzAyM2FmNDJlOGNiM2EzMWQzMzQzYjIwNTU0YmIzMDc5NDE2MWM1YmZiN2E5NTk4NWQ4OGNhN2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cd8d7393bdc94a1092ff7f9501a149ff",
+      "statement": "set_threshold_minutes сразу сохраняет новое значение в базу, и решение о текущем простое при возвращении будет принято по новому порогу.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L70-L73",
+          "version": "repo-lines-v1:sha256:cf99d001784f8146f4fac41d0e279dfb02485d4cda09d6335b65447fd32bf4f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTAyMzRmM2YwOTBlZmM0OTE4ZWY3Yzk1ZmM4NDQzMmZmNTk2ODJmYjE2OGEzMjM2MDY3Y2QwMjRhZjE5NmY2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTBlMDExM2IxOTQ1NjY3NWUxYmRhNjZjZGY1MTViNTMzNTFmMjc5OTA1ODlkNDY4NDM3NWY3YThhNDc5ZjFhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2RhY2RhMjVlNDViZWRjNzA0OTdjZGRiZDQ0NmE3OTQzMTg3ZmY5Yzc2ZTFlM2M5NWVkYzVlNDhhYjFlMDkyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDczYTc3YzdiNjU1OTNkZGYxNTIxYmIwYjRkODI3ODA5NjIzM2U2M2VkNDcyNTEyZjAwMjJhYzI0NjY1ZDFkMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ebcf32f4e2cc453494ff447a9c188f7a",
+      "statement": "_credit_interval идёт от start_epoch вперёд, определяя день и час каждой точки, и при пересечении полуночи создаёт записи для обоих дней.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L121-L139",
+          "version": "repo-lines-v1:sha256:12531f943e396df98dfef78a2f6471a67cb71d3d27eeaf6ae51161fc948b7198:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxM2RiZjUyZTI2YTQ2MDBhM2Q2ZmU5ZmFlODMwMzk4MWM1ODcxZTY4ZGJkOWRlNGNmYjQyM2RiMjA0NTJjOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ODkxNzIwZDE2NTE5MWQ4NTczYzUzYTU1M2VjZTA5Y2IyN2YyZGM3ZmJmNDczMGFjOGJlMjg3Njk5ZTZkM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhM2NhOTYzZGIxMTM3MDBhMmYzY2ZhNTM2YjAzYzQ0MmQ3Mzk0Yzg3NDE3YmNjMTZmODliMzlmYjFmMWUyNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMDZhOTM1MTJjODEyMjJjNzgyNzFhMWRmMTVkY2I1MjVjODE3MGE5YjJmYTM5YmVlZWRjZTZiZDM3ZjRjYzgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

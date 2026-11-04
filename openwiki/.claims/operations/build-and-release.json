@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:318af8d209805175ef6b49ab4ea12fc304bc9800428f5d32d602c6d2a5fee8d3",
+  "claims": [
+    {
+      "id": "claim_0c13836bb2ef40cea378832e8975bb13",
+      "statement": "Версия существует в одном месте — app/version.py (APP_VERSION, GITHUB_REPO, RELEASES_URL) — и оттуда попадает в файл версии Windows, имя установщика и проверку тега.",
+      "evidence": [
+        {
+          "resource": "repo://app/version.py#L1-L3",
+          "version": "repo-lines-v1:sha256:da308bd87487cd9617fb26fb7be0166323b89b52b1658ff29619bdbf506ec683:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzMxMDk5NjAzODhhY2Q0NzhlNTU2NjI4ZDdjZDcwOTcxMTZmZjdkNjAyMTJkNmRhZDQzOGExZDljNDBlZDYzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk0YmJiMzJkZThkNjY5MmU5MTAxMGFmZjc1MWRiZGZiNzhiMGMxNjk0OGU5MTY2MDJmZDRkMzk3NjE1NmQ2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a5210744fc384a2a87f27a99d0296733",
+      "statement": "make_version_info.py читает APP_VERSION регулярным выражением без импорта приложения, печатает версию в stdout и пишет installer/version_info.txt для PyInstaller.",
+      "evidence": [
+        {
+          "resource": "repo://tools/make_version_info.py#L1-L6",
+          "version": "repo-lines-v1:sha256:704562fc8d584d35b475ba59e7e1d23bb55cbedbfe84eae6e3512ef37178a568:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ4NGNjMTUwY2Q4NWQ5YzUxOGI4OTAyZDc3NTkwOWIzMDBiYWU2OGVhNzc5OWZiY2JkNGE4ZTgwMmExNzk2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjNkZTNlZjY1OWVhZmY1YmQyNDZkNTYwZDZhOWRmMzJiZmQyNGY0ZDJkYWRkNTAwNTk3MDJiYzYyNjAyNzFhNSJ9"
+        },
+        {
+          "resource": "repo://tools/make_version_info.py#L42-L67",
+          "version": "repo-lines-v1:sha256:bae7588750b67f4a2f980c670d05a62bbc575bfde703f749de82431ff5be5923:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNWE1YzFlZmM4MWY2YzY0OGZlODlkOGZiNDdkNWMzN2FjMWNhMmEyYzQ0ZGJhZjFjNjc3N2U1ZjRjNWQ4YjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMmU2OTIyNTE4NDY1ZGVlOTg3MGU3NjAxNjU0YWVkZWI4OThiODQ5ZmJmNmMzZjA0OGM4YzE5MmY3M2JmMGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d678f995d7484105a51c2ba42c759496",
+      "statement": "Приложение собирается в двух отдельных прогонах PyInstaller: REDISUpdater.exe как onefile из nodexy_updater_helper.py и REDIS как onedir из main.py.",
+      "evidence": [
+        {
+          "resource": "repo://tools/build_installer.ps1#L36-L68",
+          "version": "repo-lines-v1:sha256:07af33c8ea527b42352f34f9819707d494479c910a1c0326ee9d8a95cbdb9508:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NzljY2ExNjk4NDBhNjE3ZmQxMTQyZDMzY2I2NzY2OGU2OTdmYjdhOWY5MDdjNDdlNzM4MGUwNWRiN2NhZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxYzMwMjIyODdmYzM0NjI4Y2M1YTQ1ZWJmM2YwOWUxMTFlMTEzYWU1NTQ0MjdkMjdkYTAzNWQwNzRkZTFjYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmYWY5Njg2ODgxMDFhNjI4YWNlMjEwZTA5NmQ1ODkwYjBiNTliNTJmNzdiYjFiMGRhOGVlZDgwMWJmMmRiZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0f60164d6754c4e82717191d4890680",
+      "statement": "Переход с --onefile на --onedir был вынужденным: onefile распаковывал крупный exe в %TEMP% при каждом старте, что давало задержку и белое окно-хост.",
+      "evidence": [
+        {
+          "resource": "repo://tools/build_installer.ps1#L47-L50",
+          "version": "repo-lines-v1:sha256:451b98a41d41ea7f56e0030aa250fa5edb7900df752afd8e7ba663de3f0514a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjEyY2VkYWQwODRiZjhhMTkwMjQ1NTM1MmMwNDc3NTFlYmNlNjExZjc1NDViZmNiZjczZDZjNDE5ZjNjZDhhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2Q1MDA1M2VkZjNmNGMxNjUzYWM4N2Y0ZGNmYTAyZjNjNzliYWE1MDZlNTZlMWUzMzkwMDExODIyZjY5ZTFmNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDcxNDYyZGE3Y2Y0MzQ5YzMzM2FmOWY3MzBlZGJjMmMxM2QzM2I4ZWFhNTNjNzQxNDQ0NWU5Y2E1MjEzNzU5YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjBiZTEyZWI1MmQ0NTExY2Y3NGQzYzE5ZTcxNjJjMDlmZTE5MjcyNzBkZGQ5OWI4NGFkMGQ3Y2RkZjJiNjIwYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_caf511b5ce6741f5a556f369f1c4dd59",
+      "statement": "Сборка основного приложения передаёт --version-file, --icon и --add-data assets, а также набор --hidden-import для win32-модулей, без которых приложение падало бы при первом обращении к реестру, иконкам или COM.",
+      "evidence": [
+        {
+          "resource": "repo://tools/build_installer.ps1#L51-L62",
+          "version": "repo-lines-v1:sha256:79f7336023152b02c618a0cf25daa4979d2fac3c68baafce002bc2fb1c4c18ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzODU3NWNiYmVhOTNhMjMwMWNiNDRkMTAzOGM1YzY4NWY0YTc0NDY5M2NjMDZhZTdkZjMwM2NiNTkzNzkzZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4MjAxOWUwMzY5N2NiMDE4ZjUwZmU3YjA4OWI4NTkwMTRhOTgxZDNiODIzZTlkNDEzMzg3ODUxOTgzOWQ2NDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUzYmZlNzg0MTAzMmUxMmZlZDczNjNiNGFjODM3ZmM5Y2YwMGY5YjNjZGI4ODVhMzFhOGE1ODg0OGNmZTAyMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhMGM0ZjcxYTg1YmEyODQzYmNkMGY2MmRiMzM2NDEzMDcyZjQ3ZWY0ZjYzNTZhOWE3YmQ1ZjhmOGRjY2VlMDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0ec2a35ff9a14829b1b11f1c6c064582",
+      "statement": "Помощник копируется в dist\\REDIS\\ только после сборки основного приложения, потому что --onedir пересоздаёт каталог dist\\REDIS целиком.",
+      "evidence": [
+        {
+          "resource": "repo://tools/build_installer.ps1#L64-L67",
+          "version": "repo-lines-v1:sha256:99307802452fd591c1dce8565091e6bf753eb6d9bd9d15694aad4b3698490c37:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhkYjliN2VhN2RjMDdlODk4NzM3YmM4MDU1ZDZkMjM1NzkzZTY2NjM5OGM5OTcyYmViYTc5NDQ5OGFkMDgxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2UyODFkNTA0YjE1YWQ3ZGNmYmRmNWE2NDFmYWU4N2UwMmEwYzlmYTBmYzk1MzNhMzcxM2ZlNzE4MDdhY2Q3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzMzYjUxNGViNTJlMjUxYWE0YjgyNTEzMzFiOTk2ODAyNzgwNjg0ZTNkNGQ2NDczOTZkY2Y2YmJmMTNlMGQ2ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5b7892ad6fee496baeef48b3c22f1301",
+      "statement": "Установщик заявлен как per-user с PrivilegesRequired=lowest и DefaultDirName под {autopf}, что даёт %LOCALAPPDATA%\\Programs; PrivilegesRequiredOverridesAllowed намеренно не задан.",
+      "evidence": [
+        {
+          "resource": "repo://installer/nodexy.iss#L31-L42",
+          "version": "repo-lines-v1:sha256:e8b1cdbd3f3c3cbfd8a763441c8dd18c66d83f5f2c4431117d4b8ca57c1222fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NzA5NjFiY2ZhMjBiMWU3NTRmMmFlN2NlMDM1MGE3MGQ3ODcxYWQzY2MyNThjODM5Y2MwMjkxMDJiZDVhYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMWM2Njc1NDU0OTE1OWZmOGUyODExMDQ1MjBlNjRiZWJmZGExYzdjOTkxNzYxYTgwMDZhZTQ2Yzk2ZDdmZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZmZmOWRkOTViNThjZjVjMWQ3YmU4ZDFkZTdjNGEwZjhjZGIzMDU5YmM3NGFkNjUzNjgzNGJmMzJlMjdhMWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmNzRhMDAyZmM3ZjJkNGZkNWZhYWRiODNjOGQ5NTU0MTI5ZTQ4ZGI1OTYyYmUyZGYzZWY5NzBiYzg2YTIzOWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_111e71bd86ad4fe7af209221a733603d",
+      "statement": "NextButtonClick отказывает в установке в Program Files и Windows, потому что папка должна быть доступна на запись для автообновления.",
+      "evidence": [
+        {
+          "resource": "repo://installer/nodexy.iss#L168-L185",
+          "version": "repo-lines-v1:sha256:3dc23a4c3824979334c508e54caf4f80186d208558d4d98cce4c7ef56d9fe598:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjMzI2NmQ4ZjVjNWUxNmY2MmE5YTI0OGRhMzU2M2ZiOTVkMDkzZDFkMjU4MDNhOTJkODQ2OGU4MGYyZDQwZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZWE1ZWNlZWEwMWNmZWI4OThjMDUyNzkwZmE3ODVjOTYwMjkwNThhZjNkZjVmMTQwYzNmNGE0ZjRjYzI2ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhYTNjMjc3MGNmZThmYWJjYjVlMDM3MDk2YzBiNTE1ZWUzZTk5YmY3NDAwYmI2YzMyOTRkZjI1MmM3MTUxZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNjdkMjE4MGY2YWNkOTM0MjcxMzJlMjgxOWI2OTI2MjFjNzQ3Yjc4OGE1Y2JiYzU2NjgzNWM2NmEyMDUyZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2a8a22dc3b1d423e8bd48485cd04807b",
+      "statement": "AppMutex установщика совпадает с мьютексом приложения, RestartApplications=no отключает собственный перезапуск Inno, а /RESTARTAPP обрабатывается отдельной записью [Run].",
+      "evidence": [
+        {
+          "resource": "repo://installer/nodexy.iss#L14-L19",
+          "version": "repo-lines-v1:sha256:7baf855b3c643abfb4f76fe52df3caac9319d86dfe2927a7ebff3ef4c2afb6c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUwNTYxNGNkZmRkZDM0YjE3Zjk4ZmNhZjgxY2ZhNjVhYzY4NWJmYzJjZGI2NjBlY2RmZjk3ZGM2N2IwZTFiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWRjMmI1YjUxZTA5ZGYwZmQ3N2QyMWQxY2ZjMzM2NDNjMTZhMTllMjc3ZTI1YzlhN2E0NWE1MzY4MDhkYTgyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlmZGExYzFkMTVmMzM2MDhkMjhhYjEzY2JkZWFmZTYyNDNmMzMyMTFhYWU0YjBhMmY2YzJiMzViOWY0MWI3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDg5MWExZDdhZDgzZDA4ZmI1ODY4NmI3NDI3MGU4MGVhYjFmOGRkZDI4MDg2YjUwYWRhN2FkMGEwMGI2YWY3YSJ9"
+        },
+        {
+          "resource": "repo://installer/nodexy.iss#L53-L62",
+          "version": "repo-lines-v1:sha256:4593aa5da75d1644fb9d5e763c276a3a6fee51bb4c6ecca0147eaf63c1e832ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMWQwNzU4OGIyMGEyYjQ0NjBkNDI1MDU4ZmVjMjk0MjRkZmU5NThmNTgwNDc4MmE4MGU5Y2UzZTc5ZTQzNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMTM4M2NjMmU1NzA5ZjhjN2NmYmMxZjZhNDhhYTdkOWZhODZjM2QxMzEyMzFmYTc5YmJmY2EyZWJhMGNlNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiZWY4YmFjZmY4MTM3OGYzZDBmMTMxNWFiOGRiMzM0M2Y3MDIyYTE4ZWIwODUzZDQwNzAyYjNiMDZkODk5YTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4YWU4ZWMwNmYzY2NhYzE0OGRhOTE4OTE0Y2UwODAzZjUzMzU1MTgxZGRmZDAxYmExNTBmZjg2ZDY1OGJhNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fe828b2218741f095122a501c6ad6e4",
+      "statement": "AppId — фиксированный GUID, который нельзя менять: он связывает обновления и запись в списке установленных программ.",
+      "evidence": [
+        {
+          "resource": "repo://installer/nodexy.iss#L20-L24",
+          "version": "repo-lines-v1:sha256:c741732638ecc204bcf3d6fb6a3c403aaeb605453205f47f3236b09e4c697313:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFiNzg3NzA0MjY1ODJhMmRmMDIwY2I2NDk5NjA0OTY3OGJkMjFhNDE4YzlhYWZlNWQ5ZDQwYjRkNTBjNGNkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2ZjNGM5OWE2ZmJiZTg3MGEzZmIxNGMxNjNhYjIzMTJlZTJiMzEyNGI5NzU5YjllZjIxZjI4MGNiM2M2MmU5MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTQ2OGQ1YzBmNzhiMDZmODBmODNiMWJmMzg5MTUxNDIyNDYyYzM5NDNmYTUxYWFhMDQ1ZDY5OTU1ODI0NDFkMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_20b5ab43bc2a4daea5a1553334df8b45",
+      "statement": "Слой совместимости при переименовании Nodexy → REDIS удаляет старые exe и ярлыки, очищает _internal до копирования и определяет LegacySilentUpdate по наличению Nodexy.exe до InstallDelete.",
+      "evidence": [
+        {
+          "resource": "repo://installer/nodexy.iss#L109-L119",
+          "version": "repo-lines-v1:sha256:8752e5d3062f4783fb0682b45c51e2b135dc1ed4e74f23df1094099be7272895:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkZWJiMDJiY2U2MTJkMTQwMmY4Mzg1YzI3MDQ5ZjA1YTA1M2U5NWMzNzI0OWRiNGEyNWFmZDU2NmUxZjZlMTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5YzJkZWVlMjk3NmE5MzZiMmYzOTFlMmVhZDc3ZjExMzQ2MzAzMmUwZDFjZWM4OTRlMzFkNzU1ZjFmMzQ1YTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MjU5MWQ5YTg4ZTcyNzU4ZTA2OGZiZGJiNGU1MDlmZWRlYmQxZWZlNzNmZWE3MzU3MzZjNWUxMTIyODVhNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1NmViNzdhMWViMDE0OWE5ODY0OWIzOTdiMmQ4ZDg1NzAzYTQ2NzViNTA5ZmIzMWMyYWIxOTg1M2E1NTNjYzIifQ"
+        },
+        {
+          "resource": "repo://installer/nodexy.iss#L149-L166",
+          "version": "repo-lines-v1:sha256:ba212d5fcecf50883c4fe83daf6454f3f661e2b63f8ebd35c72267469812a435:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjOTVhOWI1NTU4ZjZiOGY1MTMwMDFjOTdiY2JiYWMzMjc5OTM5MjIyMmExMmUwN2JmMmQwMGFmYmZhYTg0MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZWE1ZWNlZWEwMWNmZWI4OThjMDUyNzkwZmE3ODVjOTYwMjkwNThhZjNkZjVmMTQwYzNmNGE0ZjRjYzI2ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2OWRhNjFhYjFhNDQ1NzkwZDNkMTVhMTEzYzBlMDQxMDg5MjZhYWQ0MTNlYWNhMGIyZmU4YzJhMmYzYjNmODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1ZWI1NjQ4Nzk3MDE1OWE1ODAwMzAwNTBmNjJmOTk4ZjRhNjhlNGI1YzUyYWExYmNkY2Y2YzVjOWYxM2E3ZTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f02bf5bc250e4794b018380f508bf9ec",
+      "statement": "Автозапуск пишется в HKCU Run под именем значения Nodexy с uninsdeletevalue, а при невыбранной задаче autostart значение удаляется на шаге ssPostInstall.",
+      "evidence": [
+        {
+          "resource": "repo://installer/nodexy.iss#L187-L194",
+          "version": "repo-lines-v1:sha256:57ade9c25454f72c291b5b5a939c546b5f34eb72835d2dfb3405b854a83f8e18:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDExNzE1Yzg5OTM2ZjMyNDQ4NTkxNTVhZTNlN2JhOGE0MmI2MWQ2MGYwZDA1MzY1Zjc1YzM1NWZkOGJhYzA0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZlYTVlY2VlYTAxY2ZlYjg5OGMwNTI3OTBmYTc4NWM5NjAyOTA1OGFmM2RmNWYxNDBjM2Y0YTRmNGNjMjZmMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmM3M2NiYzg0YjYxMWU2ZmQ3OTFjOTljYzFjZWEwMjNmNDk5MWJlMTk4MTQ2Zjg1NzZjYjFhOTEwZWM1MTRlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzYzN2U1MDFhM2FlOGY1ZDZjZDJlZWIxMDljZDVkOWU0NWQyNzdjOTJkZGJmNmE3ZDIwZWY0ZTQxNTQwNGY5OSJ9"
+        },
+        {
+          "resource": "repo://installer/nodexy.iss#L84-L90",
+          "version": "repo-lines-v1:sha256:e2b657ab14f1fd3bd0e360ae5c635a80d1f1ec28646329cff32a90f280e03d83:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGE1MzkzNjhlNWQxM2RkOWNmMTIzNmFjN2MwNjUwYjZmN2NiYjU3MWRmOTQ2NGQ2ZDZhZmQ4OTlhODc2Njg4YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFiNDQzMWEzZjljZDFiNDE0MjAyZWRmNzgxNDQwNmQ4NjU0MWRkYmI3NjQ4ZWUxODcyZDM4NzUzNzJhYzMxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTk5Nzc2Y2Q0YjliZTMyMGQxNjZmMGY2YTIyZmE0Yzk2MjliODI1MzU4MWIzZTI1Y2NmNzA3Y2Y4ZDZiYzAwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTliNTQ2MjFiMDMxMjY5MDIwY2IzZGIwOWFmYjNiN2RjODk4OGIzNTRmNjFkYWY2YWQ4ZThlMDZlYjlmMDE2OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_87751c40545b42fca877513b5667cb6c",
+      "statement": "При тихой деинсталляции данные никогда не удаляются: вопрос задаётся только живому пользователю, и по умолчанию выбран ответ «Нет».",
+      "evidence": [
+        {
+          "resource": "repo://installer/nodexy.iss#L196-L219",
+          "version": "repo-lines-v1:sha256:47d7c5ef579d1e9073f8b339c9fc2c9e4c004f7711ade6c0ab76accac174378b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1YTcyZGVkMjdlMDIyZDUzZWQ4Y2RjOTMwZTVjNGU3MzY3NTkyYTJmYzM4YTVhNmViZWUyYTY3ZmQwOGM4NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZWE1ZWNlZWEwMWNmZWI4OThjMDUyNzkwZmE3ODVjOTYwMjkwNThhZjNkZjVmMTQwYzNmNGE0ZjRjYzI2ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhN2Y4OWQ2YzYwMGJjYTk0N2EyNjcwMGJiMmQ5MjdjNjAzNTQzZDE5Y2YwYTk5ZjYyZTYyZTMyMDViNDRhYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ea7043d24bb4544b87a9174624781af",
+      "statement": "Скрипт сборки выбирает интерпретатор как .venv\\Scripts\\python.exe, а при его отсутствии — python.exe из PATH, потому что жёсткая привязка к .venv ломала релиз в CI.",
+      "evidence": [
+        {
+          "resource": "repo://tools/build_installer.ps1#L17-L24",
+          "version": "repo-lines-v1:sha256:cc2ccb2ee46688d0eada3e40d53a7c6474a7744f5d0c14213f5fde2af4b1b252:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDViNTA5MjVmNDc0ZGQ1NzlmZTY4YmE0NWQ0ZDQ0MGNkNDUyMTQ5NTg4MjEyNWIyMzlhZGRhMTZhNDhhMzRlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjAxZDA1ZmY2NjFmYzc3NmU2MjI5ZGQ4MzM3MWIwNDRmZjk3MDIwNGQ2ODIxMDBkOTJmNTQyYzM5OTdlYWU4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2ZlN2M4MDI4ODYyNzkyNGQxOTQ5ZDBkZTQwYjkzNTdhODA3NzMyNDgxZmQ1MzAyZWUxMmYxNDYzYWQyYWE3NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e1b6621aca14ffabc5638cc16e94f92",
+      "statement": "Скрипт печатает контрольные суммы трёх артефактов и явно указывает, что в тело релиза идёт сумма установщика.",
+      "evidence": [
+        {
+          "resource": "repo://tools/build_installer.ps1#L100-L129",
+          "version": "repo-lines-v1:sha256:aaf7f63fdf9a64184c56ff101f929a3af433e48cca3f4287c5de1ea9dbfcf002:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NjA5ZGU4Zjc0MDJkMDBiYmQ1ODA2YzZmMzNjMTgyNmIxZjU2ZDQ1YWMzOTJiYTI4MTAzNGI3ZjUzNTNiNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZDJjY2UzZGQ1NDYzZjgzY2E5OTlkOGEyYTBhMjFkYTdjNzhmNmQyNTYwN2QyODk3OTAwZjBjY2ExODlmYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3MjMwMjgxYmY0ZDA2NTM3NjNmZmJmNWExZmJlNThjNzE3YTBkZjczMGQ0ZWU5N2E4MmU0ZGYwMWYwMTMwMzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53cc409943514d959b6c67b72d5ed1f1",
+      "statement": "CI запускается на пуш тега v*, проверяет совпадение APP_VERSION с тегом и при расхождении падает, затем собирает через build_installer.ps1 и публикует установщик, портативный zip и тело релиза с одной строкой sha256.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/release.yml#L29-L61",
+          "version": "repo-lines-v1:sha256:a5a267e1a3044b8294249e1edae500c475249ba33055762ac6adf36ebb0feedf:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMzc4YTE3YWQ5YWI2YzEyNjk0MjFmMjY5MjEzNDI2NzBlM2JjODg4NjJmNGEwM2EzOGIzYTdmOTkzYTJlNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2Y3YzI0NzhiMzcyZjA4ZjIwYzg2YzNhODJmMTA2NzJjNzdiNTQ4ODM4NWYyY2RlOGUzYTlhMjQ4NTAzNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjNmY1YWEyYWQ3NjA1MGEwZWE1MTgzZGI5NzJlODFhYmJlMzlmZTZhY2NhMzM3M2VkNjU1OGUxMzdmYTdiMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_414d441072b24560a4256eb8643f9857",
+      "statement": "can_self_update разрешает тихое обновление только при наличии unins000.exe рядом с exe и права на запись в папку программы; портативный запуск получает сообщение об установке вручную.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L458-L478",
+          "version": "repo-lines-v1:sha256:530443061a72b1495728c91ca47ba78cd1e92a837356c60e9e7228225a9a836d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNjc2ODY1MzExZmMzMDgxZGMzNGQ5MWNjODk3MGUyNzc3NjhlMGQ3N2FjM2JhYTkyYjZmNzFkOGRiOTA0NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1NmEwYjMwMTI3YmJiZjE1NTE0ZGVhMjNhMTlkYTQ3ZWQ5OTRkMjdkODAwOTA3NWM3MDRiYTQ5NzAzMjkzMzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1YWJjYjAyMGNkODk2YTFkODA3MDEwZWI1ZjBjZWZhYzU2NGI0MzVmOWU0NWE0YmMwMTJlOGU5Y2I2ZDAxMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYTVjOThiNzEwODI2YTg4MDI3NzYzMTgwOTkyZDMxNzM3YTNjNWM4ZTFmZDM2YWFmZWNkYTI5YjYzYWUwODAifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

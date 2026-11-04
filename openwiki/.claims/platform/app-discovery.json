@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:99d1a9741756ff385017aea20907a644e778b279cbb17d8f7d1704c9e53fde73",
+  "claims": [
+    {
+      "id": "claim_bd3453a05d054d39a80c6fe514259b7b",
+      "statement": "get_installed_apps объединяет результаты четырёх источников — реестр Uninstall, меню Пуск, Steam и запущенные процессы — с дедупликацией по нормализованному пути к exe, причём первая запись побеждает.",
+      "evidence": [
+        {
+          "resource": "repo://app/installed_apps.py#L299-L304",
+          "version": "repo-lines-v1:sha256:34bcd74613311e54ac99a4134af03a512c99fcdf065c3e88c1111c42d497a4c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGE1YWMzZWM2MTExMTI4MTNlYTE1MjY0YjI3NjI4MmVkNWI5Y2NlOTBmOWNmZDU5NjhlZWRhYWM5OGRiZGRiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA5MDJkMmMwZGI4YWM3ZWNmZTIxMTcyZWZlODdhMDgzNTk2ZmFiYjE3MGVmODU4OTAyMjcyMjcwMjI2OTMyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDM1MThlOWYyMmFjZDYxYTRiNmFhNmQ3YTJiYmRhNmEyY2I0NjEzZTFiZGZjOWVkODFlYzUzNTE5ZWI4YWRlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b44412accb494a3aaff2fe1a649fd0e4",
+      "statement": "Реестр Uninstall читает три корня (HKLM, HKLM WOW6432Node, HKCU) и отбрасывает записи без DisplayName, с SystemComponent, с ParentKeyName/ParentDisplayName и с маркерами обновлений в имени.",
+      "evidence": [
+        {
+          "resource": "repo://app/installed_apps.py#L10-L14",
+          "version": "repo-lines-v1:sha256:bf987f89e348a914c355c061c69e75059402810881e564dc3a133912faf359d0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVlMGY1OWRkMzkzYTU4YzJlMTQ2MjdmZDQxM2E3NDQ2NGI3ODBkNzg4ZmQzNTFkMmY2YjUxYjk1NGQ1MjQwMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2MxMTc5M2NkMjY2ZDcwZTM2NWJmYTJmODRiNDM5N2MwYzNkNDhkNGY3MjdkOTU2ZWFmNmNmNmE4Y2YzMjAzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjE3OGI3Y2Q2YjY3ZjMxYmMxNjJmMGU1MTZmODczZDkzNTQzNzlkMTRiNzM5NGMwYTJkN2VkYTUyYWE5MjdmYyJ9"
+        },
+        {
+          "resource": "repo://app/installed_apps.py#L118-L139",
+          "version": "repo-lines-v1:sha256:18ce3bae38bb458225e27454b846ad2613b7fa6d685a6aea4d6592f618014324:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNjM5OGY5NDIwMDYyNjgzODYxNzRlODE0NzI5MjY1NzVlYWZiZjUxYzA5ZmQwN2FjNjI5ZjIwNjliN2EyOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2OGIyNTUxNGM3OTg2NGRkOTI4ODZmZDcyNTYyNjY5YWFkZDZjN2VhODY5NTI2YTMzNTM3Y2I2ODQ3N2FmNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczM2U4NDg3Yzg1ZGZkY2Y5ZmE3YjkzYzc0NmM5NDYyNWFlNDdlMTIwYzc5N2U3OTFlNzM3ZjllZDdmZmM3M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZDhhNWI5MTViMDhlYmY5NzA4ZGU2OTRjYWFhNTU2OTYwODlkZjYyMmNjOTViZGUwNDcxNDNkMDk5ZDlhM2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_072f0a3246e54e9e9b345dc5602000b5",
+      "statement": "Путь к exe из записи реестра определяется по трём попыткам: DisplayIcon, если указывает на существующий exe; каталог DisplayIcon; InstallLocation; при неудаче запись отбрасывается.",
+      "evidence": [
+        {
+          "resource": "repo://app/installed_apps.py#L92-L107",
+          "version": "repo-lines-v1:sha256:7ab2ef60087456da6d209ced399b42c6e4131d565e9a4eda87a742bf066347d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZjNlMTdjNDljMjZlNWQ5MTMwZDMyZTcwMDUwYzI1YmU3Yzc3NTg2NTc4ZTczZTgyZTg5MWU5MjBlNDI2ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzYzUzNDA4ODg4MzI0NzMwNzI4M2IwMzFhNmI4YzA2N2Q1ZjA5MTBlNzBkZWYzYWI4ZDJjMjhjZGU1YTUyNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyZmI2NDQ2MDM1MzI3ODdlYjVkNjE1ZjY1ZGJkZDY4ZGYyNzMwOGYzYzJjMTA4NWZjMzQyYTMyNzNlNTExZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0MDliNzIwZmJmNGE2MTE1MTZjNGJhOTUzZjRmMDI5MzMzYmNjMWFlN2M5YTBhMTFiMjA5YWE3OGIwMWM1MmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb218112d6c04f77910d16df0f7f0b2c",
+      "statement": "_pick_main_exe отфильтровывает деинсталляторы, предпочитает файл с именем папки, а при отсутствии — самый большой по размеру exe.",
+      "evidence": [
+        {
+          "resource": "repo://app/installed_apps.py#L58-L77",
+          "version": "repo-lines-v1:sha256:5a93517664611c121fd63fe7e5e0f299b85458c7dd9210a4bf3dd3e8a32a6e2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NjRjMTZmYzEyNzM0YzlmYTNiZjcxODE1MTY1ODZkYmI5YTU5YTM5MGQ0YTgyMmQ0OWVkZWRhMjg5ODU2NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllOWZjMWNhMzZkZWFlZDIxMDJhODgwMDYwZGQ4NzMxMzFmYmY5OTE3NWY2Yzc5Zjg1NDNlOTQzNWE3ZjM4MDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiZDY1OGY1ODVkNGJhZjJjMDQ2MDZhZmM3ZTA1ZTgyZThkZWU1YmJkMTllZWM0YTMyM2E5YWIzNjY4ZjcwZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyOWU5N2ZkOTllNTliNzdhMjRmZTBiMjY5NTYzYjE4MzI3NDFhMjI0ODdiNWY2YzVlN2JlNjZjYWE5N2RhNzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe36b75fb7f5412398b335574e67ffbd",
+      "statement": "Меню Пуск обходит общий и пользовательский корни, разбирает .lnk через WScript.Shell с обязательной CoInitialize/CoUninitialize, и принимает только существующие exe, не являющиеся деинсталляторами.",
+      "evidence": [
+        {
+          "resource": "repo://app/installed_apps.py#L222-L272",
+          "version": "repo-lines-v1:sha256:b7f5ef1b52f06a2e4a2dedff960905465d02e0ac3c52779cc1ebea05e82576e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjZGM2NzBjYjNkYzNjMWE3MTUzYjQ1YmViZWRlNzg3YjBjNDU3MmQxMjMzNmJiZTZjYWUwN2U5OTZkMmM1NDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0MDhkMzFmYzM4Yjk1NmQ3NTZjYzg0Y2E2NDQ4MWU4ZTNmYWQ3NjQ4ZWE2OGQ1ZDQxY2YzZDI4ZTMxNjFlYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhMWIxNjBkZWJjYWY3NmFjZjE2NDUzYWNmYjE1NmVlODhkNWM3NjI0MWNiOWViNzA4NzU0MDg0YTFiMzk5MzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd12cdb74b614ac3812f8367df785cdf",
+      "statement": "Steam-источник читает SteamPath из реестра, находит все библиотеки в libraryfolders.vdf, перебирает appmanifest_*.acf и выбирает главный exe через _pick_game_exe.",
+      "evidence": [
+        {
+          "resource": "repo://app/installed_apps.py#L172-L219",
+          "version": "repo-lines-v1:sha256:a05ec2a5756e1b2d17a3db65245727db0a0370aae0f4dc47fd08acd5dba64758:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0MmViMjkzNDZjZTE2YWVmZmE0NDJmOGJjY2NhYmEyZDdiYzk1NDViZGM1N2UwYWMyYWJkNzZjNzU5Yjk2OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4OTUxZDBjNTQ5N2U1NDVjYzhiYmRkZDA0Y2JjNTA5MWZmMDU3MTRhNmNmZjU5NDZkM2QwMDllYjk3MTg5ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhY2Q0ZjE1YzNkZmRmYWI0OTM3NTczZjIwNGNiNjRlMWQ0YmZlZTZjZmFjM2IyOWI5ZDBkOWI1MWFiYjg2Y2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1OGUwNjJkZjI4NWFhM2M3YzhhMzA3YWFiZGFiMmY1MjhhMTY0NjIzMTRjZTZlOWNiYTYzMmIwNTZmYmYzODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_936e861ae955494fa03aa44c99930062",
+      "statement": "_pick_game_exe дополнительно отбрасывает setup, redist, vcredist, directx, launcher, crash, report, cleanup, configure, dotnet, ue4-prereq и предпочитает точное совпадение <имя игры>.exe.",
+      "evidence": [
+        {
+          "resource": "repo://app/installed_apps.py#L142-L169",
+          "version": "repo-lines-v1:sha256:cca6a282aa177898ace7007512a7609bd296456f40bb515093114f2bb1a63573:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzYzVlNmY2ZjMwNjYzZjJjMDM4NTIyMzAxYThlZWFlYjUyOTQwZjMxMGJhOWY1YWI1OTViOGIxYThlYjMyM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYTIwYThhOGJjZTM0MGE1NDM3NjQwZTk4OTg1NDJiN2MwNmQ1MDYwOWFhNzcwNWUzMzE2ZGVjNDAwOTk2ZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzNTE4ZTlmMjJhY2Q2MWE0YjZhYTZkN2EyYmJkYTZhMmNiNDYxM2UxYmRmYzllZDgxZWM1MzUxOWViOGFkZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMjY3MTA4Nzk0NDllODQxZGY2YmQ2ZWU5ZGQ5Y2ZhM2E1ZDBlMzQ3MTYxZGVjNmIwZmU2NzdlZWFlMzViZmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a3087a3a747548f0a229f191a451dd65",
+      "statement": "Запущенные процессы отбрасывают всё из %SystemRoot%, деинсталляторы и explorer.exe, searchhost.exe, applicationframehost.exe; имя берётся из FileDescription ресурсов exe.",
+      "evidence": [
+        {
+          "resource": "repo://app/installed_apps.py#L274-L296",
+          "version": "repo-lines-v1:sha256:3f184a833ee8f355ee765dd0ae05d4df42def4a18035458ac9f4aa6e99b1c388:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExYmVjMmYzMjFiYjk2NzY1OGEyNGQ3OTkyOWI3NWVkZmJhZTMyODM0YmIzZThmYjcyYjJhZTQ5MzZhMGU2ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2OGIyNTUxNGM3OTg2NGRkOTI4ODZmZDcyNTYyNjY5YWFkZDZjN2VhODY5NTI2YTMzNTM3Y2I2ODQ3N2FmNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1NDI5YjFjYWI5YmI5MDNlNTU4ZWViNjRhNGI3ZTQzOTA4MWFlYjM2Yzc0OGU2MzA5ZGQ3NzU1MGM4NmE2YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmE2MWFhMjhlNDAxZWIwM2IzZGU4ZGFjODBjZmYwY2Y3YjE5MzM4ZGIyNmVjN2FiNWUyODI2MGYyNTU3MTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef9614a763e9478b9b4828c152b586e0",
+      "statement": "Сканирование выполняется в QThread (_ScanWorker), а иконки загружаются отдельными QRunnable в пуле потоков, потому что извлечение иконки — дорогая Win32-операция.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/add_dialog.py#L1-L20",
+          "version": "repo-lines-v1:sha256:7c527b69ef24a8f5e29c93af06796f09a3538ab2485ed32d72c199ae41a64613:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MTY3MmU2YTMzNmE0NDRhOWE0MGM2NGVjZTYxMDc1OTNiZTlmNmU0NzZlYjczNjhhYmU5YjYzMGQxNjJiMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwOThjNDQ4Y2VhM2QwNDc4YTAwZTQ2Yjg3NzZmY2I5Yzc0NjIxMjRhZjkyODc2ZjcwZTlkZTQ0ZThjZGEzMmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_03b367c3609648c398e6a829ab397055",
+      "statement": "wait_workers подписан на aboutToQuit и дожидается завершения фоновых потоков, иначе Qt уничтожил бы работающий поток с ошибкой «QThread destroyed while running».",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/add_dialog.py#L1-L20",
+          "version": "repo-lines-v1:sha256:7c527b69ef24a8f5e29c93af06796f09a3538ab2485ed32d72c199ae41a64613:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MTY3MmU2YTMzNmE0NDRhOWE0MGM2NGVjZTYxMDc1OTNiZTlmNmU0NzZlYjczNjhhYmU5YjYzMGQxNjJiMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwOThjNDQ4Y2VhM2QwNDc4YTAwZTQ2Yjg3NzZmY2I5Yzc0NjIxMjRhZjkyODc2ZjcwZTlkZTQ0ZThjZGEzMmYifQ"
+        },
+        {
+          "resource": "repo://main.py#L265-L273",
+          "version": "repo-lines-v1:sha256:e68a68c3d300d13cbd8bdd82182576bfb7993a15abaac64ddc5057e1524d414b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY4MDQzNWQyMDUyMjRiMWE4NTA0ZWVkNzIyMTZiOGU5OTkxNTYwNzFhNDQ4N2U2YWVjNGUxZjJjYTI0NjYwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTlkMTI4ODI4MzdjZDA5YjM0MjcxN2E1M2NiYzBlY2U4MWM2YjUyMzZlZTg2YjM4ZTMyOWJhZTE4Mzk0MWM1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjgzNTBmY2ZjOGFkMTBjMDUxYjI4NWZkOTYzMTFkNGM5ZWFjOTBkMzk0OWJjNGQ2MjRmZGFhNDhhNzJkNTczMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg1NzUwZjM1NzkyOGE0ZTIxMzkyNWFiMWQ4OTg0NTVjZjdmNDE4YWFiOWQzYTVhMTMwMGU2YTYzMDFjODkyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc4cc8cf58b04c859b2733f7f10b2149",
+      "statement": "Панель добавления позволяет выбрать exe вручную через файловый диалог для портативных программ, которые не найдены ни одним источником.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/add_dialog.py#L100-L120",
+          "version": "repo-lines-v1:sha256:0cf5311708914d85805d85bf8034b7733b065b00d1cf947ef00c507f3afbcca0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhOWFiODBlODQ3ZjZkYWZmZDA3ZTIyZTRmYjA4OTc3ZWQ3MmM2MDU4ZjA5MDQwYTgzY2QwYzQ3MjMyMjFmMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViODk0NGZlM2FjNjkxYzc1N2NlOTFmNmM3ZDFjYmQ1YjcyYTM3ODQ5NzFkYzRhNjdhZTlmMTVhOGRiYjhkNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5Zjc1NTMxMDc1YzBkOWQ3YmI1OGViMmZhOWY4MDJmMzkxNzJlODFmN2RkYjhhNDJkMmYyNmEyZjQ3NGRmOTkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

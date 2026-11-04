@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:aeee22382b038450223c96a9c229ac6bc427b0d50aab477bbf7936f8f50483ad",
+  "claims": [
+    {
+      "id": "claim_ff3c17a1a0f449a5a4109d114e6e823f",
+      "statement": "MainWindow создаётся без стандартной рамки Windows и использует собственный RedisTitleBar, а системный заголовок красится через DWM только для окон с рамкой — панели статистики и диалогов.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L100-L180",
+          "version": "repo-lines-v1:sha256:f78972fa0721fefdaac2f1605efe8b1c3e319bcce1711a648da7ba22c6468ee9:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2Nzc4ZGJlYTljZjA0MWQyNjJiNTU4NWQ1OGRiNDc3Njc4NzhlZWZkMGNjNTk0ODNkM2ZhMWMzMTg3NmU0NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0YmMzYWU3MDc0YTE4NDdjZjU5NTMyYzFmN2YwODQ4ZjliZDhiNGVlY2NiODM1NjllMTdkYmVlNDZiN2UzNmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0ZWQ5OGE5MDNhMDRkNjhkNjA0MjIwZDdhZWJjOTkyZTlkNjE3ZTlmMGFhNGEzNDkyN2I2OGY1NjA0YWJkNjkifQ"
+        },
+        {
+          "resource": "repo://app/win32_utils.py#L43-L70",
+          "version": "repo-lines-v1:sha256:28f7d596127a0b278abbd5e7a07af894c734dcc3b86a81edb8eb43cbe6f9a54a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwOTQ5Njc1ZWRmNTdmYTc2ZjgxMTY0OWU1MWQyNmMwYTljN2I5MjVhMTRjN2EzY2IxYWIwYjk3YWY3N2RiYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjZjQ1YzU0YTFmMWZlMmFkMTNjM2QwNjg2OGYwYTg4NzE1OTZiNGE1ZGM5YTVlY2FlYTZjYjgyNTc1MWQ5MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxOWY4ZGRkNTc3M2I4MGViZWY2ZjM1NGM4NGZjOGMxODY4YTNlNDg1NTVjNjU4OGE4ZTY2NTllYmU0MzJhZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef8911a6935d45d0902ee2212d2c37c9",
+      "statement": "Перетаскивание и изменение размера окна реализованы вручную через mousePressEvent, mouseMoveEvent и _resize_edges, а RedisTitleBar обрабатывает перетаскивание за заголовок и разворот двойным щелчком.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L400-L470",
+          "version": "repo-lines-v1:sha256:6c473d675082c36d878f35c9b65f0409be155f1d8c09a8d791372577a3aabd24:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZjMzMTU4Njk1N2JmM2NiZWVmNDgzNjdlYWIxMzZiNGM1Yjg2OWYzMWFhNzI1MTczOTEyOGUyYWI4MmJjNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyZmI3NzJiZDA1YTg3YjlmZTllMjk5MmM2NzdmOTQ4NWZhYjJiOWNmODNhMDNkYmU3ZWMyNTU1OTNjNWJjMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4NmZiMzQ0MmE0M2Q5YjlmNGMwMDQzZjlhY2FlZWFjYTM4OTA3ZjViMTIxNTczM2M2NTQ1MmQ3MWE1Y2E2NzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3NWNkYzMyZjIyMjM5ZDM1ZmE1NTNiOWI0Y2I3ZTc3ZDQyZWNhODAyNGJmMTdlOWI1MWYzMmIxNWVmMTc2ZjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ccef34c6a88d4a1f89670f4f4dd543c0",
+      "statement": "Боковая панель строится в _build_sidebar и содержит RedisBrand, SidebarItem, CategoryHeader и AddAppButton, с сортировкой по sort_order из базы.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L300-L420",
+          "version": "repo-lines-v1:sha256:c2ec26e98a291f754f0834c6a9fb40178e2673e9c199aec3be24c04fe193d9a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3ZWI3MDI1NzU5M2RhMDZmNjgyYTNkZGRhNTRhOWQyNjBkNGZjNTE0ZjY0NTIzN2Y1Y2E3NGIwOGY4ZGE2MWE2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4NTFhZWVkNzIyN2ZhODliODdiZGM5YmEwNmIwN2ZhMWI4MmYwZWFkMmY0NTM2Njg0MjA5YTI3NDA5NzAzOGJhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5YThkOWM5MmM0YjgxNzA2OTZkOGVjOWVlYWY3OGQyMjY5N2RlZTBlN2M4NzliMDc0ZTAxYjI3OGRjNjcwNDU5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMmFkMDQzOWU2MTM2NTY1NGYxZWRkZGIzYzdhMmYzMDg0MmI1ODFjM2NjYjZiYTNiNzI0NjhlZDgyMGE5NWExIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf4c72c73ab34ac59397fe04ce3b8800",
+      "statement": "При непустом фильтре свёрнутые категории временно раскрываются, иначе поиск не нашёл бы приложения в свёрнутой группе; категории без совпадений скрываются.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L1047-L1082",
+          "version": "repo-lines-v1:sha256:8b1c8bcf735b562cf052271b838b0ba566f32bc4f8b391794d5cf2ab99369242:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNDU3M2FmNTlmMDIxZGE0YWM4ZjU3MzExMmQ2MTMzNTU0NGU3MmJlYjdjNGJhOWFhZWM3ZjEwZjk3Yzg5N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhYzBiMWI1ZTk2N2QwMTJkN2JjNjFhYTE1NTc2ZWU0NmQ5NzE1NDBhNmNlNTFjYTUxYmI0NjAwYWQyNWQwMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1NDcyN2RkYzZlZTAxOGM3ZGVkNDdhNDIyMTUwNWI4MjJlNzNiNzFhNTI3MDRlMTYwOGRjMjkwOGU3YzNlZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d310ced633049e0b7716cc1bc4705ec",
+      "statement": "При смене периода пересчитывается _base и значения карточек обновляются с анимацией, но только если изменение больше двух секунд, чтобы не анимировать каждое секундное приращение.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L1083-L1095",
+          "version": "repo-lines-v1:sha256:e689b5711710c4eed96b175d80d032166342588983ecb7c50724ef27ef64b20c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlZDA1NGU3MjY2Y2MzMGZlZmIyODQyNTI3YjMyMzNkY2UwZjIzMmM3MDlmMmQzOWFmN2RlNzAzNGQ4MWVlOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0ZGVkODFkMDU0OTNhYzI0ZjM5OGI5MDRkYTcyOTAwYTQ5OWZlYjMwMGJhMTJjNjFiNTIyYjMxZTVhMzkwODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjYTBhZGQ4M2U0ODA0ODRjOGI4OGI5YzllY2U1MzI4NTVmYmFkZmZhMzIwZjNjMjgyYmE5ODVlOGY4NDc5NmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_245cb730a549466d8cd8d28ca7bf56c1",
+      "statement": "_update_values складывает три источника: today_db из базы, pending_seconds из буфера трекера и _base с историческим временем без сегодняшнего дня.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L2361-L2375",
+          "version": "repo-lines-v1:sha256:d0056d2f35c1792e190427dfcb73a484e19f121907938b0ddc2c697263286caf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYmM5NjYxNzNkNWE3YTkxNjVhN2NhMjVkZTUzMDliYzcxMDQzNWM0ZTE5NzA3MmQyODRmODBmYzg5OGQyZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4NDdhZWJmNDYxMGZkYjJjMDE2Y2NlZmQwNDlkN2MzNDQxMDk3OTkyN2QwYTU5MTZmN2QxZWM0MWI2YjE2ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5NzdjYjJlMGIwMDI0ZjJhZjEwYWRjOTgyYmEyODY3Njg5OGM4ODEwMGU4MTVhODkxN2JjMTI5MGYyZjc5NDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e65cb472675d46bcb49337e1518f6576",
+      "statement": "Без pending_seconds интерфейс отставал бы от реальности до 15 секунд — на столько времени буфер может накапливать данные до сброса.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L101-L107",
+          "version": "repo-lines-v1:sha256:aefe32e52c1837df9fe123d941ba7123e67f03b1c41b103f7a6a4f473e037fbd:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmJmNTBkMzBiZThmNDgxMTg0ZGI3NjIwZjdlNDNkOGU1ODVjNWM0YzczOWQzMzRhY2Y2MWI3YmYzOTQ3MDMyNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGUwYjYxNGExZTI0NzEzZTlmMDExODgzNTdkZjkwNDYzZmE4YmZjMTgwMTNhOTY3MGY1YzNiODVmNmJjZTFlNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQ5OWE4ZjNmOGM1MzJiODRmNWE4NjAwNjMxMjVmZWIzZjYwNmI2OWRiMDY2YjdmNzIwMjMxZGJmNzdmN2Y2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2VmMzQ0NmMzYmQyMjA0ZjRkNWQ2YTIxNDE1ZmE2OGEzOTcxNDZjNDA1ZTU3Y2U2NzYzM2JjZGIwMjhiMWQ4YyJ9"
+        },
+        {
+          "resource": "repo://app/ui/main_window.py#L2361-L2375",
+          "version": "repo-lines-v1:sha256:d0056d2f35c1792e190427dfcb73a484e19f121907938b0ddc2c697263286caf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYmM5NjYxNzNkNWE3YTkxNjVhN2NhMjVkZTUzMDliYzcxMDQzNWM0ZTE5NzA3MmQyODRmODBmYzg5OGQyZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4NDdhZWJmNDYxMGZkYjJjMDE2Y2NlZmQwNDlkN2MzNDQxMDk3OTkyN2QwYTU5MTZmN2QxZWM0MWI2YjE2ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5NzdjYjJlMGIwMDI0ZjJhZjEwYWRjOTgyYmEyODY3Njg5OGM4ODEwMGU4MTVhODkxN2JjMTI5MGYyZjc5NDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3162c39f9b464f3aafb64e263b9ad751",
+      "statement": "Анимация заголовка использует QVariantAnimation на 350 мс с OutCubic и останавливает предыдущую анимацию перед запуском новой.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L2376-L2394",
+          "version": "repo-lines-v1:sha256:cde7fd973a48b55f2a8635d9e0d9cacfeff8806b27cad1530e8eb508db85f0eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNjdmNGJiZGZiM2IwNGUxOGY2ZjVlNGJlMmQ3ZjFkYTA1ZTQwYzEwNGM3ZDlhNGUwZDk4NTQzYWEyMGYwZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyOWMxZjYxNjU0YTMzNGU5MGVjZGVmMjA4OWM5YjUzNTM1NGY5NmZiZTZmMzdjN2I0NDI3MDQ1MzExMWIxMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4YzlkOTdiYmViYWVlOTljNDUwM2JlYTQxN2MxMGEwNTVhZThhODE5ZWE3YzJhZTM4MjFmY2VmMmFiM2E1YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NGZlMGEwZjNmZTdjMmY0Mzg1M2NlOTA2NDk3ZDIwZDIyMTRjNTNjZDNlOTE4NTMyMzkyY2I4NTkzMjhhYTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7cd97b8e41a449e49cbb87dea81fa6bc",
+      "statement": "_on_tick обёрнут в try/except с логированием, при смене даты вызывает refresh_apps, затем _update_values и _update_status.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L2396-L2420",
+          "version": "repo-lines-v1:sha256:8e6a5ae1b6a4178af2a43d69c38af45a7d6d9cebfff3e500d36b4f8c60a6f09b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiODkxM2I2ODIzMGY4OWVlNDJmY2M4M2I4ZTA0YWQ1NTJjYThjNTZiMjFjZTRjNWNmYWU5ZGRlMzg4ZjJlYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOTQ5YmU0NTMwODAxMWI2MmJiYTAyOGQ0ZWM3MzdlMmMxNjI3OGQwZGY2MjM4OGY4OThmN2NlOTZkYWJjNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjYTNlN2RkY2M2ZDY3M2YxZmY3YzBlY2MwYWVjNWQ3NmY5ODMzMTQyNjNhNzg5YjU4YjE5N2RkYTYxYWFhMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlZmIwYzE5YWUxZjUzZTE3MTdkMjVkZDI4YTAyYmYxYjE1OWRhNjIzYTUxMTkxNGU1YjRlMTg5MTU2ZjYxODAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d149829d04e640298f7c8d91a4669727",
+      "statement": "_update_status выбирает одно из четырёх сообщений: простой не засчитывается, пока не активен, сейчас учтены с именами до трёх штук, активности нет.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L2396-L2412",
+          "version": "repo-lines-v1:sha256:658d735ee6b27c4df82d40936cdd209c1bb2b3db7dd4a9a93995d2ae9087d0e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiODkxM2I2ODIzMGY4OWVlNDJmY2M4M2I4ZTA0YWQ1NTJjYThjNTZiMjFjZTRjNWNmYWU5ZGRlMzg4ZjJlYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyYzJhNTBmNzQ3MDE1YzUwNmY5MzE1NzIyZTk2MDQ5NmMzNGU2ZWJkMjI1OWE1ZGYxNGQ3NjVmZGUxYTllYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjYTNlN2RkY2M2ZDY3M2YxZmY3YzBlY2MwYWVjNWQ3NmY5ODMzMTQyNjNhNzg5YjU4YjE5N2RkYTYxYWFhMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNDU5ZjUxM2VkNmMyYjFjZGJhNzAzZDZjOTc1MjYyMGQ2YTg1ZDIzODYyMjg5NzNkMDJmMTZmMTI0NDY0NDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_81b2d2c02bed4ea49a3c031fe2360490",
+      "statement": "_build_tray создаёт QSystemTrayIcon с меню «Показать окно» и «Выход», а двойной и одиночный щелчок вызывают _show_window.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L2422-L2446",
+          "version": "repo-lines-v1:sha256:cca4108d91bde477a3e3ed273abe7baac59613bdb5d4e417af9ddf271dd75d4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwYTY2MzJlMGI5MjNmYzkwOThlZmI3ODIxYThjMTU2ZGM2ODQyMDM3ZWM1YWNmNzY5YmRhNDE4ZmIxZjM3ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0NjhkNzRlZGQyYTE5NWU3MzZkM2Y0NmFlN2QzZDVlNTZjZWM0NzVlMWUyOGMwYmUxNTE1NGZlNzU5OTUyNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3ZDU2NmZlYmJiNWE0NTIwN2Y4NWIzODNjMzUwM2I5YzczMWNiM2ZhYWJlMWZlMmJkMzVkOWZhYTBhZGNkYzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d64af7de59324e61a019109ad2211464",
+      "statement": "closeEvent при наличии трея скрывает окно, показывает подсказку только один раз и игнорирует событие; полный выход возможен только через _force_quit в _quit_app.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L2447-L2462",
+          "version": "repo-lines-v1:sha256:5cd2c497da5be34bdcb60bac61b855bd8422e8516c5afc23574c667b8016d83f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZmQxZDljMDRiMWQ0OWJkMjc2MTYyMWE5NmJkNjVmM2NjMDJmZjgwYzgzMTQ2N2I4YTU3MGIyYWExYmM5MDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwOTVlZjA3ZjZlYjZlMDk4ZTZhODQ5YmU1YzkzODMzOTdmNDExM2U5NWI5ZTcwNzlmZDRlOGJjNTQ3ODAxNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1NWNmYWU2MDE4MmRkYjdjZjM4ZjRjN2M1ZmJiNGVkM2U0YTk1YzA1NTlmZWRlNzBhYmU3NGQ1MmJiNjgxNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhYzZlY2NkMjVhYjcwNjNjNDhmM2UzZTc0MWJlODk3NGVjNmIxODBmMDUwNGNmZTlkMzBiZGM1OGVlYzMzNGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e6614f189b0647b08054840285716237",
+      "statement": "Перетаскивание поддерживается отдельными наборами методов для карточек и для боковой панели, после любого изменения вызывается _persist_order для сохранения sort_order.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L1000-L1046",
+          "version": "repo-lines-v1:sha256:0afb9a4cd1e05c53a8dcdd3b73c1323f5faa5547b64719e0095a675734ec0709:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZDI4MTc3M2QwZTUwZGM1YmU0MWRmMzg1NDMxMjY3MDlkNjNmMWQ4Y2RiMjc1MGZmM2M5ZTAxYzQyZTk5OGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmZDJhYjFjMDYzZjVmYTBjOTVlYjRhOGY2ODBlMDFlNzQxYjQxNTQ4NzU2Yzg3YTU0Mzk2YmUyNzU3M2MwNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5NWQ4YTdhYmY3MWNiMDcwYmZlOTU2M2I4ZGM3YjgxNGZhNDMwM2I3ZDI0MmYwYzQ5YTQyODA1ODgzZjQwODQifQ"
+        },
+        {
+          "resource": "repo://app/ui/main_window.py#L1120-L1200",
+          "version": "repo-lines-v1:sha256:e5c0d643457e36bf00ea33089d36e21a1871ddf175c0ae45b9c87a98f7ea17ac:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwMGFkMmRkMzE0MTY4ZDJjNTU1YzhhNWM2MDU3NmIzNjMzZWNhMGJkNThiZTgwMGFlNjhmYzNlYmQ2NDFlZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjMzE4NzQ0NDc0ZWQyY2U4MDYyNjM4MThjMjIxOTY3NjI2YTEzNzA2ZjllZWY3MDZlODUxZDliY2VlNmFiODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4MDYzNDQzMDIzNDZiYmNkMTJhNmY2NzI2OWIyMDlmNDM0MjYyYTExNGFhMWEyZGIwMjg1ODYwYzBjNWM1Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZmE4MmFmZTllMzZmMmYzMTY1NzkxZTVjNjkwNDNiYmNhNTFjODhiYWZjOWM0ZDAxNGNmNTQ0OGQwNDI3ODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_728a270d78b44cc6951aa8a61fb68aaa",
+      "statement": "Категории создаются, переименовываются и отменяются через InlineEdit прямо в списке, а свёрнутое состояние хранится в _collapsed и не сохраняется в базу.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L1290-L1360",
+          "version": "repo-lines-v1:sha256:0643e64b001aed803bde9795177740420d5a0f059093eae5e902bb92d7d66bf2:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0ZjkwYWUxNTlhZTFhNTc3YmJhNTM0Y2Y3ODhlZjFhM2RmOTI3Nzg2ZDI2OWI4MWU2ZDVhZDgxY2MxZGE5OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0OWQ2NWEyYzdjZDdhYzZmZjg2MGZkMTNjYmFlMTdiMWVkNDM0MGQ0MTA5ODNiMjEwZTgzM2JlNWZkYjJkYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYTE0YWEyY2I1Y2JjYWZkOTM1MjYzNTc0NjBmY2NhM2VlMmYwNDAzN2NhZmVhNjEyYjQxNzExMTA4MzY5OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmZjk3N2NlYzI3MGZiNjY2ZmVkZjdmOTk4ZjVjNjk0YzU1NzU1MGEzZjAyYjg0ZmEyM2UzMWUwNTAzZjIzOWYifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

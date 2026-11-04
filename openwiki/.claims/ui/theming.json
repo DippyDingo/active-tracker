@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:e509d7f7de7a1016339a15d190d992dd4884c3b6480b9725ef7fcdd4812d5af5",
+  "claims": [
+    {
+      "id": "claim_e1526a533d8f4b019ebd69270b1acf77",
+      "statement": "Palette — неизменяемый (frozen) датакласс с фиксированным набором полей: фоны, границы, три уровня текста, акценты и специальные поля overlay, shadow, chart_fill_top/bottom и is_light.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L8-L29",
+          "version": "repo-lines-v1:sha256:dd89d320d828eee6c850ccd98e8f9f62e0bb70d065dc5bac4bfe08c4f634c3c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MGY4NmI2Zjg1Mjc3ODRhZWU1MGY0MWZkZjA3NjFkOGI2YzNmYTlkYmI2NDcwODIzNzIyYjE0M2E5NDk3M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhNjdhN2FhYTlhYTg1OTE2NjZjOTk2ZDM2ZDliMWQzNzY1YjFiZDYxYWM0MTM0MzQ0ZmM5ZTZiZTE0YjNhNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMDVlZGJhNDc2ZjJlYjJiYTlkYTllOTQ3ZmVmODllMTYzM2ZiZTVhY2Q4NzMwYWE3OGRjMTM1Yjg0MDdiNzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d377c36ed2144ee1ad5462e047914d3b",
+      "statement": "Тема по умолчанию — DEFAULT_THEME = \"redis\", а все палитры собраны в словарь PALETTES с ключом по полю key.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L69-L70",
+          "version": "repo-lines-v1:sha256:61b84cbd5cdbee2229593dcbbab7b5a4561fe54e61f0e0d585bdb0567f3a178d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U4NzU3NzVmYmQ3MzhjODVkZDYwMjA1OTNlYTM4YmFiMzk5MjUxYjQ5NjNkNmNlOTc4N2U1M2UyNWJkZmMxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ViNzAyNTc1OTNkYTA2ZjY4MmEzZGRkYTU0YTlkMjYwZDRmYzUxNGY2NDUyMzdmNWNhNzRiMDhmOGRhNjFhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZiMjdiYzY5MjBhZDc2NTE1ZjQ2M2NmYWE3NTY0OGMzMTk2NzJmMzVkNWIzOWJkZGMzZjNlYzBiNGNkYTFiNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzM1ODhhZjVkMjIyNjE4OTJkNTMyZDFhZjgyOTg0NWFiMzA3MDEyYmQxM2VhZjlmZGJhNWIzMTg1Yzk4YzViZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2afe324ba924d1291632aa65bf11eef",
+      "statement": "_derive порождает около сорока производных токенов из базовых полей через _mix_hex, а не перечисляет оттенки вручную; правила вида disabled_text = mix(text3, bg, 0.4) выводят цвет состояния сдвигом к фону.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L900-L960",
+          "version": "repo-lines-v1:sha256:d74322b0df6f302d23e1b46a58fb9d0f418a38ae22600a79d820b38d522a5334:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZjdmN2IxZjQzZDgwNzZhMWUwNjg0ODk2ZmViY2ZhZjQ2ZGUxNGQyYmI2ZmU1ZGVkZWU0NTk2ZmQwOTgwMTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlM2EwNzY5ZTlkZGRlYjJhZGVhYzAxOTQzNDQzNzJkNjljMDI3OGZiNDJhZTNiNjE5MWIwMzNkYzI4MmRiZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJmZWVkZDVmYTdmZTcxMzVjYjEwMTRiZDM4Nzk2YmM2Nzk2ZDQ1MDk2N2I3NTk5ZTRiODFlMDg2NzEwMDE4MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNTI4ZTI0MGE4ZDZlY2VkM2Q3NjQwZTRlOWI5OTFhMGUxOTQ3NzdkMWU1NWJhN2QzODY5ZjExZDkxZTQwMTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f4d46d0ca7a043fb9715202ac48d94d3",
+      "statement": "build_qss возвращает _QSS_TEMPLATE.safe_substitute(_derive(p)), и safe_substitute выбран, чтобы знак доллара без ключа не вызывал исключение.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L878-L880",
+          "version": "repo-lines-v1:sha256:72c3b65ba772abe59f214e50c3368a95d02770bd44a233159d76ce0ef3445a99:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQ2NGZiZTI1ODBmMDkzYjhiNWMwMzc4MmJmMjJiOGFjNzc1YWI3NGM1YjA2YTU4YTBmNzEyNWM1MWVhZmY5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ViNzAyNTc1OTNkYTA2ZjY4MmEzZGRkYTU0YTlkMjYwZDRmYzUxNGY2NDUyMzdmNWNhNzRiMDhmOGRhNjFhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWFjYjRmNGUzNzhmMDBiODBlMGVhZTNjNTc4MmIxOTk1MzE0Y2U3NjQ1MWQ0NDVjNmQwNGRlMTkzNWUwZWZjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTc3N2Y0MDE2ZTNkODAwNjg4ZTA0YjZhNmE0OGNmZGU3YTM4NWUyZjQ2MzQyZTU5NzgxNWJmMTVmZTk0ZTNmZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a3c8470e37e44b7ba1ce9d8ab2e789a2",
+      "statement": "build_qss вызывается на каждую тему, потому что QSS не поддерживает переменные и все значения должны быть подставлены заранее; стоимость сборки невелика, поскольку она происходит только при смене темы.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L882-L932",
+          "version": "repo-lines-v1:sha256:ff6785ecc347592f8934950d85e7573e70a275f8e43d764314491322114da03f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYjA5OWVmNjJmNGViZDU3MGQyNDdhODMzMzUyZWFjMTFlNjliYmE4ODYzNDAxYzc5YjBjMGU3ZGNiNDcyNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExNTdiOTRlNzFhYzkxNGE1M2IwOThjOGJlMGQ4YzcwY2Y4Y2UyYTQ1OWVjMmVkOTMzZGRmOWU0NTE0NGYwYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjNTExOTkyNjJiMjRkYjQyYjNiZTk1NDY1NGM3OTJjY2E3MDg1OTQzZjE5YzljNDI0OTczMTg1OTI2Yjg4ZDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ff271c0de80d48749993a2df131da916",
+      "statement": "QPalette нужна параллельно с QSS, потому что нативные элементы (фон QScrollArea, QMessageBox, рамки выделения, системные подсказки) рисуются по системной палитре, а не по QSS.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L882-L932",
+          "version": "repo-lines-v1:sha256:ff6785ecc347592f8934950d85e7573e70a275f8e43d764314491322114da03f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYjA5OWVmNjJmNGViZDU3MGQyNDdhODMzMzUyZWFjMTFlNjliYmE4ODYzNDAxYzc5YjBjMGU3ZGNiNDcyNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExNTdiOTRlNzFhYzkxNGE1M2IwOThjOGJlMGQ4YzcwY2Y4Y2UyYTQ1OWVjMmVkOTMzZGRmOWU0NTE0NGYwYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjNTExOTkyNjJiMjRkYjQyYjNiZTk1NDY1NGM3OTJjY2E3MDg1OTQzZjE5YzljNDI0OTczMTg1OTI2Yjg4ZDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1973a3f94b4d4b3499e4b58d1b1747d0",
+      "statement": "_paint_all_scrollareas обходит все QAbstractScrollArea и красит их, потому что QSS задаёт стиль области, но её viewport() остаётся системного цвета, и обход выполняется дважды для вложенных областей.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L991-L1016",
+          "version": "repo-lines-v1:sha256:ec3fd12f3acba6d0edb04cc623b68e4e344f151286b70ad0b0837f00e4d12834:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxODhiNDBjYWUxZTRjMzM1NjAxYTFjZjgwZmQxMzEyZGMwOGRjMjZmZGUyZDY5ZmE2OTQ3OWQ5YjUzMWViMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYjI2MTRlZTM1ZGFjODFlOWNiMGYyZmUwMDhlNjM2YmY0NGIzNDg5ODgyMTM4YWI5ZDE0NWE5NjhjYmJhMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3ZmNiYWRjZjM4YTM0MjJkODgwN2E4NzQ4MzljN2Y4ODJjYzJiZDQ1NTNmMGJmZjJlNGNkNTdlYjE4YjRmMzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9decbbfcab3a4695939a8b5424d842fa",
+      "statement": "Область sidebarScroll намеренно исключена из покраски с отключением автозаливки, потому что её фон рисуется градиентом в mainRoot и заливка перекрыла бы его.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L1000-L1010",
+          "version": "repo-lines-v1:sha256:0b352ee03773d59efa5a83f9e02b559208498635066be75ef178c5f5e8fe460d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczNGM5ODU0MWY1NzRiMzY1YWFhNTE2YTIwNTc4M2RmNDkyNjc2ZTlmM2QzYTAyZDM3MGIxMGRkNmZlYjI0ZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2NjBhYjhhN2I4NmQ1YzgwYzgxNDcwZjIwMjA5M2I1MzE1NTI2YmEyNGQ1YmMzMTE1MmRjMzk2ZTNjZGU5NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczNTI1N2I2NjMzMGIzZmU3MDIzMmFjZjQ1YzBkZTZmOTI5ZTk2NmMzNjhmYzA3ODYxYjEzMzQ1NzFjOWY1YmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_58e12a183628400695c4fed9dea920d0",
+      "statement": "apply_theme очищает _COLOR_CACHE и обновляет модульные переменные BG, ACCENT, TXT и другие, затем применяет палитру, QSS и покраску прокручиваемых областей.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L973-L990",
+          "version": "repo-lines-v1:sha256:d03a55b518d0a3eb7acff41a1ec10168a354e2641b57302f8685e3c3ce5f0c6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhOWVkMDdlY2UxZGEwM2IxODdhYWRmNTA0OGNjMzk0NGRlNWY2YjZiNTc2ZmZiY2EwZTU2YTQ0NWIzYjE4Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4NTgzMTU0YzQ1ODg2MDBhOWYwZTdjOWNjOWQ1YzFlNDY1ZjVmOGZjMWJjNjAxZjNlZjU4MGEzYThjMmViZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhZmYyZmFmMzEyNzVmYzI5N2JlYWViZmI0NzIyOTgzNjlhMTRhMzllZDEwZTUxMjAzYTEzYTFhM2FkYjA1NDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fdc49e3fd6c49499dcbf1cc22e62e0e",
+      "statement": "Очистка _COLOR_CACHE в apply_theme обязательна: иначе после смены темы color() вернул бы цвет прежней темы и окно оказалось бы перекрашено частично.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L1063-L1068",
+          "version": "repo-lines-v1:sha256:2d2ccd063afdb1d73edcae09a2377f89badfbdd1fa74797d70c58f7b68719764:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWMzZWQ5YTUxODFkZGUwNTIwOTU2OTFkOTc3MjRmYjljYWMwZTlkODg5NDUzYTRhYWU2MDU3ZTUwMjFmODljZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGViNjIzZjBkYzAyMmM1ZmZiYjZkYmRjNGY5ZTQ5MjNmNzIxOTZlZTQ3OTc4ZGYzMzQ4MjE2YzViMTE5MGIxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmUzMGMzMGZlNjlhNmMyNGE1ZGUxMjc4NmNiZGE0ODQ1ZjU3NTI1YTQ5ZWYzNzc1Mzc0Yjk3ZDMwMjE4YjYwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzJjZTA2MjkxYThjNjY5MThhM2ZmZmVlNGFmZGQzNTFlNWJkM2ZhMWI2Zjc0N2I5ODMxODY5NzcwZTg2YzFiNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb85aef0beb64bafbbc171c3d8d8d31b",
+      "statement": "Полупрозрачные слои soft() инвертируют базовый цвет по признаку is_light: на тёмных темах они белые, на светлых — тёмные.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L921-L922",
+          "version": "repo-lines-v1:sha256:1167e5c7b4f6eae0cf21194ea742c1675ce14715e8b0476a74d8bc886bb602d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjViYmZjNTY3MDhiZDFjYzE1ZmNmMTFiNmYzMjRkNzQ4MGEwZGM4YTQyNTAzZWI0ZGQyNGIwNzAyYTQxZDUyMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU0NzIwYzMxOTgxODViMzYxNjczMzUwZDc3MjcwYjkxYjlmZWVjNmQ1NzBkZTBmMjUyY2RmYTRlOTE3N2FlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDMyMDdmYmRjYzU0MGUyYjE0ZmFkZDNmNGI0ZWQ1YTViOTAwYzVjZTYzYTg0NWQ3M2QzYjZkNmJjMDBlYzhkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGVkYTVhODU5NDg3Nzc0YjIyMmJhMDIxNzYxYjk3YWJkMDE5MTA0MWM3M2VmOTk4NThkZWFiYjg5N2U5NDdhOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b88e9b3244446d88cc369711f82c490",
+      "statement": "color(token) кеширует QColor по токену, а _make_color различает прямые токены, токены с альфой и вычисляемые через _mix_hex.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L1018-L1062",
+          "version": "repo-lines-v1:sha256:920700ff2e5319478220b55306c91d7e5076bf5363035b2e4e7e57faecaaa680:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMzQzZjg3MDVlZmFhODk4ODRlNThjM2Q3NDI4Zjk3MmNhNTljMmQ4Yzk2MDcxNzM3YTVmYTAwNTg0ZTc1YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1OGQ4MGFlZGRiNjI3ZGUzZTE4MzNjM2UxMGU4NjVkY2ZkNTllZjQ1MmMzYmY2YTEwZGRkYzY1NThlZWVjZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiZDM1OWQ5Nzc4MTNiNzY5MDJiNjMyOGYyMGQzM2JiZDEwOTE5ZWVjMTZiZjdlMjA4YTdhYzc2YWNkOWU1MDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_669ecb27c9b246bba353c31361ced523",
+      "statement": "Предпросмотр темы применяется немедленно, но при закрытии без сохранения _revert_if_cancelled восстанавливает прежнюю тему по флагу _committed.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/settings_dialog.py#L30-L50",
+          "version": "repo-lines-v1:sha256:a8cbd4779cf700d35b15aa76d18bed17220ad5c5ca80ca70743d2520d714470f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZWU3Yzk1MzNhZTUxNzM3MjU1MDlhZDY2YzNmMjk5MTM4MDFmNWZiMmYwYzEwZGYwYTMwOWEyNGRhODc2NTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ODI0YmRhNjA5YTE2NWRhOWVjYzExNTlkMjY3YTdjYzM4NWRlNWVmMDc4Njc2ZmRhZTUxYTJiNjZiMzdkNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZjEwNGUzZDQ2Yjg4OWMyYmZiYjcwZWJjZWJkOTg0OWFlZDZlMjBiYjkyNmFjNzMyNGQzN2RlOTRlZjBkZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmOWIzNDg4ZGRmMWFmNjM5YzUxODg5ODg4N2U1MTQzZjI1ZTIwZmI0OWQ1NzAzNWFkMmJiYzQzZTE4ZjIyNzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7bae52f059448938d1eef8dc99317de",
+      "statement": "load_app_icon пытается загрузить assets/app_icon.ico, а при отсутствии рисует часы кодом в акцентном цвете текущей темы.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L1069-L1082",
+          "version": "repo-lines-v1:sha256:03c33ef6634a93d619466b46b6ff13ce7b631a6c2eafc58b728cae0c37709578:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzODlmZWVlODlhZmVkYTRkNzU4NGNiMWEwNjEwYmFjMjIyNjY1ZDA5NTkxM2FlZGJiZTU1Y2ZiMjY4NjAxNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxN2FmZjg2MjQ3MDE5MzlkZWM2NjY4MWFlMzBhNzJkN2MyNTViNWU4YzkxZWY3ZmIzNWViZmQzZTAzYmY0YzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxYzNiZGQ0ZGMyNWM4NzRlMTc1YTkxOGY3ZTUzYWJiN2ExNDU5NjQ3ZDk0NjM4ZWJkNDk4M2E3YzI3MjdiOWYifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

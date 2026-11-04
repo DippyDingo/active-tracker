@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:79e10767d38d14c46a9933fe6544f29b6b97f506b70cb8ec15396a44deaed0f3",
+  "claims": [
+    {
+      "id": "claim_89cd6a89d810475db715131a960a55e8",
+      "statement": "Приложение требует Python 3.13 и Windows 10/11, зависимости — PySide6, pywin32, Pillow и psutil, запуск из исходников выполняется командой python main.py.",
+      "evidence": [
+        {
+          "resource": "repo://README.md#L35-L51",
+          "version": "repo-lines-v1:sha256:a51d10f6d08adaa1f5388cd1a06a09600e050bf3c5c56c881310ea715591860a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0Y2IyYjVkYjliODhmZjc5N2M2MGU3MDBjNWE5MWQ2OWI5YTEwN2YyNmM2NmMxZjVmNzA3YjU3OTYwNzNjZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MWM5NWNjYzFhZDY3OGZmZjUwYmIyMWE3YjJlZWM0MTRjZmUzYzg3NjBhZDk0MTlhOTg0N2JkYWRkNDBhODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhMTIxZmQ4NWE2NDRiNDliNTE2NDNiYjdkMjczYTgwZDdhMDQ2MDE2YzlmZTQwOTgxZjk4NmI5YTZjNDQ4ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExMTMyZGZiYjQ0NmY0ZmJmZjdlNDExODBkMDU5NThlOTEyMGNkMDMzYmYzZTg1ODhhZmVmYWRkNTZkZDhjNDUifQ"
+        },
+        {
+          "resource": "repo://requirements.txt#L1-L5",
+          "version": "repo-lines-v1:sha256:bc65390e12afb2ceeb753afb7523370bc124634ae88c6958cb0c78a60652ac72:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZlZWVjMTE5MjYyMTg1MTYxMTU1NmVjNTQwMDJmNDQ4OWUwNzc4YWFkNDRiOTAyNTdkNDE3YTNjZDFlYmVhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjczMzU5MmUwNTdhMDlkZjg0YTZjMzY4ZjY0ODdmNzAxY2YwYzkzN2NmMDVhNmRiOWMwZTg5YjBlODE1YTdiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTE5NWM4NjQ0MWYyNmRhYzViZmQ3ZTQ5YzUxYThhMmFkZDJjZWZlMmU2OGMxYTVmYmFlNzI2OGFmMTBkNDBiNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5a8ed890d89e4e9eb8d0e07af89df041",
+      "statement": "Единственный источник версии — app/version.py; из него выводятся файл версии для PyInstaller, имя установщика и проверка соответствия тегу в CI.",
+      "evidence": [
+        {
+          "resource": "repo://app/version.py#L1-L3",
+          "version": "repo-lines-v1:sha256:da308bd87487cd9617fb26fb7be0166323b89b52b1658ff29619bdbf506ec683:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzMxMDk5NjAzODhhY2Q0NzhlNTU2NjI4ZDdjZDcwOTcxMTZmZjdkNjAyMTJkNmRhZDQzOGExZDljNDBlZDYzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk0YmJiMzJkZThkNjY5MmU5MTAxMGFmZjc1MWRiZGZiNzhiMGMxNjk0OGU5MTY2MDJmZDRkMzk3NjE1NmQ2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5b9ccc1d4fc47c68371ec337ca79497",
+      "statement": "Тег без поднятия APP_VERSION уронит сборку релиза намеренно, как защита от забытого повышения версии.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/release.yml#L29-L37",
+          "version": "repo-lines-v1:sha256:a2763ea9bf109b9de138c0becde6c423f18baf65c2eb0278da3f326af08fe0c5:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAzNzhhMTdhZDlhYjZjMTI2OTQyMWYyNjkyMTM0MjY3MGUzYmM4ODg2MmY0YTAzYTM4YjNhN2Y5OTNhMmU1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODgwMDVkNTcxMDZhMzYyZWIwMDBkYWYzZGE0Njc0YzgyYjUxOGZmNWEyZTJmNjdlZThlNzU3YTMzM2MyYWY2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmM2ZjVhYTJhZDc2MDUwYTBlYTUxODNkYjk3MmU4MWFiYmUzOWZlNmFjY2EzMzczZWQ2NTU4ZTEzN2ZhN2IwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODEwZjdiNWY2Y2EwMWVkMWNkY2EzMDZkODNmNzg5ZDI2MTI1NjkzNjdhNDAzMDc2Njk2OWMyODE1OTRjYWY1MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5157a87058c74ac8b867b561ad01e311",
+      "statement": "Имена-наследство от прежнего названия Nodexy сохранены сознательно: мьютекс NodexySingleInstanceMutex, значение реестра Nodexy, каталог данных ActiveTracker, файлы nodexy.lock и nodexy_update.log.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L262-L267",
+          "version": "repo-lines-v1:sha256:af4908d13323af31559c677fd3f011e36eff3d4768dcb8799f3b1b2606033525:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0NzZkYmI0YTczMzMyZTBlOTA2Y2FkNjlkNDVlNTA0MTAyNDc0MDQwM2VkMDE4MTM3MjFiZGViM2VkNDA1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNhNjFkYTA3MTIwMTczNmI3MTcyYjFmNDdmZTEzZTRmYTY2N2NjOTA2YTUyODc0ZDBlZTg0YzQ3MWMyYWZlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjdmNTJmOGE4NzczNzc2MDgxZDQ2MDUzYzM4YWQ2ZjUxOWNmY2ZmMzQ4OGFmZWYyYzJjYzZhN2FhZTJlMTUwNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDJmYjI5ZWY4MGM1YzU4OTBmZWI2ZGU3YjY1MTBhN2U1ZWU0MGMyYzI5MjM3NDIyODc2YTY4OTFjZjA2NmE5NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a548dba20d84bf1b6b07f7c95795b09",
+      "statement": "При сбое следы остаются в crash.log, nodexy_update.log и nodexy_install.log в каталоге данных, а состояние обновления — в config.json.",
+      "evidence": [
+        {
+          "resource": "repo://app/config.py#L10-L11",
+          "version": "repo-lines-v1:sha256:cdce33f387fec084531e5839330187937b6321a5c4e3b23942f08f7d9d1eb117:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVlNzVkMjdmNzgwODVkNmQ3YTg0ODBiMGU2NmZhMDg0NDA2ZmQ1NDk5YWFiZThhYzI5NWZiM2UyNmE1MmI4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg4YzFhNTU1YWNiMmQzNzVjMGU4M2VhODZjMmYxNGYyYjdkNTAwNTJjYzI5NzZhYjRhZGVmY2Y2MTllMmM4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjIyNDZkOTAzODBmZjBlM2I5ZjA4ZTA3ZDlhZjM4ZGFhMGE1ZjU4Nzc5ZDYwM2QzNTQyYmU4YmNlMGJmZTBlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZjNTcxMDNhMmVkODQwOGU2MGIwZGIyYTA3YjIzYzRiNDBlNTVhMjQ3Yjk2NDhkOWU1N2Q3Y2ZlMGZiODZhYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_92413ea2d4e94df3828078b98360707d",
+      "statement": "Главные точки входа: main() в main.py, Tracker._tick_impl, _SCHEMA в db.py, APP_VERSION в version.py, startup_processing в updater.py, run в nodexy_updater_helper.py и MainWindow в main_window.py.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L23-L54",
+          "version": "repo-lines-v1:sha256:ec37d401765ca04413129b3f8405df7799bb32fc9a38b3cb8a3e7de24422b23a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjZGM3ODg5NmE2ZWFiN2FkNDIyOGUyMGY4MmRjYzNmYzYwZGMzZDVhMmEyZTkyOGRjZTJlYmUwMjhjOTY1M2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NWQ0NTg5ZTkxY2M4Y2I5NzQ4ODlkYWIwMWRlMTVkYjE1NzRjYTEwZWVjNzI5MGExMDliZjU4OGM5NGUwMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1YWZlMmU5YjUxOTk0MTY4ZjcxZWVjMzNkMGU1Yjc4NWM4Yzg4YWI5NDA5NzlmOWI5NDdkN2M2MDJkMjdhMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmZmU4ODdiYWE1NTBkNWY2NzFhZWU2ODYzMDg2ODEyNDM0YTQ3ZDE0MjkzOTlhYWZmOTQ2YjE4OTViY2UwZjUifQ"
+        },
+        {
+          "resource": "repo://app/tracker.py#L177-L177",
+          "version": "repo-lines-v1:sha256:10ea5d6e101259bf7babac9f793bc42d43e335ba2a3f58c96faf2a2a11dc79c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBlYTVkNmUxMDEyNTliZjdiYWJhYzlmNzkzYmM0MmQ0M2UzMzViYTJhM2Y1OGM5NmZhZjJhMmExMWRjNzljMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBlYTVkNmUxMDEyNTliZjdiYWJhYzlmNzkzYmM0MmQ0M2UzMzViYTJhM2Y1OGM5NmZhZjJhMmExMWRjNzljMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYxZmFkYjA5MTk2ZWI2ODQ2NzM1NGE4ZGEyZTNjMzQyMzZhMzBkMTg0OWEwMWRhZjIwNTliNzUwNmYwZGU0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGI0ZGVmNDA4NjEwMDg0MDU3YTU2Mzk4NTVhMGRhMzVhYTZkYmM3OGZiNjBlOWVkMGZmMmY3YTQ4YWI4ZTYyMiJ9"
+        },
+        {
+          "resource": "repo://app/updater.py#L749-L749",
+          "version": "repo-lines-v1:sha256:f8278138ed70f28d670a96654d8d3852de8b7208d6c44d6de408345fe3f3d341:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjgyNzgxMzhlZDcwZjI4ZDY3MGE5NjY1NGQ4ZDM4NTJkZThiNzIwOGQ2YzQ0ZDZkZTQwODM0NWZlM2YzZDM0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjgyNzgxMzhlZDcwZjI4ZDY3MGE5NjY1NGQ4ZDM4NTJkZThiNzIwOGQ2YzQ0ZDZkZTQwODM0NWZlM2YzZDM0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyOGYzMDQwZGZiZWI2OGNjOTQ2MDg0N2I4NWRiNTlkM2UwYWQ3MDk3OTk3MWE3MzRjNDk1YTIxMGI5ZWI3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmY5ZjY3ODIyMzk2Mjk3MTY1ODU3N2RmMzhjZDY4ZjgwMDYxMDcwYjEwNDJhYTYzNTA0Yzg2NWJlZjQwMzE1MiJ9"
+        },
+        {
+          "resource": "repo://main.py#L152-L152",
+          "version": "repo-lines-v1:sha256:e03ac08d242a9d82e96883c44d5e70533d5fa62f242c5313c5ff6d9e6a0c03cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTAzYWMwOGQyNDJhOWQ4MmU5Njg4M2M0NGQ1ZTcwNTMzZDVmYTYyZjI0MmM1MzEzYzVmZjZkOWU2YTBjMDNjYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTAzYWMwOGQyNDJhOWQ4MmU5Njg4M2M0NGQ1ZTcwNTMzZDVmYTYyZjI0MmM1MzEzYzVmZjZkOWU2YTBjMDNjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjQwY2I1MWY0ZjU0NDg0OTgwN2FiYTBjZDA3ODVjMzc2Zjc0MmE2NGYyNDYxMTY3OTg2YWY4NGE4OThhY2NjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI5YmVhNmQzZTZlOTAzNzBlMDlkMjA3MDFmMmMwM2UyNDYwZTkzZTYzMGZmYTYxYTgwNzE2OGI2MDdlYjJiMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a11b163a95954b5ba6fcedbdb169fb04",
+      "statement": "Один тик начисляет не больше 7 секунд благодаря ограничению GRACE_SECONDS + 2.0, а flush перед сменой базы обязателен, иначе накопленное уйдёт не в ту базу.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L200-L206",
+          "version": "repo-lines-v1:sha256:66aaa1fb691f1c32d6f4bb19c07d5035bb73b18237880d8529e27033d54e66b3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWNhZmI1MTE4NGEyNDk4MmMzZDczODhjZjA2YTdkZTE2YjlkNDBjMTlhMTRkMGIxYmEzMDE3OGQzMjM3OTY3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2FmN2ZkMTEwNTE1NzQxYWJkYjgxMzllZjM3YzlhOGM3M2U5MjY4Y2FlOGI4OGM2OTdmMzkzZDFhYmE0N2UzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE4ZjI0MDJlOWNkYmJiYzAzMDdlZDE5YjcyNDg4ZGQ4NGVmMmJlZjUxY2NiY2E1ZWVjODVhMjJiODRhYjMwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTg2YTBmZDdjM2M4YjFmODFmNGY0YWU4MTAzNDBhOGVlMDIwM2Q3ZjczZjg1MDkzNDQzY2FiOWMzZDgyZGJiYiJ9"
+        },
+        {
+          "resource": "repo://app/tracker.py#L52-L53",
+          "version": "repo-lines-v1:sha256:fb80053f6ff3bbc875449c72ae15a3a261003b591f9d45c89cfb2b71540c3e5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDM3MTI0NGU2ZDg2MjNjMjgyNmE5YjEzMTFjMjk4NmVlNWQ4ODQxYWVhNzA2MjUxMmQ4ZDFhMDI1MDMxZDdjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwNjE0YzBmYzcxZGM0MDU4YzFkM2U5MjY4MDIzMmJmNTc2ZjMzMGJkY2ZkNDVmZGI5YWU2OTZjMDQ4ZGI2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY2NzRjMDk2YmIwNWMxYmI2ZGI2NjRkODQyNzY5OGQ4Njg5ZmIxNzQzZjBlYzI5OTNjMjNiMTNlNDMyMDc3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY1MDVhM2NkNWFhNWFmZTBmOTA2ZTI3N2JiYzc3MDMxZDhkNDM4Mzg5YmE3YTc2ZmIxNDEwYTQ0ODM5ZmUyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e76a80c193f43b69971ce38b30db9b0",
+      "statement": "Проверка установки выполняется до захвата мьютекса, а маркер установки снимается до запуска новой версии, иначе пользователь остаётся без приложения.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L182-L191",
+          "version": "repo-lines-v1:sha256:b42cd243c16223c542feb5816809713e31a4e72a950cbebfc8117d10619f9ba8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkZTJmZjVjYzJjMzAzZTY2NTg0ZWEzNjgzOTE5Nzc4NDBhNTA2YjY4NDQ0NTEzZTliNjlhM2Y0Y2MzNjcwZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNGIxMDg1NzY0NzJhZjc0NjljNjE0Y2QwMjZmZjJjYjQ0ZDQ5ZWVjMzYwMDgzMzA1YmYzNjJjMjRjOThlN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxNGM4MTcwYzdmNTFjOGQ2YmI3MDFkMGFlM2ZhMzU3OTM1YzZjMjlhOWQwM2VlMjE2NDkwYjBhODE4ZjYwMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlNzJjNjNlMjhlMjYwOGZhMjUyMjA0N2IxYjY0ODMxOGM0OGE1ZTViY2FhODk3MjhkNzI4YjZjZDhmODMyNjkifQ"
+        },
+        {
+          "resource": "repo://nodexy_updater_helper.py#L165-L181",
+          "version": "repo-lines-v1:sha256:47b0502b7a23ad29cf2e5cf2a3590eb12bd969568669aa39ccb237d25aa20215:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmOTE5YjA3NmM5NTNkMzU5M2JlMWE1OTE0ODM5OWFkNDMwY2VlMmNmNDI5NmUwNWM2ZDhhNzU4Zjg3NmMxY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ZDFiYmEyZDczZDBjNmI4MjEwOGQ3YWI1ZWJmMTEzYmE0NzkxOGNiYTQ3MzRmOTU4M2RiZWIwMTY0ZDhlM2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZmUzMmMyOWQ1NTFmZWNmYWJhZTdkNmNiYTdmNzk2Zjc5OWY2MTkyMTJhNWNkNGU4OGI0MmRiMTQ2M2Q5ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5N2QyOThiYjdjNDM4OWRkZTY1MWE5MzVjMmU2ODcwYjRkMDExNTI4YzBmZDQ3MmYwMjNiZDBmOTIxZGVmYmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_df6b1f83b25242f8b250a04691b609cc",
+      "statement": "QApplication создаётся один раз до диалогов, _COLOR_CACHE очищается при смене темы, а wait_workers должна оставаться подписанной на выход приложения.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/theme.py#L973-L990",
+          "version": "repo-lines-v1:sha256:d03a55b518d0a3eb7acff41a1ec10168a354e2641b57302f8685e3c3ce5f0c6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhOWVkMDdlY2UxZGEwM2IxODdhYWRmNTA0OGNjMzk0NGRlNWY2YjZiNTc2ZmZiY2EwZTU2YTQ0NWIzYjE4Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4NTgzMTU0YzQ1ODg2MDBhOWYwZTdjOWNjOWQ1YzFlNDY1ZjVmOGZjMWJjNjAxZjNlZjU4MGEzYThjMmViZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhZmYyZmFmMzEyNzVmYzI5N2JlYWViZmI0NzIyOTgzNjlhMTRhMzllZDEwZTUxMjAzYTEzYTFhM2FkYjA1NDAifQ"
+        },
+        {
+          "resource": "repo://main.py#L265-L273",
+          "version": "repo-lines-v1:sha256:e68a68c3d300d13cbd8bdd82182576bfb7993a15abaac64ddc5057e1524d414b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY4MDQzNWQyMDUyMjRiMWE4NTA0ZWVkNzIyMTZiOGU5OTkxNTYwNzFhNDQ4N2U2YWVjNGUxZjJjYTI0NjYwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTlkMTI4ODI4MzdjZDA5YjM0MjcxN2E1M2NiYzBlY2U4MWM2YjUyMzZlZTg2YjM4ZTMyOWJhZTE4Mzk0MWM1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjgzNTBmY2ZjOGFkMTBjMDUxYjI4NWZkOTYzMTFkNGM5ZWFjOTBkMzk0OWJjNGQ2MjRmZGFhNDhhNzJkNTczMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg1NzUwZjM1NzkyOGE0ZTIxMzkyNWFiMWQ4OTg0NTVjZjdmNDE4YWFiOWQzYTVhMTMwMGU2YTYzMDFjODkyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_81f7ff35e9df4b899e2d6f2a58902c5b",
+      "statement": "Значения на экране складываются из базы и pending_seconds, без второго слагаемого интерфейс отстаёт до 15 секунд до момента сброса буфера.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L2361-L2375",
+          "version": "repo-lines-v1:sha256:d0056d2f35c1792e190427dfcb73a484e19f121907938b0ddc2c697263286caf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiYmM5NjYxNzNkNWE3YTkxNjVhN2NhMjVkZTUzMDliYzcxMDQzNWM0ZTE5NzA3MmQyODRmODBmYzg5OGQyZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4NDdhZWJmNDYxMGZkYjJjMDE2Y2NlZmQwNDlkN2MzNDQxMDk3OTkyN2QwYTU5MTZmN2QxZWM0MWI2YjE2ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5NzdjYjJlMGIwMDI0ZjJhZjEwYWRjOTgyYmEyODY3Njg5OGM4ODEwMGU4MTVhODkxN2JjMTI5MGYyZjc5NDMifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

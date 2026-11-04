@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:890e0dd3ba756a2a9ea1be097846c2f46ba97f420d62e8d314a903b0bd52edd9",
+  "claims": [
+    {
+      "id": "claim_872259aed9a14a02bfa4f4ca55cdacb3",
+      "statement": "Иконки magnifier_icon, menu_icon и ui_icon рисуются кодом и принимают цвет, что позволяет перекрашивать их при смене темы без перезагрузки ресурсов.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L21-L50",
+          "version": "repo-lines-v1:sha256:a16f738ca50dad2381a525818afd295c9ca0a93625cccfc2ead9b220516f27ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1ODdmNGE0OWE3OGRkOGM5NDk4NTFkNTMwMjY4ZDcxYTlmNjNlMzE0NWQ2N2UwNjJiN2ZkZDkwNzU1ZGQ4NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlN2Y2YjhjMWZmZGMyMWRiOTM3ODY3Y2FjMGMwNjY3NTI4YmFlOGU2ZDkxNDJiZDU0NWM0NmY3NzI5ODljNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzNmY5ZDlhZmI2ODQyNzI5MDQyZDc1NmFlZDVhZTg0ODc3ODYwZjEzYzJhMzBhMGI1YTA4OGQzODJkMmRlYTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZTA2MzAyMTQ4ZWNiODU5MzU4NzEzOWZjMjZkOTM1YTc1YWM3NDkyOTJlNjIzZTg4NjVjMGY3MmJmMGM3OTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a6beeb510dff4ec791033808ba6857ef",
+      "statement": "MiniChart имеет две анимации: прорисовку через QPropertyAnimation на свойстве progress 900 мс с OutCubic и пульсацию через QVariantAnimation на 3200 мс.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L111-L140",
+          "version": "repo-lines-v1:sha256:da2b08064142390fe668edfa6962403894281a4464511af0dd163add41120055:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiZDUyYWZjN2UxMjdlMDk4ZWIzZTNhNzIyYjliMDQ4NTViZjNiOTNhMjFhYzczYjZkNjM5NTE0YmVhOGMwODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2NGUwYTQ2OGE2ZDM1MzI0ZDFmY2Q4ODY1MDE5NzE3NzBhNjQ3ZWU4MjQ1MjhiMDBlZTMyYzY2NTVmNjgyYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3NTRiODQzOTRhYWYzZjk0OTY2Zjk0YmQxZTgzMzNiZDQ1NmQzYjk3NzdhMjEyMGViMGY4Y2Y3ZGE3OWNiZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3NGJjZDk0NGU5MWFkNGVlNGFhY2UxYTdiNGM4ZjA3NjdiZWYxYmNmZjBhNzMxMWJlY2VmYzU1NWYwYmEyYmIifQ"
+        },
+        {
+          "resource": "repo://app/ui/widgets.py#L79-L110",
+          "version": "repo-lines-v1:sha256:3835645f356fa524643e45fbce8d902b91237188c73a3b8f0b4817c5a7e10237:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4YjkxNzE0YWM1ZjhlNzY0OWY5OTcxZjBmYzAzZTU0YTkxZWZlNDVjNDdiNTEwM2Q4YTdkMmRjMWQ1MTkzY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmODczZThlZDA1N2RiZmM5ZGJkZTA3NWI1ZTQ3MmU5NWE3MjMzZmJjODBiYzY4NDI3OTJhMmQyMWJiZmNmZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhMGE0MTIwNzE2NWI4ZDBiNTk2MzExMTQwNGU1MWNkODkwNGIwMTE2YjY1NjM5NjkxMDZkOGJjM2M0ZjRkZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmN2UzOGI4M2UyYWJhODI1MmMyZDhmMDZmZmVjNGJjMjhjMGJlM2RhYTBiYmQ2ZjU1N2Q0YWQ5ODJkODRjOWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_948405a2add548e5a8efac956deed9a9",
+      "statement": "Пульсация намеренно не бесконечная: бесконечно зацикленная анимация заставляла update() вызываться примерно 200 раз в секунду постоянно, поэтому она запускается один раз при показе и при новых данных.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L53-L100",
+          "version": "repo-lines-v1:sha256:ae3f4cdfe79813fa72c041a4d540038e47f5e9e4bbf15b24483acce5e12f2534:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMDgyMjM1OGZhYTk0YjJhMjI5MzFjYzM0NmU3YWJhOGUyYjc4NzU0NmJjYzRjYjA4OTVhZGFkOWNhMjk5MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzOWZlZWFkYTk3ODcyZjAwMGM3MWZhZmM2Y2U2OTM5MzQzZmViMzkxYjQ4YTI3MWYyOGNlNWU0OTFhNjEyZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwOTQ3MTljN2Q4N2RmODBiZDc4MmRiNDdiYjI1MmQ4NGExOWEyZDBmMzk1NWExODJlZmYyNmNmZWJkZTRhMDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_79c0901b99984d4c83526f7315e1b53d",
+      "statement": "MiniChart поддерживает окно видимых значений (_visible) со смещением (_offset), причём set_view испускает сигнал view_changed, не дающий смещению выйти за границы данных.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L100-L140",
+          "version": "repo-lines-v1:sha256:623a1f09c10387ac9d4858c3bc6b3742dba93e63c293ead0875647fe0e6c1660:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMDgyMjM1OGZhYTk0YjJhMjI5MzFjYzM0NmU3YWJhOGUyYjc4NzU0NmJjYzRjYjA4OTVhZGFkOWNhMjk5MTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2NGUwYTQ2OGE2ZDM1MzI0ZDFmY2Q4ODY1MDE5NzE3NzBhNjQ3ZWU4MjQ1MjhiMDBlZTMyYzY2NTVmNjgyYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NDVkYTg3NDExOTljZGM4NzcwOWVmMjEzYmMxNGZiOTM3ZmRiZGI2ZWRhMzcyMmIxZTMxNWJjOWEyY2Y0YTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3NGJjZDk0NGU5MWFkNGVlNGFhY2UxYTdiNGM4ZjA3NjdiZWYxYmNmZjBhNzMxMWJlY2VmYzU1NWYwYmEyYmIifQ"
+        },
+        {
+          "resource": "repo://app/ui/widgets.py#L150-L200",
+          "version": "repo-lines-v1:sha256:318f1d7da9a81b32c289c4cc00ee4d26e4748d0618e38189549a9c875192d4ee:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1ZGZmYWQ4ZjBhODU3ZjIzNzVkMDc1OTcxYTE5NTU4NWZhYWYzNGY3N2ZmN2Y5M2FkNmMwNmFkOTdjMDJiNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5N2U2ZDQ2NGJmZDM3NmE0NTc4MjBmOGNhYTk4ZjRjMzNmY2U2YmE1NzgyNDA2MWZiZjhmNzc3Yjc5OWZhYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVlMjIwNjM2MjYwMDJhNjJmOWQ4YjRkZjJkZGEzNGFjOWVmNDJlNjczY2VkYjUzMjlhYmYzN2ZlOTM5Yjg5MGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0YzU2ZmRhZjgzZGI3N2FhNjMwOTU5YzA2ZDU3N2FkOTc5MmU3YzlhNGIyMzk5NDUxMjYxMmNjOWE4ODMyNWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6d56dbc7e489444691242d70468b7763",
+      "statement": "В MiniChart флаг _moved различает клик и перетаскивание: без него перетаскивание графика открывало бы панель статистики при отпускании кнопки.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L210-L240",
+          "version": "repo-lines-v1:sha256:bd2eb8a0736c377bc2a6c90c8e98896b9c10f5a97ea4bae3d1135ecd2fb0b8a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0YTFmYWY1OWRjZTcyOTBhMGU5YzM3MDkxZWI5OWZiNWM3ZTc3YTI4OWUxNDQwYWE1ODViOTBmNzY3YzBhZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhMDE1NDg4YTc2NDlmOTZlMmI4YTdkMDBiN2U3NDEwNjI3NzY1YzJjNTA3ZGZkNTUyMmUwNGMwN2I2ZjM0MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2YWRkM2UxZjA5ZmZmNmZkMGNmOGY5ZDA5NGI4NWYzODZjNDgzN2ZkYmU2ZDE3ZWM0ZTc2ODk1Mzg5MGMxMWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53a6a074a1c344aa9cc569183256fbdb",
+      "statement": "RangeChart поддерживает три режима данных через set_data, set_days и set_hours, переключаясь между почасовой и суточной разбивкой в зависимости от периода.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L898-L930",
+          "version": "repo-lines-v1:sha256:efcfb2e22a402f37eeb5e6ebbf5f1697acae2327aaa167477b1360d9cf3b901b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMzllN2M5ZGMyMDllNzc5NzQ1NWYwNmEwZTIxMDIxYmU2ZmFlN2I3ZjhiYzcyMThiMTBkZDZmOGZkZjRkNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YzAxMmQzODkwMTQ4OWNlMjBhYmYwYjMzNzk0YTc0ZDg0YTNiMWZiOTYyM2E0Yzg3ZGUwZGIxZjZhNDk2ZTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzU1NDI0MWI4MzJiZDY5OWVkNmFiYmFhMGU2M2NkYjg5MjZiODhlNDRiNDNlYjQ4MmJlZjFiYmJjODQyMWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmNDVlMDFmOTgzYTVjZjFkOTA2N2RlMzRkZThjNGMwYzA1ZTgwYjIwODU0OTA2ZTI4MWJjYTVhNjRjMzYxYTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a712e2aea62a4a02a1a054e44d1f7171",
+      "statement": "Выделение диапазона в RangeChart использует _handle_at для определения края, _float_band_to_days с _edge_halves для перевода пикселей в индексы и _sel_band_px для отрисовки.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L1520-L1560",
+          "version": "repo-lines-v1:sha256:d017d74caf4f1f6dae7e285df5060786705a7ca98e46746aa9bfb79faf81b9e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMzE0YWMyZTI2MGI1MTk1ZDhkZTU0MzljMjJkYTljODc4Mzc5YjU0MjVjZmM4N2M4OWExNjZkZWQ2ODdjZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2YjgxMTI1NDY2ZDc4YTNkNmZlMmZmZGYwNjc5NDJjZDFhM2YyYmQ0YjNkMDBmZWE2MzAxM2M4YzNkOTVlZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4Y2U3NDI4MGUzODZkODBjZTNmNGRmZjQ4MmY5MTkwNWI4YTYzYjUzMjI5YTg5ZDNhZjA3ZGU2YzdlOTMxYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmZjNhZTllYjc2OGM2OWE0MzEzZWY1NzQwMzA3MWJmYjI0N2UwNzQxMTJkZDFkYTE2YWUyZmJmOThkZmI1YjMifQ"
+        },
+        {
+          "resource": "repo://app/ui/widgets.py#L960-L1000",
+          "version": "repo-lines-v1:sha256:4cdb2cde258a3d7d5848cff01738c22919077c71f0f507f2edbe922187260f2f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MzVjNjIzY2Q2OGI4YjY4YjUyODJhZmI2YWIzNTUyMjY1MzI5YjJmYWUxZDQ4MjYzZDI5NmVkOTdkNzAxZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhZmQ0NzA3ZTQ5YWFkN2U1MTU1NzY2ODBjM2UwMGQ2YTdkYWJkYjlkZWRlYzk1NGQ4YzI4Y2U1OTA4NTAwMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmNmU4Y2I5ODBiMGYwZmUwOTliNmM1NjgzODMzMTcyYTVhNjc1NmVjNzAxYjhiNjIxNjU1NzE1YzY4ZjZlYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkMGU0MDAwYzg4NjQ4ZTg2OTAyY2E2MGExNWIyOTFiYTMxNjViZGY2OGFmODAwMTBmZDhmYmRiMmUzODY2ZTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2418d50669c34ec080e8f231f4dffa35",
+      "statement": "AppCard имеет минимальную высоту 206, иконку 32×32 со скруглением 8 и ограничивает ширину имени 148 пикселями через elidedText.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L1743-L1790",
+          "version": "repo-lines-v1:sha256:4b30905a1eaddea0e00b1b0107e2f86d255c4fe8e7fa5c14ef4512e2ca1e46fe:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmMWQ5NzY4NjhkNDA2MDUzYTZiNGNhNWVhYjgyNjVkOWNhODMxMzRiZjdjYzU3YTUwYWEwNjY1ZWM0ODU5OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmYzU1NDI0MWI4MzJiZDY5OWVkNmFiYmFhMGU2M2NkYjg5MjZiODhlNDRiNDNlYjQ4MmJlZjFiYmJjODQyMWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlNjA3NTQ0YTQ0YWMwMjUzODJiMzZmOTAwOWNkNThmNWQ2YjZjMDE1NjliNTlmYjhhNDY4YzdiMWRlNTM5YTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1368e583db40417a8e0d88e64dcec1aa",
+      "statement": "Тень AppCard создаётся через QGraphicsDropShadowEffect с размытием 22 и смещением 0/8, но не применяется постоянно, потому что графические эффекты на множестве виджетов замедляют отрисовку при прокрутке.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L1755-L1770",
+          "version": "repo-lines-v1:sha256:0ed45bb6de0a40a80fb2b4e184cc82b2047aaca92ebe3c30d147191c6e513bb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMzQ4YTI5YmY4ZmVkNjBlMDMzZTM1MTdiMTU1OWFhYjI1YjBlMWI0MzFkMWM2ODk1ODIwY2EzYzlhOTRiN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMTk1OWZlMmQyNDE3NTBjYmJjZDAxMWYyNWM1NTJiOTBmMzdmZDljZTNmNWY5YTk5ODJhMzQzZjE0OThjOTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2ODgxZDlhZWExZDY2NDM5ODNjOWM0MzE0MTdjOWZkYzY4MDU0ODM2NzQ2MjZiMjIwMmExZTUyMzQyYjBkMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwZTI1YTE2ZDRjNzk5NGM5N2FjNjM2ZDM1ZTYzODQzNDljNmQ1ZTMxZmRkYzhiZDQxNjc5YTFmNTQ5MTBjMjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3674bee5624b4f1f88ace6d4d3d88a69",
+      "statement": "CardHost оборачивает карточку, чтобы тень не обрезалась границами виджета, и реализует анимацию подъёма при наведении.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L1700-L1745",
+          "version": "repo-lines-v1:sha256:9e99d388e5990fd98b8f8b18b3a5ed0b553e263dca4bbb179c02603aaa2897f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MWVlMzkyOWY0MWJkZGQ2ZDVjM2E0MDAxNmMxZWRlMmU0ZjA5YTI0YWQ0NDMyMTkwNzRjZjUxOWU2ZGEwNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYTdiMjUxNTk0YTk1NWFkNDAxMjNkMmI5MmI2MDdlYTgwYTRiZmNhZDkzNTRmMzZjZjczZWRhYjNhOGIxNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiOTllZDczMTI1NjBkYWM5Mjc0ZGI4MzA5OWI0NmY0ZGU0Yzc2ZWZjZWE1YTg3YTAwYTliNDk4OTM0MmEyZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyNjhhY2E3NGZjOTlhNjNlZDczMmM0MmEzMjg1YTc3ZTg0Mjk3YzM3NDQwZjg5ZTgyOTM2ODBkMGE4OTkxYWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f25bc2b845ad412ba7bafce1c6052baa",
+      "statement": "ToggleSwitch наследуется от QAbstractButton и анимирует положение ползунка через _on_t, а SidebarItem анимирует сдвиг строки при наведении и поддерживает контекстное меню.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L1900-L1940",
+          "version": "repo-lines-v1:sha256:dc0dc2889b57277c8652f52438d788866ab57ed070de21c0bbdbde584f880303:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0YmQyMzRhMTAzYTI2N2RiOGE0ZjVkNTVmNzFjMGI4ZTE1YjNlNGM1ZDQ1NTZjZWM2NzNhYWYwZTQwODkxODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMjRmMmJiMTY1ZTA4Nzk0NjY2MTEwMzYxYTI3NzhiOTQ2MTllZDJjODBhNDVlOGZiNzVmZGZkOGYwYzI1N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiNGUzMmZhMDc3ODM5MTgwODUyYzQ3NDc5N2JmYWJiODE0YzE2OGYxYzE4MDY0MTFlN2U3NWMwMjdlNDIwOTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f89ca1ca09b144a5bfb7748c9439be87",
+      "statement": "MiniChart.set_values возвращается сразу, если значения те же и анимация не запрошена, что предотвращает полную перерисовку всех карточек на каждый тик трекера.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/widgets.py#L125-L185",
+          "version": "repo-lines-v1:sha256:46fa9e435be14cde1f3f7d9580009720d0824a37f025dc214e984c1fb1a6d931:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1OGM0NDJhY2JmZTZmMGNkMjhhZThiNjUzOTg4YWJjNGE0YTY4YzU1Y2ViZDQwZmZmMjhiNjA4NTFmNGRjYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmOWExNzlhMGI3YjU3MzU5OTc0OTI5Njg1ZWRjN2IzMjhkZjBhYzUxM2QyNjU2YWU0MGQ1NzEzYzIwYTBiOTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2ZDdmYjE5ZjBkMzZiYWZkYzVjOWNiMWM1MzA4NzU2YTA2YjZiMzAzOTU0NzEyNDAxOGUxYjRlMGE4ZmU5NDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4ZTc4MTU3NWIzOTNjOTI4OGViNWY3NjJiMmM2NzdkNmEwMzdiM2E0OGQ2YjE4ZmM1OGJlZmVjZTJiY2NhNWQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

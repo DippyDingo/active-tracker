@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ce137678b0a0b15499498f3d75d6602f38aa848de54b5356ccf02bcf69e16819",
+  "claims": [
+    {
+      "id": "claim_09193d51e2ea40069a0471e9df4ad4b0",
+      "statement": "Тик обёрнут в try/except с логированием, поэтому исключение внутри учёта не останавливает таймер и не убивает приложение.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L169-L175",
+          "version": "repo-lines-v1:sha256:2c65886f6f14c66f346bcda30e00d73ddf1cc0dbf57112bb747d253ab08b2f9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWI4OTEzYjY4MjMwZjg5ZWU0MmZjYzgzYjhlMDRhZDU1MmNhOGM1NmIyMWNlNGM1Y2ZhZTlkZGUzODhmMmVhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYyMWE1ZTExYjYyMjFiMzM4YjEzMzA5NDE4NThkODcyMzQxZGFkZDE1N2VkZDdjZmEwMTQ2ZjlmZjY2NjNkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjJmZDIyZDEwZGY5MGVhODNjNTg4ZjhkMDQwNmFkZjNjYzgxNzc3NGViMjFmOThjYTk5NzUwODA5ZjliZTNkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQyYTQxNWIxMTRjMDE5YzE5YjQ5OTIwYTVhZTdiZjMzZjI4OTk0MDY5ZTYzMDJmY2Y3MGQ0NDIwNzQxOWNmMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_738df416eb564ac4a5899e04b0d8b73b",
+      "statement": "Каждый тик берёт time.monotonic для измерения интервалов и time.time для определения дня и часа, а также проверяет смену суток с flush.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L177-L184",
+          "version": "repo-lines-v1:sha256:41cbafad15dea58677afa42b73fc463068868e97c23876d92f96d8fd873cd03f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBlYTVkNmUxMDEyNTliZjdiYWJhYzlmNzkzYmM0MmQ0M2UzMzViYTJhM2Y1OGM5NmZhZjJhMmExMWRjNzljMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ViNzAyNTc1OTNkYTA2ZjY4MmEzZGRkYTU0YTlkMjYwZDRmYzUxNGY2NDUyMzdmNWNhNzRiMDhmOGRhNjFhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGYxZmFkYjA5MTk2ZWI2ODQ2NzM1NGE4ZGEyZTNjMzQyMzZhMzBkMTg0OWEwMWRhZjIwNTliNzUwNmYwZGU0OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGU5MTM0ZDhmODM5MmE1ODIxMWI1ZjgyNzgyZDk1ZDAzOWNlNmUwZTBhY2ZjZWExYmQxNDZmOGI4YzAyYWMyZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7a3c59c2c5a4d0cb34277bec0e22804",
+      "statement": "_credit_interval разрезает интервал по границам часов, вычисляя next_hour через replace(...) + timedelta(hours=1), а не через t + 3600.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L121-L139",
+          "version": "repo-lines-v1:sha256:12531f943e396df98dfef78a2f6471a67cb71d3d27eeaf6ae51161fc948b7198:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxM2RiZjUyZTI2YTQ2MDBhM2Q2ZmU5ZmFlODMwMzk4MWM1ODcxZTY4ZGJkOWRlNGNmYjQyM2RiMjA0NTJjOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ODkxNzIwZDE2NTE5MWQ4NTczYzUzYTU1M2VjZTA5Y2IyN2YyZGM3ZmJmNDczMGFjOGJlMjg3Njk5ZTZkM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhM2NhOTYzZGIxMTM3MDBhMmYzY2ZhNTM2YjAzYzQ0MmQ3Mzk0Yzg3NDE3YmNjMTZmODliMzlmYjFmMWUyNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMDZhOTM1MTJjODEyMjJjNzgyNzFhMWRmMTVkY2I1MjVjODE3MGE5YjJmYTM5YmVlZWRjZTZiZDM3ZjRjYzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d73854417d4e4a8da580bdc9857b701c",
+      "statement": "Предохранитель guard < 10000 в _credit_interval защищает от бесконечного цикла при аномалиях часового пояса.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L126-L128",
+          "version": "repo-lines-v1:sha256:60e970c387ce761acda38be05ef0528ace553ed2334ffcb67f1f5713ebe664d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGExNTNjNDE5MWI5YmU0ZGNlNGZmMWNjNjA2ZDllMGRmMDIzMDY1MTZjMjM0NWJjYWQ4Y2RlYjA0OGZmYzgzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjgxMWMzOTAwNzdhYjg2ZDBmYzlhOTUyZTVlZWVkZTUxNWIzZTAxYjk1NGQ4MWY4ZTI5NTFhZDQ3NGFkNTEwNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzI4YjFjNzNmOTg1MGZhMTg4YzI2NDlhMDk3MzQ3ZWMxOWI3ZWQ2NzczNjQwNmFkMDczOGZkNzJiYWRlZDQzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTRlMzU3ZGNjNTAxNDhiMTM2YjdiZWM0MWE2NDEwYWEzMDVkMTM5NjA1MTcyZmM0Y2M1ZDQzZjE3YmE2NDMwNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_468acaac7b29438aba1a6f7c5be9f1d1",
+      "statement": "Буфер хранит значения с плавающей точкой по ключу (app_id, day, hour), а не целые секунды.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L21-L21",
+          "version": "repo-lines-v1:sha256:2bf14a1bb321b47b73b418680d976257315bf351e9d1781bfe97e3ad3d81673f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJmMTRhMWJiMzIxYjQ3YjczYjQxODY4MGQ5NzYyNTczMTViZjM1MWU5ZDE3ODFiZmU5N2UzYWQzZDgxNjczZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJmMTRhMWJiMzIxYjQ3YjczYjQxODY4MGQ5NzYyNTczMTViZjM1MWU5ZDE3ODFiZmU5N2UzYWQzZDgxNjczZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjMwNmI1YzFhMWJhMDY4M2IwYmU5ZWJkZjc0MGMyMzMxZGUzYzc2YzdiMGQwOWNiYmFlNTI4N2RkMjQ4Mzg2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzIzMjUxZDhkOGZlYWFmZGQ2MjJjNjE2MzljODZiNWIwYTJmMWIzYmEwN2UyNGY3MzVlYjgwNGM0OGViMTBjMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_31ec467554ce44069d68c709ebcd9efd",
+      "statement": "flush записывает только целые секунды, дробный остаток больше 0.001 остаётся в буфере и переносится на следующий сброс, иначе время терялось бы на каждом сбросе.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L141-L167",
+          "version": "repo-lines-v1:sha256:2209f03445207c5b394d9945c438b2243a032edfff9665a720af8f9e3948a19c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZWVhZGY0MDZkODMwNDFlYmM0NTQwMDk1NzJmNmRmN2FhYjgxYzg3NjA2Y2FhODdmOTBmODc0ZjljODA2ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4NjgxODZhOGJkYjFkMDlkODY2ZjZmYTdjYmQ3MmJlOGYyZDg4NDQzNjZjM2M5NjVhYTFkYjg2NGVjZWZlYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzODIxYzcxNzU0ZjNiMTBmZTkyNDNkNTg3ODc4NDMxZTY4NjBiNzU0Yzc5MWU1M2NiYzczMDdlMDlkOTRkYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3NGZlMGEwZjNmZTdjMmY0Mzg1M2NlOTA2NDk3ZDIwZDIyMTRjNTNjZDNlOTE4NTMyMzkyY2I4NTkzMjhhYTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6741b8519e1d4478a8ba629fdbff9e7b",
+      "statement": "При ошибке записи буфер не очищается и выставляется last_save_error, чтобы данные не потерялись и были записаны при следующем сбросе.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L150-L166",
+          "version": "repo-lines-v1:sha256:ffc7f837272695deb8f338ed84047038a7f2a674387ff3435db145dd121a29a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkMzdiOGJiODIxYTNlZTNhMGY3NjE1YTk3YTc3OGQ1M2M4NGQxYzcwMDA4MTY0YTA1YTdkYjc1MWI3NGM0NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNTkxNjI4YTZjOGIxMjhiZGQ1YjMwNjQ5YTE5NjA3NzZlYjAwNzUzZDM0ZmI2NDI1MjE3ODA1NjcxMzcwNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzODYyMjQ1NDExMDc2ODMzODczMmIyMTk5ZDZjOWIzMzNlN2MwMDBlNDg1NDUyMTk4YTA5OGZhODhkYzA2NjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhY2VjMWZhMzBkYTY4MDU1NjkyYTgyYzliNDRhYzQ4N2FiMjc0NGI2OTg2NzI3OWI0NmM4OTYxZDc5MDQ4MDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_87c40b09fe8a40b19298306d0aa3c81c",
+      "statement": "Сброс выполняется раз в 15 секунд, при смене суток, при остановке трекера и при смене базы, причём при смене базы flush идёт до замены self.db.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L117-L119",
+          "version": "repo-lines-v1:sha256:4f1757b19bcba6aa78e62d3114d6c23955c9c041782eb5131fbd32fd921c5a80:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMThmZDJiYWVjYTRmNmRiOGU5M2JhNmI5ZWYyZDVkZjM3NGNjNTUwMTIxZjY5MjBkMmJmNmZhMGYyOTZjZmNmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwNjE0YzBmYzcxZGM0MDU4YzFkM2U5MjY4MDIzMmJmNTc2ZjMzMGJkY2ZkNDVmZGI5YWU2OTZjMDQ4ZGI2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2YwYzU0MWUxNjk0ZjFmZTA5ZGUyMTZmYzhlZjA3Zjk5Y2I2NTA0YzRhNzY4YWFmZDk5ZThkYzkwNTEzN2FjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDc5ZDY1ZTlmNWQ4ZTJhZWI5MTc4MjRlNjMwY2JhMGQ3NGNmYjM5ODQ4NTkzNGQxNDRkMmE1OTE4ZDI1ZGUxOSJ9"
+        },
+        {
+          "resource": "repo://app/tracker.py#L212-L213",
+          "version": "repo-lines-v1:sha256:9bc4cade45965905d13f8e20ba3812b8f2adb6b0f408b2d87a325c5ce5fc1a3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTFlNDA2YmEzYzdmMDFlMjE5NGQzMWE1YmRiZWM4ODE2MjkyZTM3YmIzYzE5OGNmM2M1YmMzZDhmYTZhNmRlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZkMTczYTdhOTM4N2I3YmY0NjU0YWQzN2EzMWE5NTM0Zjc5M2Y2YzFlZmM4ZWZhZGRkZjI5ODVkYTA5MGNhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTdiYTQ5YTI5YjE5YjJiYmQ3ZWFkNDVjZjBjNTRiODZjYTczNzBlMjI2NDY4MWI4MjlmODBkY2RjZjFiMDBmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTJmZmQ5NzBlYzU0OTUxNjY5ZDQ3YzQ3YzRjYzRiNGI5YjI0NDk3MDgzMjQ0NTYzODc0YTdkY2RjYTQ1OTM2NSJ9"
+        },
+        {
+          "resource": "repo://app/tracker.py#L52-L53",
+          "version": "repo-lines-v1:sha256:fb80053f6ff3bbc875449c72ae15a3a261003b591f9d45c89cfb2b71540c3e5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDM3MTI0NGU2ZDg2MjNjMjgyNmE5YjEzMTFjMjk4NmVlNWQ4ODQxYWVhNzA2MjUxMmQ4ZDFhMDI1MDMxZDdjNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEwNjE0YzBmYzcxZGM0MDU4YzFkM2U5MjY4MDIzMmJmNTc2ZjMzMGJkY2ZkNDVmZGI5YWU2OTZjMDQ4ZGI2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY2NzRjMDk2YmIwNWMxYmI2ZGI2NjRkODQyNzY5OGQ4Njg5ZmIxNzQzZjBlYzI5OTNjMjNiMTNlNDMyMDc3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY1MDVhM2NkNWFhNWFmZTBmOTA2ZTI3N2JiYzc3MDMxZDhkNDM4Mzg5YmE3YTc2ZmIxNDEwYTQ0ODM5ZmUyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_936ef1881be248c1bfced662e239571a",
+      "statement": "add_activity_batch обновляет stats и hours в одной транзакции, поэтому сумма по дням всегда совпадает с суммой по часам.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L297-L311",
+          "version": "repo-lines-v1:sha256:69b880ecc2e1e2d92b31bdae852d5534959ab8082f5c2e9f009bba3b9613cc3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkNTkyODI5M2NhN2Y3YmNkNjNlOWUyZDkyNmJiOGQyMTI2ZjdlOTUzNGMzNTFlNmIwYmMxMmYwMzhhMGI0YjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5Y2U4NDUxMzIxZjk4MjZmNWQ2OTczZTQ1OTA4ZTc2ZDczNjk0N2M1MTU5NTc0ZGMwMmIyZjZmMTdmNTUyMjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzM2UyYzlkZDk2ZTcyYWZmYjA2MzM0NGU1YWEwODJiODhlNjg3NDI2YWUyN2MxMDQyOTdjNzlmYzhmNjYwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwYzU2ZWFhNGI2MWNlNDZmY2ViNDA3ZWVmZTg0YjgzMWRhN2NjMDQ5NTdjM2FmOTlmZWI4OGNlZTFmNDJlOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad10406ae626480a9ba53bb6e25e8519",
+      "statement": "Сигнал tick испускается в конце каждого тика независимо от успешности учёта, и окно подписывается на него вместо собственного таймера.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L169-L175",
+          "version": "repo-lines-v1:sha256:2c65886f6f14c66f346bcda30e00d73ddf1cc0dbf57112bb747d253ab08b2f9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWI4OTEzYjY4MjMwZjg5ZWU0MmZjYzgzYjhlMDRhZDU1MmNhOGM1NmIyMWNlNGM1Y2ZhZTlkZGUzODhmMmVhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGYyMWE1ZTExYjYyMjFiMzM4YjEzMzA5NDE4NThkODcyMzQxZGFkZDE1N2VkZDdjZmEwMTQ2ZjlmZjY2NjNkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjJmZDIyZDEwZGY5MGVhODNjNTg4ZjhkMDQwNmFkZjNjYzgxNzc3NGViMjFmOThjYTk5NzUwODA5ZjliZTNkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQyYTQxNWIxMTRjMDE5YzE5YjQ5OTIwYTVhZTdiZjMzZjI4OTk0MDY5ZTYzMDJmY2Y3MGQ0NDIwNzQxOWNmMyJ9"
+        },
+        {
+          "resource": "repo://app/tracker.py#L214-L214",
+          "version": "repo-lines-v1:sha256:52ffd970ec54951669d47c47c4cc4b4b9b24497083244563874a7dcdca459365:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJmZmQ5NzBlYzU0OTUxNjY5ZDQ3YzQ3YzRjYzRiNGI5YjI0NDk3MDgzMjQ0NTYzODc0YTdkY2RjYTQ1OTM2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJmZmQ5NzBlYzU0OTUxNjY5ZDQ3YzQ3YzRjYzRiNGI5YjI0NDk3MDgzMjQ0NTYzODc0YTdkY2RjYTQ1OTM2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzJhYTk4NzIzMTUwYjQ5MTZhNzFmYzRmMDAzMTY5OWNhNmE4OTE3MGUxOTI5ZDhmOWQ2YzI2MjA1NDUzMTFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

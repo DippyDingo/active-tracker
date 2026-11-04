@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:db99b1741053ef596a66df3832a4f0e77f99f370b537e4821ec0eb76f1a6e1f8",
+  "claims": [
+    {
+      "id": "claim_92ccbc39bc4144dc9cba31b1de24b74f",
+      "statement": "Схема состоит из пяти таблиц: apps, stats, hours, settings и categories; все таблицы создаются через CREATE TABLE IF NOT EXISTS, а затем выполняется _migrate(), так что одно и то же открытие работает и для нового файла, и для старой базы.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L23-L69",
+          "version": "repo-lines-v1:sha256:6a31f132cbaee7a26860320a026230e4980941c778430a4c2b5322c7a5fb03d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjZGM3ODg5NmE2ZWFiN2FkNDIyOGUyMGY4MmRjYzNmYzYwZGMzZDVhMmEyZTkyOGRjZTJlYmUwMjhjOTY1M2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1YWZlMmU5YjUxOTk0MTY4ZjcxZWVjMzNkMGU1Yjc4NWM4Yzg4YWI5NDA5NzlmOWI5NDdkN2M2MDJkMjdhMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZTExOWVmZjBmM2ZmNTRhOTdiMDBkODBjOWI2YjU5OTNhODYwYzhkMjA0MjVmOWM5MDMxZmY5MDY2ZGIwOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c480197ff264bce8a717b0ff7dbcec4",
+      "statement": "Соединение открывается с режимами journal_mode=WAL, synchronous=NORMAL и foreign_keys=ON; последняя прагма нужна, потому что в SQLite внешние ключи по умолчанию выключены.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L61-L65",
+          "version": "repo-lines-v1:sha256:e38313579c17802ae014886cd6d916bb6c90f02daac352c025e1411d46b78cb0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjkzNWJlYmUxMDdiYzU1Nzg2YjdiMzkyMTRhNTVkN2UxNmExZDljNDY5NTgxNDI3YmU1NjY5ZmU5ZGYzMzhiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjY2OThmNDEyOWFhNTFkODY0NDg1MjhhYmY2MjAzZWYxYjMyMWZjMTBkN2YxY2YxMjkwZWQzMDU4OTNlNmY1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzNkYTJlOTA0NjhhZTljNDE5OWI3YWNlNzhhZGUyNGE3MmViMWU4Y2NkODRmM2QzMDI2NzM1ZTBhNmE0NTk0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGU5MmViZDVmNjVjNmUwODc5MGU3ODljMWNiM2U3MmFkOTY1YjBmN2U5ZDc4N2U3OGRlOTdmMDA2NGNhNDAwNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_441cb988f60c4fa38285830a69bc88d5",
+      "statement": "В таблице apps колонка exe_path объявлена как TEXT NOT NULL UNIQUE COLLATE NOCASE, что отражает нечувствительность путей Windows к регистру и защищает от дублей на уровне схемы.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L24-L31",
+          "version": "repo-lines-v1:sha256:a0f84e8c844670616cf5ecf3a6301acf8b07c3b0df04f929065dcb4cdb1faef7:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTEwZDM5ZmFjZGRiNWUwZTFiM2EwZTdkOTc3ZTFkZGUzOWYyYTU2YjY1NmI2NGE0YTc0NGQ0YTUwZWRjMGRjNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTg2ZjA1YTQ1NGZlNDIzNDUzMmY0ZTE4NGIzM2QzZDdiMzEyNzFmMDcwZjI5ZTI4MjgxNTljNGMzZDdjZjI3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmU4OTE1NGE5NWVhMjZmNTY4MjM2OWYxN2FmNmEwYzkxZmUwYzI0M2MwN2Q0ZDBmNmExZThjODBjODM1ZDQzYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGQzZTcyMDU5NzA1YmFlOGI1MjY1YjBkOTI1ZDg5MmI0MTg1MmM5MTk1NzQ3MmZlOTdhNDQzMTIzYWEyOTY5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d80fd8473c5d44979660e8ded7e1783e",
+      "statement": "add_app полагается на UNIQUE-ограничение и возвращает None при IntegrityError вместо отдельного запроса на проверку дубля.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L178-L188",
+          "version": "repo-lines-v1:sha256:6097cf064153ba56b45d0478b8a1cbd9933df63a0991ee84fae162cbaaab4c0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1OGI5OGMwNGNmZDQxMzJjODk4N2MwZTE3MWFjZWY1ZmRkYjI0NTJjZGViMWU0N2Y3ZmY1ZjA1NDliYmJkMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjN2E0MzRhOTE3NDAzMzZlMmZlMWNhZDI3NTVkYmNhYjFkZWRhODQ0NzM1NzljZGUxYWEzN2NlYjU1MjgzOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjZTAwMGZmZGQzMzgxMjMzODUxMTgzMjU5ODFiNjFiOGIwNzViYWVjNGU2NTQxZWIyNDg0NDc5NjMxZmYwMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzNTg0ZGZjZDY3ZGNkNTJkZGZlYTU2ZDEwOTA0MzhkNDM2NTMwOWYxNWMwMDU1YmY4NzU4ZjEzMzYwOWVhMzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d5fe786adc94d47b9eb00018eccd27b",
+      "statement": "Таблицы stats и hours имеют составные первичные ключи (app_id, day) и (app_id, day, hour), что делает запись идемпотентной по адресу.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L32-L44",
+          "version": "repo-lines-v1:sha256:1a01c170cd930bce09ec2be9d3ead34b456585f5a2fa998b28cbb876d6b34fdb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhZWY5OTg1MjQ2ZWYxODQ2MjUwNzk2NjlkZTRhYmUwNDAwMmQ1Nzk1MDA3NzViMDAwMDU5YWIwNjFlODZmNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4NmYwNWE0NTRmZTQyMzQ1MzJmNGUxODRiMzNkM2Q3YjMxMjcxZjA3MGYyOWUyODI4MTU5YzRjM2Q3Y2YyNzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5YTkwNGZiMDA2Njc2Y2YwMTQ4YmVkNTQ1ZDlhYjQwMjE0NWM0ZmExZmZjMTE1OWVmMmEzYjU1MDc5YmY5ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkMzNlOTMzMTg2NjllNjM1ZjgxMTEyYmE2Yjc1NzZlZjA3MTBkOTg5MDFiNmEyZWM5YmVmMTg5ZTJhYjE4MjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_31a5c3f4ddd543fc97ee520efcdb7e29",
+      "statement": "remove_app явно удаляет строки stats, хотя каскад уже определён, а delete_category сначала обнуляет category_id у приложений и только затем удаляет категорию.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L197-L200",
+          "version": "repo-lines-v1:sha256:1ceb70f82586e7162830c60eb18682a265c063fc96e823fd0e7130c13409d8ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzYyNzQzMjYxZjFiNjM3MjVjOWY0ZjkyY2FiODlhMmJiN2FhYmIzOGEzMDc0ZTk0YTA3NGZhYmU1ZDY3OTlkYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWVjZGY2ZGU2ZTBmYWFmMTgyMzMzYWY0ZmYxMTFlYjVjYTE4NjgwZDEyZTdkMDQ0M2JiNzJmZjY5MDdjYmQxZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjczNjI4ZDZiNDE5NzljYWIyMDcyNmZkYTcyNTdlMDIxOGFhMzUzZjdkMGExNzQ0ZTlkYmExOGFjMjFkNTFlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDg3OWY3NDYzNzcyZDA1ODZlOGQ0OGY3OTVlMGJjYjBkODRjMDhkOTQ5OTk4NWI1ZDE1NjRkZjUzZWIyNzE0MSJ9"
+        },
+        {
+          "resource": "repo://app/db.py#L270-L275",
+          "version": "repo-lines-v1:sha256:eb249bcfb75a4c2e3e38774aa6438b7cd89eecb6788e531e2de4c280680becf6:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDhkZWJiNzFmYzJjODc4NzRhZDVjN2FkMDBjYzRhNDAzMWVkMTE3ZjFkMDZjM2EwNWQ3YTljMjliZDA1MTI0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE2YjczYjZhYjZiYjNlNTFmNTBhNDFlNzU3MDY4NDAzNmUwMjEzYzk3ZjhhNjFkNmIwZjY3ODZmMmU1ZjgzOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGUzZjljMDY1YmNlNDc0OGM3NWJiOTY2ZmZhMmZjZDQwYzdiNzZiN2E1ODlkNWVkNjczN2Y5YjJjYjU3YzRlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjEyNzA2YTZlMzMxNmMxZmViOWYxODExYzEzNWEwNjY4NjQ5Y2RlOGVmMGU0OTQ3YjVlMzI0ZDNhYjQ0ZWRlZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_718e11fb108642d09f3f3352c18b2229",
+      "statement": "_migrate добавляет колонки sort_order и category_id в apps через проверку PRAGMA table_info и ALTER TABLE ADD COLUMN; миграции идемпотентны, обратных миграций нет.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L70-L81",
+          "version": "repo-lines-v1:sha256:fe6b8f721201df314e3c3966c5aebf93b095102227ff1e0c07a14fb36d3346e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMWFkOWRmODEzYjQwOTFhZGU1MTNlNmY1NDA5YmMyNDk4ZmM4NDljYzgwZTM4ZmEyNTNiZGMxMGMzYjJmZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMmExYjRlZGM5YTFiYjA5YzkzODg3NjA1N2VmZWI3NDRlYWMwZmU1Y2RiNjY1MTk4OTc3YzJhODkxMjIyMWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NDZiNjFmMzk0ZDFiMWFmMDllYzk2YTBkMjQ0NjkwMGM2YzI1ZTQ2OTE0YmFhODEyZjA2YzM3ZWZlMmY5M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjYTA5ZDRjNDhhYzljMzg4NDgxNmU1ZTRjMmY2Njg5YzI3M2EzNGQzM2E3YjMyNzcwMGFkYjcwMGE3MzYyZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe38e78e4fd145a1b9896fe11c176bbd",
+      "statement": "validate проверяет наличие таблиц apps и stats с колонками id/name/exe_path и app_id/day/seconds; лишние таблицы допускаются, недостающие — нет, а любое исключение трактуется как непригодный файл.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L83-L107",
+          "version": "repo-lines-v1:sha256:a627db5317503c2b6b83f396f50d52a6e7fb807d9d8c8b4b62d535880069ae57:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4N2Y4MjUyN2E3NjA1ZTBmZWFlNWExYmE3ODBjNDY0ZjEyYjhkZDA3YTY0NjE5OGE4NGFiMjY0NzY5ZGY1ZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMmJjNTRiMDQ0MGE5NWQwMmE0ZDRhZmI4MGEzN2UyNmY3ZWM0YWVhMmNmYzA1NGQwMTIzZjBmZmNiMmJhNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkZjAyMjQzOTRmYzE4ZGMzNWNlMmNmYmM4MjdiZjMyMzM4Y2E0ZDBjNjg1ZWZjNTVmMDQxNWE3MWQ0YWQwYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1OWFkMTQ0YjhhMDVlYzgwODk0OGUwNjQ2OTBmYzA1Yjg5YzAxYjMzZDQyNzEzZWM0YTJkMmI0OTEyZWY4NGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ed826efb26cb46c6832f8b4bf5228b7e",
+      "statement": "add_activity_batch выполняет для каждой записи два upsert-инкремента — в stats и в hours — в одной транзакции, поэтому суммы по дням и по часам не расходятся.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L297-L311",
+          "version": "repo-lines-v1:sha256:69b880ecc2e1e2d92b31bdae852d5534959ab8082f5c2e9f009bba3b9613cc3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkNTkyODI5M2NhN2Y3YmNkNjNlOWUyZDkyNmJiOGQyMTI2ZjdlOTUzNGMzNTFlNmIwYmMxMmYwMzhhMGI0YjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5Y2U4NDUxMzIxZjk4MjZmNWQ2OTczZTQ1OTA4ZTc2ZDczNjk0N2M1MTU5NTc0ZGMwMmIyZjZmMTdmNTUyMjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzM2UyYzlkZDk2ZTcyYWZmYjA2MzM0NGU1YWEwODJiODhlNjg3NDI2YWUyN2MxMDQyOTdjNzlmYzhmNjYwN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwYzU2ZWFhNGI2MWNlNDZmY2ViNDA3ZWVmZTg0YjgzMWRhN2NjMDQ5NTdjM2FmOTlmZWI4OGNlZTFmNDJlOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6bd045e4eb8b4e0b908c1fcd5aec9bcb",
+      "statement": "get_hours возвращает список ровно из 24 элементов и пропускает строки с hour вне диапазона 0–23.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L313-L321",
+          "version": "repo-lines-v1:sha256:8adf243f4df2f5f9a0111d98fcd5c8d420fffc6b4268d779e2501fde6905fabe:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzMyOGY0MGQwZjk5NGM2OWQ2NzA2ZmE5NmFhYjA4ZDZjMjdhOWE3NDg4YmE3YTViNmQ0NzcyYjFjMmI4NzIyOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA0OWM0ZDlmZjg1MjdiNDA5NDM0NDA2NGU5ZTNhMGE2YTNmNTcxMmYwM2VjNzJkYWNjMzc4ZjRlZWQ4NjY0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjcwOThlYTU2NGZhODYzYjM2YThlYzBlMDBkNGQ4ZGFlM2NiNzc1ZGZlNDQ1OTRkMjkwMTE1MDMwMjk4YzNjYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGY5NTQ3MDVjZTEzOGUzMGZhMzNiZjk3OTBlM2Y3YWY5YjhmMzAxN2RjNDk1ZDgwODFjMzkyNWEyOTNiNmI1YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_93f65ae6a353440da63303ba2f28bea1",
+      "statement": "get_int не различает отсутствие ключа и значение 0, поэтому для трёх состояний автозапуска используется has().",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L376-L400",
+          "version": "repo-lines-v1:sha256:864381136313c9872916264cff22991d1cea45056713c2bcbb6020b5ee1d4872:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMzAwMmE1Yzc4NzIxYzE3ZTcxZmRiOTA3YzBjZmUyNTc4NGZhYzE5NjVmMzAwNjU3NzNkNGIxM2VlMDJiZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNjc0NzFlNTNmMDllZWI0ZWIwZjg1NTc5M2UwYmQ3NTIzNWFlN2NmN2MwYjM4MmEyOTlkY2RhZDE2NTRjNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmYzI5ZTZiMTdjMjU5YmUwMjdlZjY4OGMyNmY3ZDY4ODUwYWZiYTc3ZjgzOWY1OGIyNjlhNTI2MDNmZGZhNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5NmYzM2Q3ZmZjZjM3ZDczYjFkNDkzNjAzZmY1ZjhjOTQ5ZmVlMzg0ZjJmZTg2YzY4ZjU2MjM4NzgzN2Q2YTQifQ"
+        },
+        {
+          "resource": "repo://main.py#L240-L248",
+          "version": "repo-lines-v1:sha256:c3c04e69f06ed58bae6cb587712644b811df4ea661b69a7f7cfffc1a17ae8497:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQxM2UyMTcyZTcyNmZlMTExNDkwM2I1MWI3OGI5MWZjMTRmZTE2ZWZmY2ZjYTA2NDE1MmQzM2I5MGQwM2VhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNhYTdjODYxODcyMWU1YzY2ZTgxYWQ3M2Q0YjJmMDc0MTQ1MDcxOTE2NzhhOGFiOWQzM2FhNjE4NGM1NDM3ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTkxZGVhYThhOTBkZGI1N2JjYTM3ZTM5OTg3MDc2YmZhMTIzYTFhZGQ4ZDIwNmFiYjhhMTk0NDYxNmUwN2E3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjI5MDE3OTViMzQ2NmYyYjg0M2MyM2IyYTlhYmU4YTdmNTMzMzE2ZjFkNGExNWZhYWUwNjlmZDBjMGMzZDFmYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bcd3678e80b14a9e8bb1bcd4c6d6f9bf",
+      "statement": "app_path_taken дополнительно нормализует путь через os.path.normcase и os.path.normpath, поскольку COLLATE NOCASE в SQLite не нормализует разделители.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L233-L241",
+          "version": "repo-lines-v1:sha256:e80ed54243975ac1039e45e8a0e7eae38a3209ba08fe3b9149232685fd516954:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQwYjI5YzJmYjgyNjNjODIyMWJiYTkyNWJmNWQwODBlZmMyNzNlZWY0ZWFhNzJjMjM3MGRiNWU5ZGVmNTQ0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE5ZjhjMmJjN2ExNDFhMDIyYWYzZmViOGFiNTAwOGVjMjU3NTdlZjI0YWNkMDQ5ZjUwODlhNzRiN2M5YWU4MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjhkNmE1MGVjMzFhM2VmMWNiZjJhYTU1YTJhOGM2ZTZjZGNkMWRhNGU5NWJiNjMwMWYwODJiNTY1OTE0M2FlMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDkwNmNhZjI5YWQ2ODM4YjgyZTMwNGFkMTQwNWFmMDc3MDEzZGM5NzI5YjQzNzU4YTViYzg1ZmNlN2Y0YmY4MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8dbf993b8df24460a1024ae2fac6daff",
+      "statement": "Методы чтения делятся на точечные (get_hours с 24 элементами, get_day_stats), диапазонные с включительными границами (query_app_stats, query_hours_range) и агрегаты (get_totals, get_min_day).",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L340-L374",
+          "version": "repo-lines-v1:sha256:550b1019f93836009047e6c226dbf30a670d2fed0c1810a31e56225ee786d4cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Y2VkMmJmOTA0MGY5MTBiOTk2ZTMzMmUxZmRiNTMwN2QwY2MxYWI4MWQ2MjU0NjZkYTljMmM0NTk3OTQ4NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZTc4MmQwZDljOTZiYmQyMTE3NDFkYmUyYzIyZmRlY2JiMDE1MDI1YjEwMmE1ZWYwZTg2MGYxMTRkZmMzYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExMWE3OWJmMzZiYmZiODlmMWJmZDk1MDhmNGZiZDY4Y2M3ODA3NDRjODQ3YzZjMzRjNmJkMGE5MDk4ZThjY2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmNjM0OTgwZmM5YWVkZDljMDU1MmE0YWJhYTY3OTk2MGI0Njc1MTkwNmI4NmUwMDhjYTA3OTAzNjBkZDE1MjEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

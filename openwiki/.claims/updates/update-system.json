@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d0cfa295d6b1bd00e897ce822d4cef31287ccd380a8a0e1719df84daccea2d61",
+  "claims": [
+    {
+      "id": "claim_c666510e38d54dc688f2077c28458a05",
+      "statement": "Версии сравниваются не строками, а кортежами чисел через parse_version с регулярным выражением, принимающим необязательный префикс v, и _norm выравнивает длины нулями, иначе (1,2) и (1,2,0) считались бы разными.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L32-L60",
+          "version": "repo-lines-v1:sha256:27a945a772e769ef992911c0990fa7fd856b10becfc5ec5eb0c2efa1c3917d43:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4NTc2ZDQ0NTYxOThkZmQyOTNkYzIyMmE1ZmY0NjNjNWFkMjgwZmQ3M2VjZDU0YTA4NWVmNGZlODc1OTQzZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MWMwZWQ1YzJmMGIxYTI0NDJiM2VlMDM2N2NkOGJkZTEzYjIxY2JjM2Y3YmVjYTM0MWJjNzA4Y2JjM2E1YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NTY0MWYxODI1NjFkMDYyZmI1Mzk3ZWEwOTllMmI5YjkyYmNhZWYwNDBlNzY1NWM5NDQwYmI2ODhkNTRjNjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiZDc4YjhkMzk0ZDM3ZjQxODg4NmFjOTJlNmIzM2ViMmQ0OTRmY2RlODc3Y2QyYjdhYjNkZDY2ZWE0OTcwNjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56898e22b9c944f28be6c877df92423d",
+      "statement": "is_newer выполняет строгое сравнение, а same_version учитывает префикс v и разную длину, поэтому v1.2 равно 1.2.0; неразбираемая версия возвращает False, чтобы не навязывать обновление по нераспознанному тегу.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L46-L60",
+          "version": "repo-lines-v1:sha256:72aaf3dbeb2980576e00e2545b7a810d7b13e6c3296961eee068c5ba0feca463:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NWVhNzJlOTcxYjdiMTZhOTlkMWJjMTBlOTE4NGU0ODdkZTE2MzM4ZGRkM2Q0OGEwYTI3NzA0MjgxMzRkOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MWMwZWQ1YzJmMGIxYTI0NDJiM2VlMDM2N2NkOGJkZTEzYjIxY2JjM2Y3YmVjYTM0MWJjNzA4Y2JjM2E1YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZDk5MmUyZmFmN2E0NmUyNDhkZjEyY2I5YjVhZjcwZjZhMGFjZWQ4ZTg3MmU2NDY0NDViNTA2MDFjZjYwZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiZDc4YjhkMzk0ZDM3ZjQxODg4NmFjOTJlNmIzM2ViMmQ0OTRmY2RlODc3Y2QyYjdhYjNkZDY2ZWE0OTcwNjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9827b4e1d9e249dd9fea8b04f9b4a4d5",
+      "statement": "fetch_releases запрашивает GitHub API с заголовками User-Agent: Nodexy (без которого API отклоняет запрос) и Accept: application/vnd.github+json, с таймаутом 25 секунд.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L190-L200",
+          "version": "repo-lines-v1:sha256:8a43c1e5718220efb5905f49046ff702d9ec8a9ba8b7cddbe2bd8a3c4b410b2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZTVkYWNkZDM2YzEwZmE5ZmI4MzM3NDFjNjkzODIyMjJmMjY4ZDE0MmRlZjA0ZDgxZmM2NmVmZjU1OGNiNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5OWIzNzA1Yzk4YWNlYzBhNThjNjQ5MTMyMDIxNGYzNDZjYzhlMDZhYmYwYWQxNmJkYTRlNzczYmQxNTg5NGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMmYyNGNhYmQ2Y2E2YTFjOGM4ZmYzOTVhZTYyMjE0YzBmMjc0ODAxNWZhZTc3YTNiNzVmZTVlOWI1ZDMxZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmNTVmNjVmODk3MjU1Yzg4MGRlYWM4NjE1NWFhNTNlYTQ4Y2Q5YTZlMzhkNzI2OThhOWY5Y2IxMGY5MWY3ZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66528836f57b4700b86732025b028649",
+      "statement": "Запрос релизов выполняется в фоновом потоке CheckTask, потому что синхронный запрос в главном потоке заморозил бы интерфейс до 25 секунд.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L204-L212",
+          "version": "repo-lines-v1:sha256:d8c2e6ceb797d27290ced17dee2f608e8bce59c3dce4f560deac407cace6294d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTJiOWJjZDUxNTg5ODhjNzg4NjcyYWIxMjdlMGE1M2Q2NTAyYjhmNjc3YzU3N2VjYzc0MTEyYWQzNGQxNGM1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQ2MTAwMzA4ZWY3M2MyYzU0ZTczYmIxNmQ3N2ZjN2NhZmRmZmNjZTRkMDEwYjg2OTQ5ZGRlNTM0MzAwNDllZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmY1NWY2NWY4OTcyNTVjODgwZGVhYzg2MTU1YWE1M2VhNDhjZDlhNmUzOGQ3MjY5OGE5ZjljYjEwZjkxZjdmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjliOTZiNjY2YjA3ODQxM2MwNjk0ZmY4N2U0Nzk2OWE4ZGQ3ZDU0NThiZWFiMTAxYmUwYTk5MjY2ZTdjNjc4NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6be8c6a93aaf4ab6a637d8c73e9294c8",
+      "statement": "select_update отбрасывает черновики, prerelease, релизы с неразбираемым тегом и релизы без подходящего ассета, сортирует остальные по версии по убыванию и возвращает (None, \"\"), если последний не новее текущей.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L136-L160",
+          "version": "repo-lines-v1:sha256:623423fca64afc4020ffca681b1a4a3c02aef6b08ff4dadf8b5afd3ea838fc22:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMGIzZjBmMWFlZmU4YjBlYWEyNGUzYWQ0YTI1ZTFjYWNlNDJiZTM3MmExN2IxYzZkZDZiY2QzZjFjODYyNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlN2IwOWIxNmZhNzc4N2EyZDEzMjBhYWFjZTc4OGQ4YWJhZjQ5NDcyMDNhZjFkYmVjYjE5ZGUwMWFhMDNiMTcifQ"
+        },
+        {
+          "resource": "repo://app/updater.py#L163-L187",
+          "version": "repo-lines-v1:sha256:336119be96bc05158a43b7082191ebf2e6bafc77d85ea9b7d4bd495d15fe6ddc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwNzQxYmZlMDFjNjEzYjlkODczZDlmZDlmZGY0MDc4MTczM2ZmMThhMWQzMTI5ZTk1MWU4YTkxZWFlZGUyYmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMjZhNDBkZjZlZTkyMTcxNjVhOTUxNzdlOGNhYTdjNTMxYzk3N2Q3MmRjMTYxMmIzMzk5Yjc1NGFjYWQyZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkMzNhNjQ0YTAzNDNlNjhmYTE5MDU5ZDNiODA5MjdjNDViZmUwY2NkNDY1YjA0NGEyZWY2MDQwMzgwNzUwMTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cbeeddfb8c5b465eb95eefdade3aeb7e",
+      "statement": "is_installer_asset определяет установщик по маркерам в имени, а при PREFER_INSTALLER_ASSET = True кандидатами становятся только установщики без запасного варианта.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L102-L133",
+          "version": "repo-lines-v1:sha256:22a928e45097b9b1d2af8282780f0c7eb2d6fb1c8ae9d43565d30076b0ca7f11:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3YTZiNTE1ZDI1M2MwMDQwZTkzOTJlZDJkZWMyZmEyYWU4NDhlYTEyOWFmOTg4NDY3MzI1ZWRiNTIzYzAxZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlNDQxNjVlNjgxMzgwMjgyYmE3MDg5MjlkNjUzMTc3YWU1MWE4ZWEwYWUxNDE0ODg4NzU5ZmNiMjRiMDY4MDYifQ"
+        },
+        {
+          "resource": "repo://app/updater.py#L94-L100",
+          "version": "repo-lines-v1:sha256:9d48a3c2286b8da139882e52dc6d86b78a4f1a365568ec94a6ad51fcc3b70feb:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U4YmI5MmIxYzY0ZGE5ZDQ3MzgzMzc0YmJlNWYxZDlhM2RkMWZhNThiNmJjYTlhMDAwN2I2MTYzNmViMWE5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE1Mzg2NDQ1YjRkOWM5ODI4YjhmY2JmZWUyNmNlYWNhMmUxZTIzZTU1ZjcyMWVmOTU0ZDI0ODUxYTFjYTZkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzljODdhNTA0ZDM0ZDI0MmVlYzFjNjcxMWY2MjRlYjU2Y2VlZTNmNGFlNTA1NjUxZDdkNjk2MjhiNDc4NDJlZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_89b17ed16cfa49afbc4cc0c1e7ac5b2d",
+      "statement": "Стратегия B не имеет запасного варианта, потому что иначе апдейтер скачал бы голый exe и попытался обновиться им поверх установленной копии, что разрушило бы раскладку --onedir (exe плюс папка _internal).",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L102-L133",
+          "version": "repo-lines-v1:sha256:22a928e45097b9b1d2af8282780f0c7eb2d6fb1c8ae9d43565d30076b0ca7f11:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3YTZiNTE1ZDI1M2MwMDQwZTkzOTJlZDJkZWMyZmEyYWU4NDhlYTEyOWFmOTg4NDY3MzI1ZWRiNTIzYzAxZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlNDQxNjVlNjgxMzgwMjgyYmE3MDg5MjlkNjUzMTc3YWU1MWE4ZWEwYWUxNDE0ODg4NzU5ZmNiMjRiMDY4MDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8ce1ce328e3b456b9eff0440c20540ca",
+      "statement": "parse_sha256 ищет сумму сначала по явной метке sha256, затем по любому 64-символьному hex-значению в теле релиза.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L84-L91",
+          "version": "repo-lines-v1:sha256:7b20027f368c1e7b586f5e77035ee05b4e96c45a20af51caba45863df2c15c8e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVjODc2ZjYxODQ2MThiYzMyMWY4MTkzYjFiZWYzZDFlY2VhMjFlOWEzNTA2ZmRlNDRlMGQxNjhjYmIzZTliOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ4YmZjODBiMzc0NDVhMGRjYWUwNmIzZTAxYmQ2ODRmOGU2NmNjOGJmMDkyZWRmODg4NWZlZTI3OWM3ZTczNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTIyMGM1ZjI3ZjE2MWJmNTg5OGYwMDIyZWI1MzhhYjc3YzdhOTI3MTc4ODYxY2ZlMzllYmU1ODE5ZmMyODI5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2NmYzg2MDVjMjgwM2M0ZDQ4ZDkxNDVlOWQ0MTk1ZDNhMmQ4Y2U5NGM0N2UyOWNlNWZkYjMwMzFhZjdlNGY3MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_22bc238eb53949d6a47093d6badabc96",
+      "statement": "При нескольких пропущенных версиях заметки объединяются по всем релизам новее текущей, причём тег не дублируется, если тело уже начинается с него.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L177-L187",
+          "version": "repo-lines-v1:sha256:265af9cfec3912429a8af9808e6094ec7098741671eb653d8109a9270ff28dda:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzM2UwODI2ZWQxZjY4MWJlYzAxMGRjM2I0YTA3NjRmZDgxZjY1MDYyZmYwOGE3MjZjZTgzODZhZTgzZGEyNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMjZhNDBkZjZlZTkyMTcxNjVhOTUxNzdlOGNhYTdjNTMxYzk3N2Q3MmRjMTYxMmIzMzk5Yjc1NGFjYWQyZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMWNiMjczMWViYzI3NjRmNzhiZTVhMThjNjg1YmJkMmZiOGMxYWQ3ZmRiZWIxYzU3YWM4Y2I0MjRmNzU3YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZkMzNhNjQ0YTAzNDNlNjhmYTE5MDU5ZDNiODA5MjdjNDViZmUwY2NkNDY1YjA0NGEyZWY2MDQwMzgwNzUwMTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4b307cc812ab4b76b0f2c5aec132fb99",
+      "statement": "Параллельные загрузки блокируются через _DOWNLOAD_LOCKS с threading.Lock: второй запрос получает отказ \"already-downloading\", потому что автоскачивание и ручная кнопка ранее писали в один и тот же .part и портили друг друга.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L229-L236",
+          "version": "repo-lines-v1:sha256:560aed0fcfe7941c34f0f94dae2b384677fc058efab6ec6b4eaceea3004a09d2:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2UxN2JiNWYyNTY2ZGRkMGVlZGU5N2ZlNjUxNzhhZGRjMTdlYWQ4YzM4YWU4ZGQxOGQ3ZTc1ZWQ4NWNkNTE5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU2OWNiMDkyODBlZTA3ODE5NDVlNDhkNDA0MWJkMmRmYWFlNjkxYWQyZWFiZjVkM2NiYTA4NDZjNzIxNmNhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTI1ZmIwYTAwZWFiMjViNDY4NmJlM2JlOTdhMDRkYjE5YjUzZGU3NWE3ZjhjMDRhMDE2MzNkNzIzM2JjMGZlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmViZDNhODk1MDNhZGZmZDBjOGQ1YzEyZWYyZjE0MTJlM2IzNDQ2N2I4MzEyOTc1YTA0NmMyODcyMTdkNDBjOCJ9"
+        },
+        {
+          "resource": "repo://app/updater.py#L273-L292",
+          "version": "repo-lines-v1:sha256:440fe8be23b238e16ddf86eada7ba1f3eb449da1e661614d647545d8f61ead2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiZDRlZjQ0YTUxZjcyMDRjYmQ3MzU4N2M3NjAyOWU3ZjVlNGY3ZDFhYjZlMjM5OGRjMDYzM2UyNjBmNmNhNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhMjhmMzA0MGRmYmViNjhjYzk0NjA4NDdiODVkYjU5ZDNlMGFkNzA5Nzk5NzFhNzM0YzQ5NWEyMTBiOWViN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzYTk2OWI4YTMwY2M3ODNjMDdiOTQwZGU4NTY2ZTljMDJmMDMyODQ2N2M4NWViOTg1N2Q3YzYyYzM1YzNlYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3780a055da2b44e1863822e5b5fe1e3e",
+      "statement": "Загрузка идёт в dest + \".part\" блоками по 65536 байт и завершается атомарным os.replace, а release_download вызывается в finally, поэтому отмена и ошибка не оставляют путь занятым.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L237-L261",
+          "version": "repo-lines-v1:sha256:d558f2ec8c6ba7992b642450e4110a9f32aab9f39d93e5a59574a43ddce2c878:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMTljYmY5NjUzODk0M2U5ZTYxNDczODcxZDQwMDAyNjNlNmQ4YTVjODkwNThjNzU2OWY3NTdhMWEzNTJjOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkZGEzMzkyYTU2MGI3NjkyNTZiZDI4MmRlN2M3MGQyOWU0NGRiOGQxN2RlMGFmNjZhNTRjNThjZWVkNTdjMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNjhjNWFkNzE1MDY1N2VmMWRjYmJhYjdiOWU4NzY4OTU1YjY3NjIyNDFiZWIyNjkxODRjMjJlYmY0ZThmZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNjdiMjQ3YWIyZTFiYWE4NjE5YWE2NzczN2ZkNTgyYjg0YjJkYTBjYzA0NjE3MzI4NDE3OGM0YTI5MWY2NjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9b4910ac06804d54a2d2937272899141",
+      "statement": "verify_file проверяет существование файла, совпадение размера и совпадение SHA256, а sha256_file читает файл блоками, не загружая установщик в память целиком.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L303-L314",
+          "version": "repo-lines-v1:sha256:107cf964cad25e0cb052a68871a1ded5b943ebf5958bb9117678c23a38f21a6b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MmRhM2YzYzc0YWU1ODg1YTc4YTA0YWFhNWFhYTY2MmU4Zjc0Mzg0ZTFjNmFkOTM1MWFjNjg5MDc1NmM5NzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NjAzYTZhODVhNTc5ZjNiYjk0ZjllYWE4NmFmZjIwMDE1MTMyZjk0ZmU3NjlhYzg5ZWMzNjA3ODM2Y2Y0OGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmM2E3MDRmODI2ZmU2NTc2ZDViNzljZmRjODlhMzI1NzI2MDMwNTRmYzE1MTU4NWJmYWJhNWI0Y2U1ZDE4MmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNzMxNWY4YmE3MjY2ZDQwZjQ5MjY4NGEwMGMxMzcyNjkxNDYwMWU1ZDQ5OWM5OTVlMmUyMjU4MzZmNDZlMzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_71cf0e34fc9f4afe98201a7e2b520321",
+      "statement": "cancel_pending удаляет не только запись update_pending, но и сам файл установщика, иначе отменённое обновление оставляло бы десятки мегабайт в каталоге данных.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L332-L336",
+          "version": "repo-lines-v1:sha256:010e8d6cda6adf0bea1d8ddd57e06792ef5f9e110e6173ae86a5f72a0c94dafa:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg3YjAwNDViM2YyYTU3NWY5Y2RkN2M1MWYyMmVkYWRlNGFmZTNmNjA0OWZmNjcwZmFlNzg1ODkxYjYzOTIwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBjNTQ1M2YzN2U2YjMwY2NjODExZmFhZTZjOGVjYjE3MDE4MGVkZjM3NTA5MWJjOWRkYTg2YmE4NGJmZTM5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmZlN2Y3NzEwOTY3NzNkY2FmZDNmMzU2Y2Q1MGZlYmNiZTA1ZmYyMmU0ZWQ0YjcwZDViNDI5YzU1MTI4MGViZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM5NTkwYTlkNzk0NTY4MGYwMjU5ZjIyYTQ2OTY3NGE2ZGEzNWJmNjlkMTdiZDJkMDA5OGVmMDIxYjY0NjU2NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc93939b41954d70a8b4247505340af2",
+      "statement": "mark_whatsnew_seen ставит seen: true только при совпадении версии и тем самым не помечает чужие заметки, а whatsnew_unseen возвращает истину, пока заметки не просмотрены.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L344-L360",
+          "version": "repo-lines-v1:sha256:edf53693df5383dd60091075098300cf469cc8ec12803d479ade0e5785cba566:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMWQzMzhkNTYzYWMyNTExNGNlODI5ZDNjMmZjN2JjOTEyNDk3NTY4Zjc2NWYxYzNkYjc2NTNiMjg5MDE3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MzkwM2IzNGZiM2NjZWZlNzhlNjAyN2UzOWQ2ZmRkODdhZmUzMDgxYTY3OTI2OTk4Zjc1ZTYxYzg1Mjc0ZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkYjVmZjM5MjBiYjJmNTg3NTllYzEzZTA5ZGY2MzlhYWY4YTAyZjM3NWJkNTZjMjExZDhiNGY0M2FiZGJlZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYmUyMmEzNDQ0ZTg4Y2Y3OGNmODNmYjI3YmViYzJiYmE2MDhiNWIxYmRhYmM0ZTEzNzYxY2JlNTFhY2EyOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ced20c9560ab4c7a882f42f039c0d6a2",
+      "statement": "Откладывание обновления привязано к версии: snooze_active требует совпадения версии и срока менее SNOOZE_DAYS = 3, иначе вышедшая новая версия не была бы предложена.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L421-L435",
+          "version": "repo-lines-v1:sha256:78ed1a9846688bbe42c9b13f10cda1543ca74f8ebaf2ac7826f32ddc44310e19:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlYjVjZDk3OWU0ZTFmYjhjZjI3MzY2OGI4NzkwMWVmNTVmNmJlNTY0YmFiMGEyNzE5ZjkzYmJkNzI5MGRiZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NzNiN2RjNWFjM2NmMTc1NGE4NGRmZGFmMmY2OTUzYjRlZWRiMzI3MWMxZGI3MTAzYjUwYmUxNjA3MzU0NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzNGQyYTMwOWJmODc4ZTU3NDA2NzVhYzJmNjBhMzg4MTU1ZmYyNWE5ZjZjZjY1YjMyZjJmZGZkYzUzZGFhN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkNjM0YTE1OGE5NmE0NjFlMDM1NTU5Y2JmNDc2NDA1NmE2ZGYzNTE3NDY0MzY3MjBkOTA4ZGQ2MWE2YjU2YzUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

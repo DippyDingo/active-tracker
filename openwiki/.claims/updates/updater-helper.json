@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:008253f8defac1f06f0ac461fa1d43be08ab2a86544eaa64dbde0b677894ebc6",
+  "claims": [
+    {
+      "id": "claim_9469360a0d604a5d9d1b28624a289a34",
+      "statement": "Помощник вынесен в отдельный процесс, потому что приложение не может заменить собственный исполняемый файл, пока выполняется, а установщик Inno отказывается ставить поверх запущенного приложения.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L1-L6",
+          "version": "repo-lines-v1:sha256:7cfaa29fa5b807d48190a58c25f20f0f6016d628e1a6125e57d95065be5528bd:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY3ODUyYTg5MDQ4MzFhNTQyOGU4ZjVlYThjOGM0Y2RhOWEwNTMxNjczNjk2OGY5NWNlZDQ3YmMyOTA1NDRiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTg2Nzg4ZGM5NTMxYTdmOTE4ZWQ5ZjFkNjc4Njk0YWFhM2ZlZjM3ZTE2MTYwN2JhNDE5ZTNlOGQxYTA2YmM3OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8c719c2ef8d4046a2975218c43678d3",
+      "statement": "От VBS-помощника отказались, потому что кавычки в путях и аргументах ломали установку; отдельный exe принимает аргументы напрямую без промежуточного разбора оболочкой.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L492-L496",
+          "version": "repo-lines-v1:sha256:65dfbe1addc7a5d5dbbdc3ecf7619f051e3d95a4b2203a3199b6c7438e22c158:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU0NDk5MTVjNWZiZGUyZDEyNzNkZjY1NmFlNTAzYjBkOTkxYjM0YTRmN2M0ZDA4YTYzNzg1MTk5Y2M1NjM3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGRmY2I2MzdjZTViZDdmNWRmYzE3ZDI2NWFhZGUwM2Q5YmQzNzkxODk3OWIxY2VkOGUwOGJjNDMwYjNkZTE1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzdhNGFiYjNjMTg4YjA4OGY5MjgxOGY3NzA0N2E4ZjljNzQ2YjNjNmFkNzNkNzIzOTcxODBhZjI2NWNkNDYxMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0ab2868d809942159859dbdcb27eb015",
+      "statement": "Помощник переносит собственный образ в %TEMP% как REDISUpdater-<pid>.exe и перезапускается оттуда, потому что работающий из каталога приложения процесс не даст установщику заменить свой exe.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L61-L82",
+          "version": "repo-lines-v1:sha256:90894682a85a58b77bfd482e3fd6aaf31a1a4e126999a69256dc54d1fb19c8eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkOTBiZjI3ODYzN2M2MWVmM2FhMzNkNzJjNTZkODMzNjEzNzdhMzQwNWEzZDA5YmM2NzAyZjkyYTYyYTllNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkZjlhMjcyOGQyNTRmMmE1MWI5ZGU2NWU2MmM2ZTkyNzgyNDQ2OGJjZjMyNmI0ZWVjNDVhNmVhYTM1ZjQ1NzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjMTg4Y2MwMzU5MzZjNDNjNDM2YmY4YzY4MzZiNzFiMTJjOGQzY2QwNGE4OWQ0YzM1Y2E0ODlmMjY3OTAwMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiODliMThlODUzNzhmNWM3ZjlhNWM5Y2FjZmFiODg1NmRlYzkwYjA0ODRlODQ5ZjkwOTIwMDU3MTM0MjAyYmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f8d0037f22c840369627f00bc13129f1",
+      "statement": "Переменная окружения NODEXY_HELPER_TEMP=1 передаётся дочернему процессу и защищает от бесконечной рекурсивной самокопии.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L63-L78",
+          "version": "repo-lines-v1:sha256:5a3ecf03010beb23f4308ad29c442268b32ec770e797aa6bcf9e0bbd4a9cc89f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNWIwZTZiMzg3NTA0OWZiYmNlZGMzZjRmOGQ4NzUwNzEzYzk3YWNkOWM2ZmFlNzcxNDA2ZTFiNTNhOGRhNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxOTE3MGMwNzVmOGQzZmQ1MDIzOGEzZmU3NGU3YzU1ZDg4Y2IzMTYwMjM0MzJkMmE2Mjg3YzI0MDRmNWQwNTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxNWQ3OTQ1NWFhYzg4OTA3ODZhNjRlNmRjY2QzOWUxZTEwNjQwM2M4MmI2NWQyM2VhZjkzMzRkNjQ5MTU5NzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_54a02d88498b43e38bd9fd2e98261746",
+      "statement": "Ожидание выхода выполняется по PID с шагом 250 мс и дедлайном 120 секунд, а не по имени процесса, потому что имя менялось между версиями, а PID уникален для конкретного процесса.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L28-L53",
+          "version": "repo-lines-v1:sha256:108bad5a188c674e3a6193f662e0250a48637c88c4e04f3cb122649fa815ee1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MjdhYThiZDQ0MzJiODA0ZWY1YzhiZWRlMWY0ZGRlNWJhZjc4N2U3YTk2OTE4YjQ2N2YyNWQ2MTJkMGRlOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhMjhmMzA0MGRmYmViNjhjYzk0NjA4NDdiODVkYjU5ZDNlMGFkNzA5Nzk5NzFhNzM0YzQ5NWEyMTBiOWViN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyN2E1Njc4ZWIzMjYzM2ZiOTZkNmI4NWYwNzYwODY0NjBhMmQ2YzUxYmM1MzY0ZTM3Njc0YWE2Y2NmNjgyOTcifQ"
+        },
+        {
+          "resource": "repo://nodexy_updater_helper.py#L91-L99",
+          "version": "repo-lines-v1:sha256:20b3016b65767e38491d383711db6f2b693cca72352cef7c9fdf3680d59be648:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWRhNWM2NmUxN2IxNDUzOTc4MzRiOGM4NTRkYzQxOTNlMjEyNTE4MGE4OTk2YTE0YzMxODgzMzI2YjJlZmJjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjkwMDM4OWI2ZWUzZTBiYzkzZmZhZjljYTAzZDZjOWIwZjU3MzE5Njg3NGRmNzFlMDZkZDFmYTk3NjM1ZmY2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGUzZmMzZWYzM2YxMzVlYWExZDA3MTJjZjI4NmFlZGRlZWMyNmQ2NGNhNWIwNGUwYmUxMGIxOGZkZDdkZTk2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjMzZGM0NzZkNjhjOGRjYzU4MTIyZjlhOWVlODk5NTE2YmVmOGFhY2RjYWYwODljYTgwMWE5OGI1NzMzNTllNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8ff5fb2569a4464db15f9bf66f9363b2",
+      "statement": "Вторая проверка target_running ждёт до 30 секунд, если целевой exe всё ещё запущен, защищая от ручного перезапуска приложения во время установки.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L101-L109",
+          "version": "repo-lines-v1:sha256:e1eaf9603195b05c7adfabf36dd6dbebb065ee309c1be719849c48547da10482:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk1ZWI5OWM4NTJkYzc5YWIzNmNkYjUyY2M3YzMxZjhlMzdmYTJhZDk3MTJlYmJiOWE2MGQ5YmViZTA4NjM2YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjAzNzE3MDk1MzFlYWJkOGZmNzhjNGM5YTUwOGIxY2Y1YzVlM2ZmN2U1ZjMyYzZkZWNiNTU0YTk0MDVmNTMzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjYxZjViYzJhMmY2OGJiZDI2ZGQ5ZTkxMTllNjEzMGIxYTg1ZmQ2MGI2ZjA1Zjc3MjgyMmNjNDIwZTU2NmMyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDRkYzQ4YzQxYzQyNzNkMmJlY2JiNWU5OTFkYTlkZTc0NDEyYzNiNjdiM2YwMWVlOGQ3MTY4NTI2MTViOGJiMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3713c9a94a6348b2b46ddc6fdff67995",
+      "statement": "Установщик запускается с флагами /VERYSILENT, /SUPPRESSMSGBOXES, /NORESTART, /SP-, /LOG, /DIR и /DISABLEDIRPAGE, с CREATE_NO_WINDOW и потоками в DEVNULL, без оболочки.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L114-L142",
+          "version": "repo-lines-v1:sha256:8731fc0d9b0ce8dbb8c36246e24dced1ac25f7f145a0c1e9f5df8546025c1800:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmODg1NjNjOGU1MWNjZDk1OTRhYzBjY2I0M2RjODBmMzBhMDg5MjdhYTRlMzY3MGRkMTYyZjdkYjc1NjY5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5YzRhODUyNzgwZjIyMWJiYjFhNDk5NGNlZTY0NzI0NTczYWIzNzRmNmU1MzJkNTI5MmIxNjAyZDNlZWRmMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI1NGIxYWY1Nzg2YWE2NzRiMWIxMWEzMWJiNDBjMjhkYjgyNWU3NzQ5Mjg4OWNhYzg0ODBhMzI2M2M3Mjg1MzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc59668b520546d4bcaf184c72557c66",
+      "statement": "Параметр /DIR передаётся явно с отключением страницы выбора каталога, потому что установщик запоминает каталог по AppId и при наличии параллельной установки файлы уезжали туда, а запускалась прежняя копия.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L122-L129",
+          "version": "repo-lines-v1:sha256:ea7d0236fe3a70989233a93ea72f48f3d68c0435949ac046aeab23a0ddeec1cb:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE1MTg5YmQ1NGNmYWFjNzIzMjk1NmFhNjU3ZjcwN2NhZWY3ZjNhM2U4OTNjYjkxNDdlMmQ2NTJmY2IyZjdmNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFhZThhMGNhNzZmOThmN2I3ZGM3OTg0OTUxZDYzZTU3ZGIzYzY0NTU3OWNhNTFiYWQ2YTUzOWQ2MTRlZGJiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2E2NzBkNzEyMjM0ODVmMGVkZmVhOGE2NzU4MjEwM2MwODMzMDI5NjY4MTgyNGYxYzYzYTgxMTgwMjYyZjQ4ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2IyZjAxYTE1OWU4NThjNzk2MzViYjMxMWQ3MzJiNmM5MmE5NDYzMjJhNzU0OTU0YzBlZDgyMzY5ODM5ZThkZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_05d001956d6443c5b5e7a6ed85aca484",
+      "statement": "Запускаемый файл ищется по четырём вариантам (REDIS.exe в целевом каталоге, имя переданного exe, переданный путь, REDIS.exe рядом с ним) с ожиданием до 30 секунд, причём поиск идёт в целевом каталоге, а не по переданному пути.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L147-L164",
+          "version": "repo-lines-v1:sha256:05dc6d025611cc6bea2a296c55c7b02eaceb5117039e0d73a636beecf3a99949:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZjUxOTIzOGYzZGM2YjFiMjgzODRlYTMwODA5MDliNjZmMzhhYWQ0OWYxNTBiNjUyNGVmY2U4NDliYTQ5MTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkZTRkYTU1MmNkMDNjN2RmM2MxMzRmZTdhYjMwMTA1YjVlYTY1NWU1MWI5ZGZkNGZlNDY0MmFhZDBhMGRjMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ZTEwZTdhYWUyYzUwMWVlN2QyY2MzM2U1NGY5NWJiNzdmOTEwOGI0YmE3NTcwZDI3ODgzMjE3ZWE0MjM3NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYzFjNDg3YzdhODBkMmVkNDdkMzI4ZWYyZTQ5NjA4ZTFiM2UzNWQ0ZTdiN2M1OWIyZTdlYzAzNjZjMzNjMzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dce41caaab2d4271bffc42577f3c60db",
+      "statement": "Маркер install.lock снимается до запуска приложения, иначе новая копия увидела бы свежий маркер и живой помощник, решила бы, что установка идёт, и вышла бы без запущенного приложения.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L165-L181",
+          "version": "repo-lines-v1:sha256:47b0502b7a23ad29cf2e5cf2a3590eb12bd969568669aa39ccb237d25aa20215:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmOTE5YjA3NmM5NTNkMzU5M2JlMWE1OTE0ODM5OWFkNDMwY2VlMmNmNDI5NmUwNWM2ZDhhNzU4Zjg3NmMxY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ZDFiYmEyZDczZDBjNmI4MjEwOGQ3YWI1ZWJmMTEzYmE0NzkxOGNiYTQ3MzRmOTU4M2RiZWIwMTY0ZDhlM2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwZmUzMmMyOWQ1NTFmZWNmYWJhZTdkNmNiYTdmNzk2Zjc5OWY2MTkyMTJhNWNkNGU4OGI0MmRiMTQ2M2Q5ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5N2QyOThiYjdjNDM4OWRkZTY1MWE5MzVjMmU2ODcwYjRkMDExNTI4YzBmZDQ3MmYwMjNiZDBmOTIxZGVmYmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe705e3f9be24a4cab77302815b1b1e4",
+      "statement": "Блок finally тоже удаляет маркер установки на случай ошибки на любом шаге.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L186-L190",
+          "version": "repo-lines-v1:sha256:c82571b3bbe73598e5ea1f54a4a65f652d2a3599fe87acce97f3201071becda6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTcwZGEwMzJmYmZkYmQxYjQyNGU4MTRjMjEyYWU1ODQ4NGU3NmY1N2RjNTZkYmZkMTNiZjgwMzczNmQzMjRiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGYwODY4ZDg2MmU1OTZlMWZhMGEwYTU4NzhiMDUwZWVhZmM2ZTM0ZDBlMTYyYmUzOGM2YWYzYjFjYmFjZThmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGRlNTFjMmY0ZmY3YzhkYTAyYmYzNzFlYzdhOTQ4NzVmNjc4ODgxNTJkZDM3ZjI2MzU0ZWUxM2YwMmQxNzEyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQ4ZDc0ODNkMDYwZjE3MjJlMjQ1MzY4ODgzMzQyNTZiNTQ5MGU4YmJlODY5ODIwNjc2Y2E5ZWFmMzUwOWNjOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a30fae74f16747a4bf314d431cceab42",
+      "statement": "Помощник возвращает коды: 0 успех или перенос, 1 ошибка установщика, 2 невозможность создать маркер, 3 PID не завершился, 4 целевой exe работает, 5 нет установщика, 6 нет запускаемого exe, 7 внутреннее исключение, 8 неудача перезапуска из %TEMP%.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L55-L82",
+          "version": "repo-lines-v1:sha256:936da5e82bd6e7dc245d6fd5dfa63b7edf75ed50f92cc2d80eede0e1e630087c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MmZjNDAzZWRjZTIwMjhjNzE0ZWQ0MTY5OTAxZGFjZTA2NDA0MmVkYWEwZTEzZGU2NjkwYTBjMjk3MWU3MzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkZjlhMjcyOGQyNTRmMmE1MWI5ZGU2NWU2MmM2ZTkyNzgyNDQ2OGJjZjMyNmI0ZWVjNDVhNmVhYTM1ZjQ1NzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYjIxYmY4OTVmYWUyZDczOTIwZDkzMTc4Y2ZkNTg0MWNkZjhmOTUyNDUxNmM4YTU2NTg0MzZhNGFjNDhmM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiODliMThlODUzNzhmNWM3ZjlhNWM5Y2FjZmFiODg1NmRlYzkwYjA0ODRlODQ5ZjkwOTIwMDU3MTM0MjAyYmEifQ"
+        },
+        {
+          "resource": "repo://nodexy_updater_helper.py#L84-L190",
+          "version": "repo-lines-v1:sha256:579dfc055957e24d1d8fc7acfaa21b5027ee2dd5cacc32692baeb41571b940a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhZGE1YzY2ZTE3YjE0NTM5NzgzNGI4Yzg1NGRjNDE5M2UyMTI1MTgwYTg5OTZhMTRjMzE4ODMzMjZiMmVmYmNmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwZjA4NjhkODYyZTU5NmUxZmEwYTBhNTg3OGIwNTBlZWFmYzZlMzRkMGUxNjJiZTM4YzZhZjNiMWNiYWNlOGZjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MDU1MGI1NDNhYWUwZjAyMDMyOGUxMWI4ZGZlZDNiMzU2MDdiNTMwOGIzYTgwY2QzYjUxNWQ3ZmFmYzQ3MTg4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NDhkNzQ4M2QwNjBmMTcyMmUyNDUzNjg4ODMzNDI1NmI1NDkwZThiYmU4Njk4MjA2NzZjYTllYWYzNTA5Y2M5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_05062d443d1e4ebab66b6a21f5dec95d",
+      "statement": "log пишет строки с отметкой времени и подавляет ошибки записи, потому что помощник должен работать даже если журнал писать некуда.",
+      "evidence": [
+        {
+          "resource": "repo://nodexy_updater_helper.py#L19-L25",
+          "version": "repo-lines-v1:sha256:aeb7f3bef8ce8fe8eb3c73322c6719347c66084e840dec5ae62e1ba011953c8c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGM5YTYwOTk4YzE1ZDQxMWQxMTNiOTZlOTkwMzVkYmYzZThlYzI5MTBiMWY0YzJhYzBlOTQ2N2VlYjdjZjgyYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjA2MmU1OGVhMGIwZmQxOTViYTA3NjYxM2I2MzBkNTllNjdiZDQ3MGJiMTllOTdhMjBjOTAyMzY2ZTViYTBlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTkxYmYzZDk2ZjFiMTE5Njg4ZGVlYTlhMDA0YjJiM2ZlYmIxODBiYjhmYjIzNDQ2MjU2MTRhZGM4NTk1NjNhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmM2MGEyZWE3NzI2MGE0ZTNiMmUzNzFmMzU2YTFmODA0OTUwZGMxMGRiYTUxZjIxZWM5NmQ1MDY2ODY5ZDA5ZCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

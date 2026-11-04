@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:5276eef31226ef8cf32e90d9bbf166d77adfeb96e9364b37209be968e72881e0",
+  "claims": [
+    {
+      "id": "claim_4ee615a8ac23460eba8dca33c2c96a49",
+      "statement": "Обновление не применяется сразу после скачивания, а записывается в config.json под ключом update_pending с полями version, notes, file, kind, page и attempts.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L318-L336",
+          "version": "repo-lines-v1:sha256:9101df837d7c4e0f2cb3374cb005c9801bf26fc9561a42092e7c6d847c9aa492:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3OWU0ZDIwZTBlNmQyNWE1MGNlMTNiMWY5YmQ0Yjc0ZGE1OTUyMDJhZDdjZmUyMDQ5MDZmMTQ2ZmFhNzIwMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYzU0NTNmMzdlNmIzMGNjYzgxMWZhYWU2YzhlY2IxNzAxODBlZGYzNzUwOTFiYzlkZGE4NmJhODRiZmUzOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkNzMxNWY4YmE3MjY2ZDQwZjQ5MjY4NGEwMGMxMzcyNjkxNDYwMWU1ZDQ5OWM5OTVlMmUyMjU4MzZmNDZlMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzOTU5MGE5ZDc5NDU2ODBmMDI1OWYyMmE0Njk2NzRhNmRhMzViZjY5ZDE3YmQyZDAwOThlZjAyMWI2NDY1NjcifQ"
+        },
+        {
+          "resource": "repo://app/updater.py#L754-L789",
+          "version": "repo-lines-v1:sha256:bf2d1339f570a6844229534dcc2daf69c8f9928c7bbc0b2042faaa8641a9418a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjZTFiNjIzMDQxNDMwM2Q2YjkxOGYxMzUxMjZiZGE2ZWU5M2FlMGY5NGNiYzg5NjQ1NWUxZDRlNWJlYTY3YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3ZjMzODg4YTMwNGNjYzIwY2MzMWE3YjliMGU5MjJjZjAzNGIyNTc1MWFkMTc2OWI2NWRhNmQ4ZmY1NWY5NTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZGUxZTYzZjgzYzljNGNhOTllNTViYTIwNTdhYzk3NmQxZDVlOGM2OWQ4ZjQxMDU5OWZhOTgwOTJlNjMzMzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_91ff237454224f93be464fa28ecd36f5",
+      "statement": "При достижении MAX_REPLACE_ATTEMPTS = 3 ожидание обновления отменяется и показывается ссылка на страницу релизов, потому что повторять установку автоматически бессмысленно.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L776-L788",
+          "version": "repo-lines-v1:sha256:a6f5e2dfe37b255983a7d6917da3e420ee0e0a6da671feefa4bbc8b172f3997c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NGU1MGFiMzM5ZTlmYTRkNTllMDc0OGU3OWY0ZWFjZmMyZTBkMDk3NDhiNzk3Y2EyMGFhMzVlODUyY2MwNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMjVmMmFkYmFmMTdjYjQ2MDYzOTBlMjc2NmFmNmMzNmIwNWJiYmE2MTE5ZTA5NGQ4ZTg2MzNlMmJhNzU1Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4MzdiOWY4NzQ0YjBhYzVmYzUxZmIzOTM4YTdkYTg0YjMwYmZkMDYyNDE2ZGQxMDg1ZGE0N2U2ODZlOTc1OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1NDRhN2E2Njc3ZjMxYmI4YWJhMzBkNDBmYzMzYjRlZTJmYTVlNjZjZmU0YzI3ZGExYjgyZmRiOThlYmRmYTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_88f9bde9e2a849139790b74251453a35",
+      "statement": "boot_step увеличивает fails только если предыдущий сеанс той же версии не был помечен как clean, поэтому три быстрых открытия-закрытия больше не приводят к откату.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L714-L732",
+          "version": "repo-lines-v1:sha256:30c0385adf28f788898c28139e2408311c758596ed538a704ee9ccea88f0ccb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiOWQ3YTc2NTNhOTE3MWE0OTZkZWJjZGY1NGI5ZTRjMmExZGUxZDQ5ZDAyN2U2ODIyMmM5ZjFlMjQ3MDViNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ODE0YzhkOTFhODgxMGI4NzI5N2I3MTY3ODIxYzgxMzVmYWNlMjMwMzgzZjI4MWM4ZDYyNDg1ZTZmNGVlNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5OWVmZWRmZDJkOTcwNmQ4OTFjN2JhOTgzZTdmODRlMDVhZDBlMDE5MWMxMzI3OThiZTVlM2MxY2M1MzA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjMmNiOWRiNjBmNDdmMmYxOTM2Nzk3NTAwMGQxMjc5OTMxZWFhNTEyNTdiNjlkZjE5YmQyYjQ4ZWYwNGU0NjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8c6f475cde734e77ab1a8d53191e29f0",
+      "statement": "mark_clean_exit подписан на aboutToQuit и ставит clean: true при штатном завершении, что отличает нормальный выход от падения.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L735-L746",
+          "version": "repo-lines-v1:sha256:6729c7f8bd641d49962734d4048decb871d8719fe2d6492b9f5497036b2d542b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhM2EwZjBlZDYwZDliZTdjMzgwOTY4NmMwOWRmYWMwZmM2NTg0MTkyMzFlN2U5YmFiOTFjZjhiNTU3NjNiZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNjJlNThlYTBiMGZkMTk1YmEwNzY2MTNiNjMwZDU5ZTY3YmQ0NzBiYjE5ZTk3YTIwYzkwMjM2NmU1YmEwZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkZDgwMmEwZDU4MmI5NjRiNGVkNWZkOWUxY2FmOTFjYWRmYWExNmZlMmUzNWU5OTcxNmQwNmZkNDE5M2FkMWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJiNWE0M2VjZDk5YjNmMmY5MGM3Nzk3ZTA3YzFiMzdjZTgwOTliYzIyODA2ZTNjMGQ1MDViZDc5YzFkYjkzZDYifQ"
+        },
+        {
+          "resource": "repo://main.py#L273-L273",
+          "version": "repo-lines-v1:sha256:99d12882837cd09b342717a53cbc0ece81c6b5236ee86b38e329bae183941c52:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTlkMTI4ODI4MzdjZDA5YjM0MjcxN2E1M2NiYzBlY2U4MWM2YjUyMzZlZTg2YjM4ZTMyOWJhZTE4Mzk0MWM1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTlkMTI4ODI4MzdjZDA5YjM0MjcxN2E1M2NiYzBlY2U4MWM2YjUyMzZlZTg2YjM4ZTMyOWJhZTE4Mzk0MWM1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDcwZGRhMzFjZTAwZWFhMGQ0OWU0ZTdmMjI4ODlkZjFkMWVkOGI0ZDFiZTBkMGJmYTNkNjZkNzY0ZjcyODNjNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg1NzUwZjM1NzkyOGE0ZTIxMzkyNWFiMWQ4OTg0NTVjZjdmNDE4YWFiOWQzYTVhMTMwMGU2YTYzMDFjODkyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4004437c3b0540ef821e270d0f47a1fb",
+      "statement": "boot_success вызывается через 10 секунд после показа окна, удаляет boot_check и переносит установщик успешной версии в кэш отката.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L823-L836",
+          "version": "repo-lines-v1:sha256:421e5360a213f9049446215d01aef02c636ba3e3bd41a1fb1a6cda0e44814a86:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZTAxZWJjZDI3N2UwMTM3ZjMzYzNkMzQyN2I1YzI4Njg1MzZhZTljYzkxNmU3OGE1YjFlMTQwODMzN2Q0NDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxZmVkODAyMzE1MTZlYTA2NzIyYjE3NjVmY2E0ZDE3NjVmZTQ0MzcxZDAxMjhjMTQ3MjAzODEwNDE2NGI4M2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://main.py#L259-L261",
+          "version": "repo-lines-v1:sha256:c210b2dac19a50382c79bcdc91e02326e771e8e99d57c1df3a93a54ac670db0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjUzZjMyNWViYWVmMWUxMDhmODNhODRkMmUxMzk3OTZjYzg2ZGY2ZTJmZTM4Zjg1YzMzMWIzYTk4ZGRmM2ZhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFlODIxYTZkMzg3MmQ5MWExYWExNTg3M2U4Nzc3M2M2YWExZDhjMGU0ZmYyMDAwMjIxNDkxYjI3MTAzOGE4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmI2NDkxMjIyN2I5YmQzYWVmMTM0YjYzNzZhYzkxYjUzZDdiMThjNDk1NDlkYTA1NTM2MGMwNWNiZjM5ZmM1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjgzNTBmY2ZjOGFkMTBjMDUxYjI4NWZkOTYzMTFkNGM5ZWFjOTBkMzk0OWJjNGQ2MjRmZGFhNDhhNzJkNTczMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2a3ab2395c9439898ea16f349ff0024",
+      "statement": "Кэш отката заполняется в updates/prev/REDIS-Setup-<версия>.exe после успешной работы версии, а не после скачивания, поэтому точкой отката становится проверенная версия.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L385-L417",
+          "version": "repo-lines-v1:sha256:efa095b1a3a2ac297a880f8fbd869217b857f77df7e218c7d912041c66c2020e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzYjA5MzJkYWE5ZGJhMTA1ZjgzNzIyMzZiYTJjN2I1MGZhZjhkYWFlMjRiOGRhYmU5NTMwNDgyM2ZjMmYyZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzZDdjM2Y0YjJhMGIxYzk4OWJmMDUyNzQ3NjhhNjk2NTYxMTE3Nzk3ZmZiM2YxOTBlYzljOTM2MTAzOTkyNTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0MGY3NmNmNjMwNmEwOTQ5NTM2Y2FkMjk4M2NiMDBkMDI3ZTMwN2M2ZTY5ZDc4NGFkNmM0OWFkMTJkNDcxMjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNGQyYTMwOWJmODc4ZTU3NDA2NzVhYzJmNjBhMzg4MTU1ZmYyNWE5ZjZjZjY1YjMyZjJmZGZkYzUzZGFhN2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_81a1df9deaa64f1285bd04769b1ff6c7",
+      "statement": "Если счётчик исчерпан, но кэша нет, приложение не откатывается, а сбрасывает boot_check, отменяет ожидание и показывает страницу релизов — это защита от бесконечного цикла.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L810-L819",
+          "version": "repo-lines-v1:sha256:8bee54b45247f21697c557599f00ac06dd71a8866d03d539c7aee7f520f4223b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1N2QyYmZkYWI1ZjI1ZTc5ZTIzZWI0MjlhMjg1N2EwYTcxOTc3NTM3NDA0N2ZiNjViZGM1MDU0ODkzMzQyMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YjBlYWJmMWNjZmY2NWY2OTIwMTE1NTFlYTNiNmE5M2E5MDc4OGZiZTdhOTA2YjM4M2MwMzYzMGYzZjRjNDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVhNDEyMmE1ZTYwZjBmYWY5YzE1NjVlNWIyNzFhNGQ1MTc2NWZkNTAwMTRkMjJmMGYzOGI5MjM4MTRlMTdlNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_32193718659b4134b1d0d010c8f5eec3",
+      "statement": "При успешном планировании отката вызывается schedule_rollback, удаляется boot_check, выставляется rollback_safe_mode и startup_processing возвращает rollback: True.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L797-L809",
+          "version": "repo-lines-v1:sha256:d8a47cf7cfd6aa5f14d43035a03965bf4f1daac1310024a07dd8e6c5aa02fb1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYzZiODU0ZDExZjhjMzkzZDEzNDQyNjUyMjdlMGI0YTU1MTA3MDJjOWVkYjQ2MjQ2MjczODQwMmIyMjQ3NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MDZmMTcyOTkyNmZmZmQxM2VhODc0M2Q1ZTcxOGM4ZjEzMzAyZDYyYTgwNjczZTUyYjUxNzI4ODRjNGJlOGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyMzg0YmFlMDBhZGY1ODg4YjgwMTY0NDllZTgxM2JiMTkzNDBkZjhlYTZmMGM0YTVhNWM0MjllZmU2ZmZjNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkYzI0YTJkZTkzNTlkMWM2NDBiNmI2OGM3NGZjM2NjNDhlYzgzY2Q3NTEzMDA3ZjdhM2FiYmQyN2MwMGFiODAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de61639cdd424a88aa063be5732da8ba",
+      "statement": "schedule_apply запускает помощник с аргументами --pid, --setup, --target, --restart, --dir, --log и --lock, с CREATE_NO_WINDOW и перенаправленными в DEVNULL потоками.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L643-L688",
+          "version": "repo-lines-v1:sha256:2fb17c40aa67dfd37bd99cda05a01d4fc9b90289cf8fb7e447b46b05b479e0a8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2YjcxZTNiMjlkOTlkN2FhNzRiYzcyMDc0Y2M0YzU3MDI5ZTJkNmI0ZTQyNTAwYmZmZDlkZWQyMjg5ZjA4NjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3MWZjZGY5ZDAyYTE5NjhkOWZiNzVkZGI1MmMyYzVmMjE3YWVmNzkzMTI2NzFjMGRmNTFhZTdmZmQ0NWYyYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZTA2ODE0ZGM4MmRiNWU5OGM4M2ZmOTIxMjdkZjUzMzcyN2VkMzU1NGRiOTRmNjhlY2Q2MjUwMWIzNjQ2ZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_943e1bd3620c4a69a783a0226c195a24",
+      "statement": "Параметр --dir передаётся помощнику явно, потому что Inno помнит каталог по AppId и при наличии параллельной установки файлы уезжали туда, а запускалась прежняя копия.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L660-L667",
+          "version": "repo-lines-v1:sha256:93a39e039335cab5c78d6dd78ffb7c4a3caca9562ba44ba4c6393039c97acc94:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmQ2YWFiMDhkNWYxYzg2MGE4N2RhYzMxOTRlMDM2NGRkNGRiODRhNGZkMzQ0NDY5OTA3NWMzYTg3ZTkzN2RlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTRlMGE3M2EwOGVhOTYwNjg0MjFmN2RmYmYyODliMWM5OGU5YTg0NGQ5ZmM2ZGZlOGVmMzEwM2EyM2IzNmU1YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2EzOWU2ZDQzYmM1NDkxMWJkY2U3ZGU5NTU4ZWIyYjE1M2I2ODNiMjIzMzY0ZjAwZWViNmIwODViYTIzZTQ4YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2U0YTU1NTA3MDI2MDA3Y2RiOWVmNzdhYzE4MDU0MWQ1MWZiN2FjODdhZmUyNWQ0YjM4OWI2YjFmNDc1ZTA0YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_48c1eb95b53a4abd8f06270e76154e0f",
+      "statement": "Маркер install.lock считается действительным, если он не старше INSTALL_LOCK_TTL = 900 секунд и процесс-помощник жив; иначе маркер удаляется.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L25-L28",
+          "version": "repo-lines-v1:sha256:3044fe3b9acd7cf5a6aeac0efac821e2935e8792f5795645507d0b9f1d9903a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZlNDQyZjFlYTY0NTQyMDVmMThkYTU4ZGU3YWI0ZDZlMzVhNTg3ZDE4YmUzZjAzMzFiYzQ1ZDQwYjVkNzlhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJiMTlkNjU0NDJiMDA2MTg1NTk4NWZjZGVmODUyZjE5YjUzNDBhZGYwZTIxMGVhNmY2YjNhNzdlNmQ4MzkyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZiNGNhNzY3N2I5NGE2MDE1Zjk0Mzg5YzA3NDg3NjQ5M2I5Yjk0YjY4MjUyOWM5MjNhNzRjOWYwZTJhZTdiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjk1NjQxZjE4MjU2MWQwNjJmYjUzOTdlYTA5OWUyYjliOTJiY2FlZjA0MGU3NjU1Yzk0NDBiYjY4OGQ1NGM2MSJ9"
+        },
+        {
+          "resource": "repo://app/updater.py#L543-L557",
+          "version": "repo-lines-v1:sha256:f7aaf8bbc900c2597ce2f8e0e229b4633acce59206157165b1f9b10293f309ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MWIxNjU2NTRkMzRkOTE2NzkyYzQ3ZjI4YjQ0NmYxZmUzNWMyMTMwNDM4YjRhNWYzN2IxMTYyZDg4ZmQ1MDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZTJhNDY1MDA5NWZhOTVkMGUyYmI0MWIyZGIyOTA5NGQzNDA0ZDI4Y2UxMjMzOWVjODhiYjRiNWM1YmU4ZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYjIxYmY4OTVmYWUyZDczOTIwZDkzMTc4Y2ZkNTg0MWNkZjhmOTUyNDUxNmM4YTU2NTg0MzZhNGFjNDhmM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1NmQwN2ZiM2ViMmJlZTc5N2ZmYmViOWQzY2Q5NmIzMzg4MzczMzAxNjI0M2UwOGI1ZTkyZTJlNjBhNzAzZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8bacff141dca4c4fb471cff05fac3e9e",
+      "statement": "TTL в 900 секунд выбран потому, что помощник может работать дольше 300 секунд (три попытки по 120 секунд плюс паузы), и при меньшем значении маркер протухал, приложение стартовало во время установки и установщик падал по AppMutex с кодом 1.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L25-L28",
+          "version": "repo-lines-v1:sha256:3044fe3b9acd7cf5a6aeac0efac821e2935e8792f5795645507d0b9f1d9903a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZlNDQyZjFlYTY0NTQyMDVmMThkYTU4ZGU3YWI0ZDZlMzVhNTg3ZDE4YmUzZjAzMzFiYzQ1ZDQwYjVkNzlhNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjJiMTlkNjU0NDJiMDA2MTg1NTk4NWZjZGVmODUyZjE5YjUzNDBhZGYwZTIxMGVhNmY2YjNhNzdlNmQ4MzkyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjZiNGNhNzY3N2I5NGE2MDE1Zjk0Mzg5YzA3NDg3NjQ5M2I5Yjk0YjY4MjUyOWM5MjNhNzRjOWYwZTJhZTdiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjk1NjQxZjE4MjU2MWQwNjJmYjUzOTdlYTA5OWUyYjliOTJiY2FlZjA0MGU3NjU1Yzk0NDBiYjY4OGQ1NGM2MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_15948ad0e06e401bb84c390c50bc8c16",
+      "statement": "_helper_alive ищет помощник по имени процесса и по маркерам в командной строке, чтобы обнаруживать и старые версии помощника, работавшие как скрипты.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L524-L540",
+          "version": "repo-lines-v1:sha256:9b345998d7b77504bbeb344ce730b8917d15f0bba392963e00d84659a5f1827d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NzFiM2JlOTU0NTg5ZmNhNzhjYTFjMWEyYjczNDdkODAzZjdiMDJmZDJhN2MyNzhiMDg4ZTRlMTNiOGRkYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YmM0NzExZWNjYTA0NTBhZmM4MzI3NzlhODg2NzZhN2M2OTYwZmEzZGE1YWY0MTBlZTAyZDFlMDE1MTU5MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmNzA4ZDQ4MGI2NWRhNmRhNWYxZDljOWI4NGQxYmQ0OWE2YjVlOTdiYmU0NDU3NDZmNWY2MDE1ZWYxYzYwOGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMTAxYWViZjcxOTY1ZDZjMjY3MGE2ZmMyYWYwYWZhODAwMzg5MDQwZjdiMzQyYzYzY2JhOTQwMGNkY2Q1YTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e7667a4e3ba64cee869ea8f85eabbd76",
+      "statement": "wait_for_install нужен для перехода с версий 1.4.1 и ниже, где помощник запускает установщик, а тот поднимает новое приложение до выхода помощника; при ожидании мьютекс не захватывается.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L560-L576",
+          "version": "repo-lines-v1:sha256:1b7d2f97b92e74d712b7f22d3fc8b76417adc6b0c5fab8b3bb83662c7ca9808a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYzE3NTMwYTg4MGI5YTQ5MTE5ODQxMTY1MmQ0MzE5YjdiMTQwZTUwODE2NWQyYjQ2YTdkY2Y2NTVhMjA3OTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmMDQyZDA3NTMyZDQ4NmQ5ZmFjMDhjOTQ0NzlhZjJmNjA1NTk0MjA5MTlhYmQ0MzYyNWZiNTkwMzUzMmVkNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlNzU3NWMzYjc3NzZjZjJmOWMyYmZiY2E0NGYyMTQ4MTNhNzgyN2VhYTljMzg0NTRjNzAzYjY4OWE3NDQzODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlN2FjNGVjZTIxMWQ0MGFhZTJjYzAxMTllMTc5ZDA3NTFmMjJkNWJhMjZlNGNlMTljYjdlNWE2ODJkNWZlYjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d42c29f78648457e8517fd5dc07dd8de",
+      "statement": "cleanup_orphan_helpers убивает процессы с маркерами helper и осиротевшие find.exe с числовым аргументом, но пропускает текущий процесс и помощник, созданный менее чем за 120 секунд до старта.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L583-L637",
+          "version": "repo-lines-v1:sha256:cf18cdccfad74b18c4aa535ecea19dea88d91fc3663f3b33ce0e4a8b84e93196:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiOWY0OWQyODhjODU4NDMxZTRmODQ0Yjc2NjEzZjgyOTBiNjI1Y2JjNDIwMzE2ZjhhNDAxODg2NTM1MGZiZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkODQyZDJiNWVmMzM2Yzg5MTA5NDI1YWE0MTY2ZjViYTg1N2ZlNzFlZWRjY2NjNWQyYzJiZWIwOTZmNGU4N2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlZDliYzRmNWM4ZWIwZmMyMjJlOTY3MDEzYmYxZTJmOTNkMTEyMWNiNGRhMmQ5MDM3ZjMwZjE4YWNkZmNiYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0MWNkMGY4OTNhMWEyZDUwZjZmNTQzYzFiNWEyOTNjY2EwNGFlYmNkMTNiNmNkMjA3NGFkM2U3YThkMzMyYjMifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7dbe4aaad20e8f19772448b0d2f087c8ebb0544d7e52324887eab2189521cb94",
+  "claims": [
+    {
+      "id": "claim_25a36539b96a407ebe6850e769522347",
+      "statement": "Периоды заданы двумя параллельными списками PERIOD_KEYS и PERIOD_TITLES с совпадающими индексами, что служит единственным контрактом между главным окном и панелью статистики.",
+      "evidence": [
+        {
+          "resource": "repo://app/utils.py#L21-L23",
+          "version": "repo-lines-v1:sha256:f252a2cea037e9515ac7077cf913bb3786d7a54d392f235cb979ac72612a3a10:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBiZGEwZTgzMDJlODJhMjA4ODQ2Mzc0ODgwZTI0ZTA1NzFhMjIyYjY5NGYwZDExZDNhYjljYTU2MjY4YzQzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGEwNjQwNmI3ZTFmYzg1YzJhMzRlYzA1ZWEwYWY0MjQzZjcwZmNkODE3MzVhNTA3MDBjNmRlMzE0Y2U3NmIzZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjI5MGM1ODFjODUyYzMxOGE0YzY3MDcyMDBlZDU0NDYzYjM1ODk1Y2FlN2ZlNWQ0MjYzYTE0MDU1MDc2YzZkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmIzNWMwMjcyMzg5ZjcyM2IwOWNhM2U1MzEyMTE0NDM0ZjAzZjA1ZDM3Y2I3OTYwYWM5OWIyZDI4ZGVhMDIyMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b45b1f3d06954c3fa1cf937fa3dd4454",
+      "statement": "Панель хранит якорь периода, который нормализуется через _period_start при смене периода, что сохраняет позицию пользователя между режимами.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/stats_panel.py#L300-L330",
+          "version": "repo-lines-v1:sha256:9aa83e9b947da45f7671bffa619d003162c7a6a670dc4ed78250486e5a4a9d5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxODkxNDZiYjFlMzY1YTVlNDk3OTRjYWVjMzg2MzQwYzU4YjA5OTJhOTE2ZTczOTAwZTI1OWM5NjFhMzQ2ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlYzM5NDAxN2E1NDNmNTZhNDkzODQwMDllMmYyZjdmMGMxYTM2ZDk0YTZhMTBiZTgyOTU0MDBiZjdhNjdlMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5ZDhiZWE5NTM0NWNmNWJjNTIyYzY1ZGQwZmVlYjlkYTNlMzZmYTdhMzMzOGFhMjhkMjc4YjcwZDNmZDAzMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkNjgyZDZiNWUzMDc3YjA4ODYxNTgyMzYwZjRhNDI1NWE4ZWFiODE3MmZlNmZiYTAxMDMxNzNjYjJjOGI3NmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8eb1a1f7ee9f455e8c3b5c99953f4480",
+      "statement": "Кнопка «вперёд» отключается, когда якорь дошёл до текущего периода, а для периода «всё время» кнопки навигации скрыты.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/stats_panel.py#L340-L365",
+          "version": "repo-lines-v1:sha256:f344ea2384a43e6626e96a32e25f8cb97fd9afc1342f36f51c572247329c06a2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5YzMwY2ZmYjRlNGFlYTRjYWM5Zjk4NDcyYmU3NTNiMTlhMDk5ODk2MWIyOTFiOTVmNjEzZjk3NzBmZmM5NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMzVkZmE3ZWEyM2IyMjI3NDJlYjQ2ZDUzYzcyMmE5OTVkYzg4MTE3ZWU3YTIzYjMyOTY4Nzg2NzgyODU4MTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmNjgzZGExMjliMGUxMWI3ODRjNzQyNWI3ZDBmMDQzZjZmMTY2ODYxMmVlYmY0ZTYwOWRjNzZlYjU2MTNmZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3ZWU4NjY1NzMxYjA5ZTA3MTAwODkxZWE2OWE2ZmM2NDMxNTAxMjgwN2ExYTBkNDJiZmU0OGI5YjY2Yzk1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b85a9511acfd406caae0b35d8a85575a",
+      "statement": "_series_for возвращает кортеж из значений, подписей оси, подсказок, единицы и подписи периода, различая пять режимов.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/stats_panel.py#L366-L408",
+          "version": "repo-lines-v1:sha256:81dc226d950c50983c595bef16a42ab113774cf92893dbaa640b1fa1eeb235e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjNjIxNTZkYTJkN2YxNzQwMTFmZTA5ZmVhNGE5ZDZlYTFjYWJkMzU3ZmJlODIwNTVmNDc1ODgzMjgzNzJkZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZGViZWUyZGFiMjU0OTBkOTA4ZTE4MWE2MjU0ZTRiMTgzZTRlMGQwNGY2ZmI4Mjg2OWJkMGE3NDE3YTA3MzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzYWNmMjI2MGM5ZmQyNzQ3YTA5OGEyYjU4Y2JiMWU5YjRkYjM2MDM1NzQxODNiYmY3ZDYxOWZhM2YyMGU4ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmYjcwOTZkMmQxNmYzM2YzOGRiZTc0ZWVjNjZkM2MxMzc1YzFmMjkzZDNhYjg1YzMyNDRlOGEwNWEzN2Q3N2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dbb4fa68eef048a4b9dedf870f1a705b",
+      "statement": "В режиме «год» данные агрегируются в памяти из _history по префиксу года, а не двенадцатью запросами к базе.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/stats_panel.py#L380-L390",
+          "version": "repo-lines-v1:sha256:9ca2b87eb76b10817015ba9d7ed98414eaa404059d512a1aec37f0c1d5a774a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyY2U0OGMwNjE0ODUyYjZlM2E4ZTZhZTFjZDk5MWQxZDRjMzVjMDBkODAzZGFhOGViMGM1ZGM3ZDhlYTkxNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZWNiMjU1NThjOGIxZjk1YWNiNWY0YzY5OWY3NDUxOGNjZDUzNGQ2N2I4NTk4MTIyMDEyYTRmOTkzNmYzYmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkZmMyODIzNWVjNDEyMWU0YThmOTc3NzZhMTJlNjlmM2IzZGNiZWVhN2QyZTRlNTIxMjFjNTZmZDEyOWQzMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3YzI1ZmRlYmRkM2M3YTQxYWJkYzJmMDI2OTRlN2UxNzhmYzY1MmY3NjMzOTM5OWY0YmNmNWJhNWFjM2E1Y2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d9dce6400c5b487e85ca565195d470a8",
+      "statement": "В режиме «всё время» первая дата не позже чем 30 дней назад, а последняя — сегодня плюс 30 дней, чтобы был запас для прокрутки с обеих сторон.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/stats_panel.py#L395-L410",
+          "version": "repo-lines-v1:sha256:e669e68ea19d26d06821db4741a5080ac4c671234c440d975913115c87b55b52:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMjg2OWI1NThmMTU1ZTc4OTM2YjJkYmM0OGQ0ZTlhM2VkMWMxNWRhNzVkNjg1OTI2OTNlNmQyMDI4ZWIyNGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YTA0MzIxNjE1MmFlZTE1MTkyMDI4YzFlNjc3MjY3Mjk0YTA0YWY1YmQ2OTUzMjkwZWUwZjQxY2RlNDRlNjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjOTdmMGY5OWQ2MGI3NjA1OTE3ZjI4NDVmNDMzYzcyNDFlY2Y0ZjBhNWJjNDA1NTNkMDViMTQ1MDg0NmU0ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4MzNlNTk0NzJhODhjNDU3ZTJiZmIwN2QxOWY3NjJiZjY4YTgyMGZiZjc0NzA1MmYwODg4MjMwMDg5OGRmZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2415b81c54d4049b5a07d01ac6723af",
+      "statement": "TimelineData загружает почасовые данные лениво через _hours_cache и _get_hours_for_day, запрашивая базу только при промахе кеша, а load_hours_range предзагружает только видимый диапазон.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/stats_panel.py#L51-L137",
+          "version": "repo-lines-v1:sha256:e11fdf419242c4267b48f97faa70b27e4afbbc22cb91cf63e3d61fa638f1861e:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlNzZiMWQ1ZThhOWFkNDc0MzZhYmE5NjA4NGZjZGRhNmI0NjIzMGQ0ZThhYjJmZGUwMWRjNTk2YzNjZjUzYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzYjE5YTcwOWRmNGI0NzUwZWEyY2I2NDY3MjFjMzE1YjYwYzMwODg1YjI3OGM0OGM4YTQ5N2ViM2Y0YzU2YzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjZjQ1YzU0YTFmMWZlMmFkMTNjM2QwNjg2OGYwYTg4NzE1OTZiNGE1ZGM5YTVlY2FlYTZjYjgyNTc1MWQ5MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0MGY4NzcxZGJkOThkMjE0MmI2MzI0YmRjN2EyMWNkMDdmMGZjNDc3OTgwYWM0YTllN2I1YjMyMmMzMmYyYTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_12e68ffd7ba94ad09528fa6269fff3dc",
+      "statement": "TimelineData принимает _today_live и учитывает незаписанное время буфера трекера при формировании сегодняшнего дня.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/stats_panel.py#L51-L75",
+          "version": "repo-lines-v1:sha256:9bde54de2c0501fc04c18a7c51e0a64d0e4f5cf66368221e92c7e75042d005c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlNzZiMWQ1ZThhOWFkNDc0MzZhYmE5NjA4NGZjZGRhNmI0NjIzMGQ0ZThhYjJmZGUwMWRjNTk2YzNjZjUzYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNzRiOGQ5ZTMyNTdmMmYwNzNlODY5YjEwM2Y1Y2ZjZmEwNWQ5YmQyNDJiZjQwMGYwMzBiMjFjMWZjY2I5ZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjZjQ1YzU0YTFmMWZlMmFkMTNjM2QwNjg2OGYwYTg4NzE1OTZiNGE1ZGM5YTVlY2FlYTZjYjgyNTc1MWQ5MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlYzdjZjA1YzYwZjE3NzdkMWZmOTAzOTIxZTdlMzJmYTcwZGU3MDVjZGNmOTFhZWI0ZTc3ZmExMDRhMmExYzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_821d7e823a6145deb889b27cd219a100",
+      "statement": "Для периода «всё время» сумма ограничивается сегодняшним днём проверкой d <= self._today, иначе будущие дни растянутого диапазона попали бы в итог.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/stats_panel.py#L406-L420",
+          "version": "repo-lines-v1:sha256:1d9b65875ed48f393084ed9b82425fd299c00cf9691f82d296c93e30a938c8fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyODM4YTMyMjI3ODg4NDgyOTYwZTE4ODgwYTZlNTI0OGQyODIzNjgxMjhhNThkMjYzYTc0NDNlZmYxNzgzNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmNjdjNjhmODNkNzU1YWU3NDE2ZjM0ZWUxYWQ2ZmQ3YTc3YTE5MDFlNjI1ZTJkYTk0ZDc1MTc0MDRiYTI4NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkNDc3MTEzZTA2MmY1MzlkNDE2ZTVlNGUyOThlMjY4ZGUzNzMxMDYxZGYxMWJmNWE3MDg3MDM2OThkMjdkY2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d0c77a0458d7451fbfb91246fb20b957",
+      "statement": "Форматирование дат требует трёх массивов месяцев — MONTHS_GEN в родительном падеже, MONTHS_NOM в именительном и SHORT_MONTHS для оси графика.",
+      "evidence": [
+        {
+          "resource": "repo://app/utils.py#L4-L19",
+          "version": "repo-lines-v1:sha256:7bb1aa686f484fb9394a522eda9183d92022170c6ead9aec4d6d004f11ce027d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYzlkMzFkNDE3MDVjMzJiY2ZkYTgwY2U2MDU4YTg2NDQ5YzU3MmE2ZGQ4ZTJlNzczYzlkMmQ5MTNlY2Q4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmMmIwMDk0MWY5ZDRhNTZjODc1OGVmODk4Zjg0NjE3YzVkN2JmYTFmZmY3ZTIzMDFmOGNkMmZlOTc0YjJiNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2NWU3MWZiNjQ1Mzc2M2VhYzg3OGFmY2MxNDk5NzNhMjU0YWFiNWQxNWYwYWQ5NWVmYTdmODViMWFmM2UxZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxYWE1MjhlMmQ0YTRkOGU4ZTYyNjVlYzQxMWNmZGJiNWI3N2UyNDVmMmI2MTBhNTJkM2U2M2JlOTgzZWQxYzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b2e45790bdf544f583c6647dbfedbbd1",
+      "statement": "format_seconds даёт полную форму («N ч M мин»), а format_compact — краткую («Nч MMм») для мест с малым пространством.",
+      "evidence": [
+        {
+          "resource": "repo://app/utils.py#L70-L89",
+          "version": "repo-lines-v1:sha256:486163955b7410c3b7f890e8a37865e982052b91918f4860be1f53b84c73cdc9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiODkyYjNkNGFjZmQ3NThhNDcwYTczOGYyODlmOGU2YjU5ZjE2MmQ3OWMxNzUyNGUxYWZkNzRhNjYwMjAzZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YjNmMWRkNmEyOWI0NDJlODMwNjJmMTMwMDI2OTQ5NDRlY2RhZmUzMDUyNGFlMTU1OGEzMWU3NDMxZTJiY2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmOWQ3MjJlYjhmOGQwNWMyMTJiNTg5MzczMmZiNTk5MDdjNWQwZDk1NTZmYjFhYTRlYzlhNzJiNTY3YTM0YWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmODQxNDgxOGU2OWVmZTk2NTNjOGVjOWYwMWY4NWNiOWJiODk3N2Q2MjY4OGFkNmRhNTYxODcwNDk0ZmViOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9fb88e34770d43d3bc83ce767602a91c",
+      "statement": "add_months переводит год и месяц в единый индекс и обратно, обходя переход через границу года, а month_days использует calendar.monthrange для корректного февраля в високосный год.",
+      "evidence": [
+        {
+          "resource": "repo://app/utils.py#L31-L32",
+          "version": "repo-lines-v1:sha256:c2fc9acf1c5819ab18481b0bc2070f787b189d600f69efb90120334b3745f391:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRhYzE0NDFiOTFhY2IxOWQ0YmM2YTdkOWZhNDJmMzQ1ZTVmZGFlNGM4MjcxYWFjNTM1NWVjOTg0NzY1NTQ4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRhOTU5N2M2OTg3NmJiZjEyZDAxODE3YzlmM2ExZDMxNjNkYWJhMWQzYzBmYTk3MzY0ZjVkMzA1NzNjZDAzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGMxMTQ5ZDFkYTViZWY2MWY4YmJiOTcxZTViNjYxMTk1OGJmZDJjOTc4MjJiMTVlZDIzNjhjYWE1ZjI5Zjc5YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGE3MWI1YzYzMWFmNTMzNGZkOTRiNmRmOTU2NzUzMWY0OGFkZDQ2ZDQ5MzdmOGNjODNjZmU4NjVjYmFkNjMyYSJ9"
+        },
+        {
+          "resource": "repo://app/utils.py#L35-L37",
+          "version": "repo-lines-v1:sha256:eafbdcb092ca244d315080084ac3259b4900ddf531b0c3ca03061ffa5b4fdba1:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjIzMGVkYTc5YWIzYjhiYzMxMjRiMzU2NWE1MTJlOTQ4Nzc0MjRlYTc5OWI5MWUwOGFmNTIwMzI4Y2JiYWU5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U1M2JiZmJjMWUwYzdmODE2NWZlMzJkY2I5YTlmZmVkYjYzYzVjZWUxZjgyNWRiY2Y5Y2EwNjlkOTFjNDY2ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDIwZjBiMTZkYzg4ZTI3NGZiZmNlMDU5MWMyMzk2MjhhYTIxOGI1NmViYzkxMDEyNjRmMzI0YzQ2MzU0NzZkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzQ2Yzk5YTA3NjA3MjFiNzA5ZmUzY2QyN2YxZjFjMjdhODFhYjg2OWE4ZDY4ODBhMzFhMWQzOTRiNzE1ODRhYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc181f32e32543f4b5520e9126ed4bdf",
+      "statement": "label_day добавляет префиксы «Сегодня ·» и «Вчера ·», а label_week выбирает формат в зависимости от пересечения границы месяца или года.",
+      "evidence": [
+        {
+          "resource": "repo://app/utils.py#L40-L47",
+          "version": "repo-lines-v1:sha256:4174d04459b677b51ef204229b7a57c338312deefad005e31c75728ed86b17b2:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAzMmU0Nzg3YjFjMzE5Njg0ZjdjYWNmOTBmNTRlZmRmOGVkMTUyNGYxMWJjODgwZTMwODFmZmUwZjZmMjM3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNlMzdjNjdmMDJkMTZjYTgzNGRmYmM2MTBjODg1ZTIxZDllZWFkYzRkZWU5YTMzMGU4NjFjMzYzYjk2MWFhYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjdjNDM2YWY3Yzk5ZmQ2NjU2MzBiMmMxZmE3Yzg4NzViZTBjNGQ0NTgwYTIxNmMzYTQ5MGY1ZjA4MTA2ZDFjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNjOTkzMDAyMThlNzAzNTc4NTliNTNkYWEyYTZkOTBhMWI0MmFmMzNiOTc0YzMwZWNiMWU5ZTRmYzI3Yzk4YyJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

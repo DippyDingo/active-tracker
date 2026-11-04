@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:b03c57b0040d342f66eba7453bbbe1ce6ec87c9cf50b5d352f98b54dc61c1711",
+  "claims": [
+    {
+      "id": "claim_9c84d503d5994d19bf88ef3949a4c57a",
+      "statement": "Модуль явно объявляет restype и argtypes для функций Win32, иначе ctypes считал бы возвращаемое значение 32-битным целым и обрезал бы дескрипторы OpenProcess на 64-битной системе.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L13-L40",
+          "version": "repo-lines-v1:sha256:a10e2c6007ec51ce7f5a061de614950c22a32f0c579d179028df6615fabbb511:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MTE5MWM5NGY1NDkzZjc0MDM5M2Y1M2VmZTkxYmY3NWRiYjk4NWZkZGVlMGU1Mjg2ZWZlNzk2MmEyNTZmNWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkM2I2YzViOTQ0MjJhN2MwNGYwMDkzMzgxYmY4ZDE3MDdlNmVjY2E2Zjc4NzMyMWE2Nzk0ZWEzZGYxNjQ1MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5OTBhYmU0OWM4MjkyZjU3OWY1ZGMxODNmNzIyZjc1M2IzMjAwNmRhNzI1OWM5MTM2YjM1ZDM3MjU1MWQ5MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzYjA2NmEyZGUxODY4NGM2ZWFiMDFlZDljYTU3OTRiMzQzZWM1N2FlYWM2ZDRiMzZhMjViZDNkYjZmZjc4ZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_829daf90a38246cd90a0c569ef34c65f",
+      "statement": "get_idle_seconds вычисляет разницу GetTickCount и dwTime по модулю 2**32, что необходимо из-за переполнения 32-битного счётчика примерно раз в 49,7 дня.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L110-L120",
+          "version": "repo-lines-v1:sha256:43ab6339856e9dd170feb182b6e8d26c05294ff391439419ff0aaee68036e8ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NDk4ZjIyODQ5ZDBhN2U3NTcwZWQ4MjM1MWEzZTc4ZGE5OWRjZTI0Y2JmZTYzNTM0MWYzMTY2N2U0ZTI4YjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNzM1Yjk5OGQ5M2NkODcwOTdiODM5MGFlMTBjNGEyNzY4NjNlMzFlNGJhODE2ZjMwNTFkOTgyZmUwYzdiZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1ZmZhOTQwN2QzOTI1ZjIxM2E4MjZjNGYxMTkzYzQwMTJiZTAzZGFkYTIyMzc3OWI3NmRlNGQ1OGIzY2Q5NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczZjIzMDc2OTY0NjE1YzdhNzdhMzcxOGI0NDEyOTFhNDE0YjY1ZWUyYTBkYjZhNjVjMjk2ODY0ZjcwMmY3YjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0052577380234fe1bfb437ce8eb6d1d1",
+      "statement": "При неудаче GetLastInputInfo функция возвращает 0.0, то есть трактует пользователя как активного, выбирая потерю лишнего времени вместо потери всего.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L114-L120",
+          "version": "repo-lines-v1:sha256:126fbb40cd0ca70c942de2b0a34f37cb1d803ac3fb0244895ac408abf42b5f16:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzU1MmQ2OTJmZGE4Y2Q1NjI2NmJkYmJlODc1MzlkNDU3OGZhMWE0ZDJiMmU0YTUzNjM1M2NhMGI0NWRlYWJiYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2I3MzViOTk4ZDkzY2Q4NzA5N2I4MzkwYWUxMGM0YTI3Njg2M2UzMWU0YmE4MTZmMzA1MWQ5ODJmZTBjN2JkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGIwNGYzMWIyY2U1ZmE2MmQyOTEzNmZjZjYxNzAxNTJjMDJlZjQzMjkyNDk3YmYxMWIzMTkwNzM1YTg3MzJjYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzNmMjMwNzY5NjQ2MTVjN2E3N2EzNzE4YjQ0MTI5MWE0MTRiNjVlZTJhMGRiNmE2NWMyOTY4NjRmNzAyZjdiMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_478b58c93c5f46219d1866dec7228d7f",
+      "statement": "Определение foreground-процесса идёт цепочкой GetForegroundWindow → GetWindowThreadProcessId → OpenProcess с PROCESS_QUERY_LIMITED_INFORMATION → QueryFullProcessImageNameW, с запасным вариантом через psutil.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L123-L152",
+          "version": "repo-lines-v1:sha256:20f27f28d40db06a549e710e345ec1b12cef9124bfe7203903f5b2ddb3193b2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNDk5MWM1ZjVhYTc4NTE3OWY5MzYzOTkxNWNjMjA2NzcyMDQyOTVjYjhkZDg2MTk4ZThhNWM4ZWE0NWVjZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MWJmOWNhMjc3OWE3YTk2MjE1ODFjODgwYTU2YzBhODNjMmNkZDc0ZjZhMDJjMjA3ZWMyN2EzYWFjNDg1MmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmMjU2MjM5NGFkYmRmNzJlYzE4YWFmZmI0M2UzZjc2M2RjNmNhZmFmZDljYTFlYTI1NjIwMTgwMDA3OTRmNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyODI0NWI1YTFkNzVjYjBiMmUyMzYyZjBhNGJmNGQ5NTc1OGFhZjYwZGJlZDdmMmIyNjMwZTY0Y2NlZjE1N2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a2d0e21fcf934f20b4e01f4f14ff0228",
+      "statement": "Используется PROCESS_QUERY_LIMITED_INFORMATION вместо полного доступа, потому что полный требует повышенных прав и для чужих процессов часто отклоняется.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L133-L141",
+          "version": "repo-lines-v1:sha256:80c7d429c57930a401b856fc79b6704f92362fdf1914fb48d2f426c47d51faf9:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU5M2I3MGE3OWFlZjA4NDE1YzgyMzMzYzk3NTI2ZDhiMGU5YWQyZWM0MDY2ZjAzZjVkZTU1NThlZTQ3OTk0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmRiYjg1NWY2MWQ2MmE3OTIwYTZiMTFjZDMzMGMwN2Q5MjY4ZTg4N2M2ODc2YjI1NjYzMDA1NDU2YTA2MjQ5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGMwZjJhOTg1MTQxNzY4Zjg0YWJiMWY1M2RjZGQ3MWFlMDBhZDgyNmJiNmY3MzkyZWY5NDRiYjZmYWMxZGJmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE2YzM5MDhkYTg1MDE5YTU4ZDkwYzZkNWJkMzE4MjFiMmM1MjEyN2EwYzg2OTA0NzIwZjA0MGUzZTMxZTljNCJ9"
+        },
+        {
+          "resource": "repo://app/win32_utils.py#L29-L29",
+          "version": "repo-lines-v1:sha256:12e651bb00b5ce895b5d78ce6b60f9dc866f5181c841af299c93352eff7e306d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTJlNjUxYmIwMGI1Y2U4OTViNWQ3OGNlNmI2MGY5ZGM4NjZmNTE4MWM4NDFhZjI5OWM5MzM1MmVmZjdlMzA2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTJlNjUxYmIwMGI1Y2U4OTViNWQ3OGNlNmI2MGY5ZGM4NjZmNTE4MWM4NDFhZjI5OWM5MzM1MmVmZjdlMzA2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ2OTNjN2I1OWQ4Y2UzNDk2OThlZjI3YzAwMzg5ZGI2ZmViOGJkYTFkM2E3ZDMwOTc2YzM0YjkyYTMzM2RhZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmRiNDNiZDA2NmRiM2FiMDVhNDFlYWZjNTZjNTI3NDhlMjY3MmMxYzYwMDZjNmNkOGNiNTc2NmUxYjYxZDQwMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_17b60f1254b7401a95192896cf47f84a",
+      "statement": "running_exe_set перебирает все процессы и кешируется в трекере на 2 секунды, поскольку перебор процессов дороже одного Win32-вызова.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L82-L88",
+          "version": "repo-lines-v1:sha256:73430320bd178113399f19d74c0a6cdcec72d2a43588cf90c5aa866bb7552c61:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmYxMDNiMjI4NTMxZjdkMmViYjcxN2U0NmYyMjQ4ODI4ZWU2OGIzNTFhODdhMDczNmVkZDM3MjkwYjNmMGMxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY2NTE0MTY5OWY4ZmFiMWUyNGMwZDVlM2U5Yjc3NjkzNTM3YzQxMzA0YmViZDE3OWJiYWZhNmU4NzcyOTMwNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWU2MDNkOTcyMDhjMTdlYThlZjFmYmI5MTM4ZDk2ZTMwMTEzMDU2YmIwODI1MjAwNWIyNDUzYThhODhkMGIzYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjY5YmI0NGNlNjJhMGE4M2M2OGQ2ODdjMmVhMzMzYzNjNzJkMmFlOWQzZTY5MTcwMDA3OTA1NWNlNTI5OGUwYSJ9"
+        },
+        {
+          "resource": "repo://app/win32_utils.py#L155-L167",
+          "version": "repo-lines-v1:sha256:34baa5e8cd735c9c3c607d65c6ad44afd1cd9d0c9d4fad8397c61f7d7d1c207e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NjdiOWY0YjA1MGQwNTFiZDQ5ZDJkOWViMWU2MmM1NWZhMTg1YWYzZTE3YzEzZDI3OTk2MjcyMDUwMTNkMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiY2MxZDEwMGEwMGZiN2Q4MjhmYzllOTgzOTMyNGZkMmExNTNhNjYzYzg5MTQyZGEwMGUwNDBiYWMwNDhiYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4ZmZjNzEwMDE1NDA3MTI5MmUzOGVmNWU3NjE4NWQ0ODI5Yjc0NDZjMWE0NWFlZDNkNTZkNTlmODc2NDBmNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNzZjOTViYjhkY2E0MmRmZjJmMDUzYzhmOWU0M2E5NGZiNmY3ZmI0ZGJmM2ZhODEyYzA4M2Q3ZTVlYjc3NmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e275c554b88a46e8bfbbf91c5e71482b",
+      "statement": "extract_icon_png использует SHDefExtractIconW с запасным ExtractIconEx, а в finally уничтожает все полученные дескрипторы иконок через DestroyIcon, чтобы не утекали системные ресурсы.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L184-L221",
+          "version": "repo-lines-v1:sha256:476328abdc1983d0ede264f51abac57179e9d4abb25773705ea8043caa4d3241:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MzE5YTYxYjVjMTViMTZiYzg0MmEwNmYwYjVlNDM4M2UxNDM5ZDJjNTgwMmYzNmMzZmI5Mzc1ZGRhOTUxMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwZWFiZGZmNmVlNjVmY2M3ZjIyN2U1ZWY4Zjk4OTZlZDc0YTFmMTA5NTc0MmVkMDQxNGQwYmYwYjA2YzA3NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjNWNmNGI0YzFlY2QyNDkxMmY2OTViOWU0ZmFkYmE5ODczMDJiMjFjMzg1OGNjMDUwZDYyNGNlYWI3MjlhNjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1be0b9c0dde04c20b58c709369d5cd6a",
+      "statement": "_hicon_to_png создаёт совместимый DC и bitmap, рисует иконку через DrawIconEx, читает пиксели в порядке BGRA и собирает RGBA-изображение через PIL, а в finally освобождает все ресурсы.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L223-L257",
+          "version": "repo-lines-v1:sha256:4d41aafa9891f180d6f254c9b9bfaf7fe09e23d6f6696d1ae94ade245a732fc7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NmFiZTI3NGQ1ZTdiOGE1OWY1NjI0ZjAyNTU4NGYwZDc4YTgyMjFiYjYyY2UzNjVlYzJjYWYxNzQ1ZGUxYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNjQ3MDRiM2RjNGVjZDc1YjM4ODRjMjM0ODM5MjNlOWY5MjY0YWI3YTc3N2Q4MzM2YzBlODA0NDUxN2YxZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NDkxZDEwNDg3NTg1Mjg1ZWVmYzU1NzU3YmE4YzE3YjExMDhiNTdkZGFlMGE4ZTE0ODdjYTAxNWQxNWFjNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MGRhZmE1YmRmNDJkM2FkMDNkOGFmYzBjMjhkMDBlM2ZlYWIwMTA3NDI3ZTJmY2I0OTdhMTc2ZTE1YTM2ZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6abf05ffd4f438ab097461073aaddee",
+      "statement": "set_window_chrome ставит атрибуты DWM 19 и 20 одновременно, потому что номер тёмного заголовка менялся между сборками Windows 10 и 11, и конвертирует цвет в COLORREF с порядком BGR.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L43-L70",
+          "version": "repo-lines-v1:sha256:28f7d596127a0b278abbd5e7a07af894c734dcc3b86a81edb8eb43cbe6f9a54a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwOTQ5Njc1ZWRmNTdmYTc2ZjgxMTY0OWU1MWQyNmMwYTljN2I5MjVhMTRjN2EzY2IxYWIwYjk3YWY3N2RiYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjZjQ1YzU0YTFmMWZlMmFkMTNjM2QwNjg2OGYwYTg4NzE1OTZiNGE1ZGM5YTVlY2FlYTZjYjgyNTc1MWQ5MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxOWY4ZGRkNTc3M2I4MGViZWY2ZjM1NGM4NGZjOGMxODY4YTNlNDg1NTVjNjU4OGE4ZTY2NTllYmU0MzJhZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5b3a25fe193a4f67a203b46c54fc988c",
+      "statement": "get_file_description читает FileDescription через GetFileVersionInfoSizeW, GetFileVersionInfoW и VerQueryValueW, перебирая пары язык/кодовая страница из VarFileInfo Translation, с запасным набором английских и русских вариантов.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L77-L107",
+          "version": "repo-lines-v1:sha256:51dfb59404946457072f5b326fb3b49038458cc6d80aef57a1acabfcaa3d3ee6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZjQ0MGUzNTc1ZWZhMWJlMTQwNzZiNDc0MjUwNjdiMzc0OTRlZTVmYjNkNzdlZmQyMGFlM2RlM2ZmMTEyOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NDI2MGY4ZGNlODVkNGFiYTlkZWFmMGVlNzAzNmYyMGE3OTcyZmRjYTA5NjNhNjc2ZWQxZWZjZDJiMDBjZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4YTIyZjVmZmI1N2Y3NzRkNTQxNjUwZWZkMTYwNTIzYzUyZWM5ZmJiMjFlOWJkNDRhOGQ0NTU0ZmYyZDJjNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMmY3YWFlYjI1YTNiNTgyYjYzN2IxNzliZDZiNGI4MjRjYTljOTZjZjkzNzdmYzIwMjJhMWZlMzM0ZWJhZmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_668cfe7b3dc64a6987d85a9f039abc0d",
+      "statement": "Имя мьютекса NodexySingleInstanceMutex сохранено от прежнего названия приложения, потому что совпадает с AppMutex установщика и с мьютексом установленных версий 1.4.x.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L260-L293",
+          "version": "repo-lines-v1:sha256:f7d0cab12fe2c880b5abe4e95477bea135d4adb15d807f7775e69585b62186c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNDFmM2I1N2UwYjY3ZjRhNzE3ZDM5ZWNiYzgzMzRhODIzYjNkM2Q1YjJkMmI2ZDc5MmYwYTJiMGVmMDBiYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZTY3Zjc2YTIyODdiYjZiNmFkYjAxNTA1NWRmZjA4OWMwNjY4ZmFlMmE1Y2ZjOThmY2JmYTIzZWYyYjQyODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NzhhYjgxNGU2ZTU2ZjJkNmI0NDZiZjdiNzhhMWVkMjExY2Y5MmM5ZDcyZjVmODVjNzJiNjRmM2U5MzUxMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwYjc4ODcxYmE1ODdhYjJiZGVmNWMyMzE0MWU5ZTZiYWEwYjdlNTQ0NjkwYWU0ZTk2YzZmNjNlNzc3MTE1ZWYifQ"
+        },
+        {
+          "resource": "repo://installer/nodexy.iss#L14-L19",
+          "version": "repo-lines-v1:sha256:7baf855b3c643abfb4f76fe52df3caac9319d86dfe2927a7ebff3ef4c2afb6c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUwNTYxNGNkZmRkZDM0YjE3Zjk4ZmNhZjgxY2ZhNjVhYzY4NWJmYzJjZGI2NjBlY2RmZjk3ZGM2N2IwZTFiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWRjMmI1YjUxZTA5ZGYwZmQ3N2QyMWQxY2ZjMzM2NDNjMTZhMTllMjc3ZTI1YzlhN2E0NWE1MzY4MDhkYTgyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTlmZGExYzFkMTVmMzM2MDhkMjhhYjEzY2JkZWFmZTYyNDNmMzMyMTFhYWU0YjBhMmY2YzJiMzViOWY0MWI3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDg5MWExZDdhZDgzZDA4ZmI1ODY4NmI3NDI3MGU4MGVhYjFmOGRkZDI4MDg2YjUwYWRhN2FkMGEwMGI2YWY3YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_32b4a22c32974519ba22b0b0bff6d057",
+      "statement": "Дескриптор мьютекса намеренно не закрывается при успехе, потому что должен жить до выхода процесса; при уже существующем мьютексе созданный дескриптор закрывается.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L276-L291",
+          "version": "repo-lines-v1:sha256:0a1cc0f5b2b0e383d772b9d135c471bbc015cf1ccfc8e606154a672ec7a66928:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0N2ZkZWRhMmM1NjM4NDA0M2RkMWFmMmM5MTk2ODU0MDdiOWQxMTBhYmQ0YTZkYjdiYWRmNWE0MjA4NGM4MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMThkZGNmYTc5MDNlZTA0OGVjNjg4MmU1NTBjZDg3NGIxMDM1ZGRjMmY5MjRkZDI1YjYwYmJiY2YwOTc2YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwNmE2MDA2NTlmMzc2NGY2Y2E2MTc5MWQ3ZWExYzI3MDk3ODQ1NjlhMmQ3NzVhMDQyMjYxOTBmYTcwMGQ1NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5ZDA1ZWNhNDA0NzgwNDU5Njc5NWFlNThmNzEzY2ZjOGI0OGJiMWUzN2M2ZmI5NzQ5YTVmYjE3ODk3YjY5NzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_143863e6fa064429a1b17aac67fc4bc6",
+      "statement": "set_autostart пишет или удаляет значение Nodexy в HKCU Run, а autostart_command различает собранное приложение (\"<exe>\" --minimized) и запуск из исходников (pythonw.exe с откатом на python.exe).",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L296-L335",
+          "version": "repo-lines-v1:sha256:6d739f381bbfdb53ea3f9e1df2f36012470875a2b143cba5d775afd3584d2837:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyODU5MGYzMzMzYjY2OGExNDIxZDMzMWMwMzQyNDM1NWU2ODAwYTU1ZGVhNzBiOTQ4MDFiMWMxZjgyNzMxNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllZDEyODdmZmU1NzgwZTY4N2ZiNTQ5Zjg5NmM0ZGZiMmRhMDViMGRmNDk5ODU1ZWEzMWQ5ZjVkNzdkODU5MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkYzVhZjBlNDMzNDc2MDZkNTIwY2M5ZWU5NzliMjI0YjUxMjhmYzM4NWVhMzk1ZWUyNjJmMDdlZDljMWZjMzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5MWZjYmNmM2JiNWNmNDQxMDczMzNiNDI0ZDgwZmJmOTg3NGI2M2VjNWQ0YjNmOGJiZGQyZWVlNDYwZTFiYTUifQ"
+        },
+        {
+          "resource": "repo://app/win32_utils.py#L338-L394",
+          "version": "repo-lines-v1:sha256:0c77bceeeb9ad56b6f6b06054f9db853ee21754849f7e8cf61dcfe8f24ac8847:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMTYwMjA3YTc4ZjQ3Yzg0MGY5NDRkN2YwNWViYjk4ODFlZmIxNWNiNWQ0ZDhiYWJiNGM1ZjRjNjFhOWYzZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZTY3Zjc2YTIyODdiYjZiNmFkYjAxNTA1NWRmZjA4OWMwNjY4ZmFlMmE1Y2ZjOThmY2JmYTIzZWYyYjQyODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExYzFjZjRlZTAyNDM0ZjhhMmQ5MDM5M2JiNTExMzhjZjI0OWRmNmZhNGFmMDM5MzVmNGU1OThlZTZiZDFlNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxYTUyYjUzMzc0ZDE4YWJmNDg0NWI1ZWJkZDkwMGE5NTY2NzI5NWI1OTQwMjdlYmNiZGVlZGQwMGFiYTAxNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_25a3bb03b3e04884a6bd897eef4f056e",
+      "statement": "autostart_points_to_current разбирает значение реестра и сравнивает первый путь с sys.executable после нормализации, что позволяет удалять только свою запись автозапуска и усыновлять запись установщика.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L465-L486",
+          "version": "repo-lines-v1:sha256:637471f9173dd00ff72805cb70668b7d9a3e56d1a88f8c40f64f39eb2cf6bfa9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MzU5ZGM1OWY4NGZiZTRlYzkxMjFkM2RiMmY5ZGNhMjAzMzNkNzUxYWVmYWVjYTFjOTNlMmUzZmFiZTk3NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZTY3Zjc2YTIyODdiYjZiNmFkYjAxNTA1NWRmZjA4OWMwNjY4ZmFlMmE1Y2ZjOThmY2JmYTIzZWYyYjQyODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0MGNiNTFmNGY1NDQ4NDk4MDdhYmEwY2QwNzg1YzM3NmY3NDJhNjRmMjQ2MTE2Nzk4NmFmODRhODk4YWNjYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6b474548886b4cb4b9f4aedc954be2f6",
+      "statement": "Функции Win32-слоя в основном не выбрасывают исключения, а возвращают безопасное значение по умолчанию: False, 0.0, пустую строку или None.",
+      "evidence": [
+        {
+          "resource": "repo://app/win32_utils.py#L110-L120",
+          "version": "repo-lines-v1:sha256:43ab6339856e9dd170feb182b6e8d26c05294ff391439419ff0aaee68036e8ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2NDk4ZjIyODQ5ZDBhN2U3NTcwZWQ4MjM1MWEzZTc4ZGE5OWRjZTI0Y2JmZTYzNTM0MWYzMTY2N2U0ZTI4YjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNzM1Yjk5OGQ5M2NkODcwOTdiODM5MGFlMTBjNGEyNzY4NjNlMzFlNGJhODE2ZjMwNTFkOTgyZmUwYzdiZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1ZmZhOTQwN2QzOTI1ZjIxM2E4MjZjNGYxMTkzYzQwMTJiZTAzZGFkYTIyMzc3OWI3NmRlNGQ1OGIzY2Q5NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczZjIzMDc2OTY0NjE1YzdhNzdhMzcxOGI0NDEyOTFhNDE0YjY1ZWUyYTBkYjZhNjVjMjk2ODY0ZjcwMmY3YjEifQ"
+        },
+        {
+          "resource": "repo://app/win32_utils.py#L184-L221",
+          "version": "repo-lines-v1:sha256:476328abdc1983d0ede264f51abac57179e9d4abb25773705ea8043caa4d3241:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MzE5YTYxYjVjMTViMTZiYzg0MmEwNmYwYjVlNDM4M2UxNDM5ZDJjNTgwMmYzNmMzZmI5Mzc1ZGRhOTUxMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwZWFiZGZmNmVlNjVmY2M3ZjIyN2U1ZWY4Zjk4OTZlZDc0YTFmMTA5NTc0MmVkMDQxNGQwYmYwYjA2YzA3NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjNWNmNGI0YzFlY2QyNDkxMmY2OTViOWU0ZmFkYmE5ODczMDJiMjFjMzg1OGNjMDUwZDYyNGNlYWI3MjlhNjQifQ"
+        },
+        {
+          "resource": "repo://app/win32_utils.py#L43-L70",
+          "version": "repo-lines-v1:sha256:28f7d596127a0b278abbd5e7a07af894c734dcc3b86a81edb8eb43cbe6f9a54a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwOTQ5Njc1ZWRmNTdmYTc2ZjgxMTY0OWU1MWQyNmMwYTljN2I5MjVhMTRjN2EzY2IxYWIwYjk3YWY3N2RiYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjZjQ1YzU0YTFmMWZlMmFkMTNjM2QwNjg2OGYwYTg4NzE1OTZiNGE1ZGM5YTVlY2FlYTZjYjgyNTc1MWQ5MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxOWY4ZGRkNTc3M2I4MGViZWY2ZjM1NGM4NGZjOGMxODY4YTNlNDg1NTVjNjU4OGE4ZTY2NTllYmU0MzJhZjMifQ"
+        },
+        {
+          "resource": "repo://app/win32_utils.py#L465-L486",
+          "version": "repo-lines-v1:sha256:637471f9173dd00ff72805cb70668b7d9a3e56d1a88f8c40f64f39eb2cf6bfa9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MzU5ZGM1OWY4NGZiZTRlYzkxMjFkM2RiMmY5ZGNhMjAzMzNkNzUxYWVmYWVjYTFjOTNlMmUzZmFiZTk3NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZTY3Zjc2YTIyODdiYjZiNmFkYjAxNTA1NWRmZjA4OWMwNjY4ZmFlMmE1Y2ZjOThmY2JmYTIzZWYyYjQyODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0MGNiNTFmNGY1NDQ4NDk4MDdhYmEwY2QwNzg1YzM3NmY3NDJhNjRmMjQ2MTE2Nzk4NmFmODRhODk4YWNjYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

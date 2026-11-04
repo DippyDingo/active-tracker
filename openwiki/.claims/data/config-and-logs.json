@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8b346c282ae21d23f0e97e7e1d708e3dc2aac79e069fafb7a6ed7ea11726ae7c",
+  "claims": [
+    {
+      "id": "claim_0242d3d6ed464f038296ca099160e6d7",
+      "statement": "Корень данных — %APPDATA%\\ActiveTracker с откатом на домашний каталог; имя каталога осталось от прежнего названия приложения, чтобы не потерять статистику существующих пользователей.",
+      "evidence": [
+        {
+          "resource": "repo://app/config.py#L5-L5",
+          "version": "repo-lines-v1:sha256:3a5a7d2e80df0c7899a3e8b3094944ba792adf8955e32e2347d844bc6875d186:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2E1YTdkMmU4MGRmMGM3ODk5YTNlOGIzMDk0OTQ0YmE3OTJhZGY4OTU1ZTMyZTIzNDdkODQ0YmM2ODc1ZDE4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2E1YTdkMmU4MGRmMGM3ODk5YTNlOGIzMDk0OTQ0YmE3OTJhZGY4OTU1ZTMyZTIzNDdkODQ0YmM2ODc1ZDE4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDIwMzJmZjFmMjQzOTU5YWY5NWZmNTcyMDlmYzdiOTYzMjgzMTMxMmIzYjRiZjcwMTg3OGZiMGQ2ZDZhNjk0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ2ZDg3OTMzY2M0OTFlMGE3MmQ5YzQxNzRmMzExOGQ2MDY0NTM4YTQ0MTUwOTRiMWY0Y2YwOGRjNmFiM2U4MyJ9"
+        },
+        {
+          "resource": "repo://main.py#L25-L25",
+          "version": "repo-lines-v1:sha256:308eee7dc29a0492aa7d2e3e55f157bb0a7a488d32219ae7d7ad3ff57b46a976:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA4ZWVlN2RjMjlhMDQ5MmFhN2QyZTNlNTVmMTU3YmIwYTdhNDg4ZDMyMjE5YWU3ZDdhZDNmZjU3YjQ2YTk3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA4ZWVlN2RjMjlhMDQ5MmFhN2QyZTNlNTVmMTU3YmIwYTdhNDg4ZDMyMjE5YWU3ZDdhZDNmZjU3YjQ2YTk3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTEyZTYxYzgyOTIzYmVkZTEwZThmMTY4YzUxNDdhOWQ3NzFmZTc2OWVmYmY0Yzk5MWMzOTdlY2NlOTRkMzQxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjUyM2FkZGU0MTAxYjBjNzNjMjUyZjQ4ZTI0YzgwZmQwY2Q0MTQ5M2U1OTA1Y2RjNjYwZmRkYjY4MTljNTU3MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0dbba36911e84d22bcf161779ad8afc8",
+      "statement": "write_config пишет через временный config.json.tmp с переименованием через Path.replace, что даёт атомарность: читатель видит либо старый, либо новый полный файл.",
+      "evidence": [
+        {
+          "resource": "repo://app/config.py#L35-L44",
+          "version": "repo-lines-v1:sha256:6e2c966e3f4c5c78c326da2bff10bd8038d0d81792695ccd357a903ded7feb43:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OTM3ZjhhNThkODFmNGRmOGQxZjI4MTBhNTBkYzAyMzZhNTI0YjRmYTJlYmZjMGIyMWIzZTk4MmRjNzk0YTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZTY3Zjc2YTIyODdiYjZiNmFkYjAxNTA1NWRmZjA4OWMwNjY4ZmFlMmE1Y2ZjOThmY2JmYTIzZWYyYjQyODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MGU3YzU3OTljZDg1ZjZiMWE1MzI0ODZmYTRjYmUyYmMyNzQzNzVlNjQzNzdhY2E0ODUxMWYwYWZmOGY5ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0OTUxNmM5OWUzNmFkMjQzMTRmOWQyNTg0YTM1OGM3ZTQ2ODllNDlhYmY1Njc0MzA2NDVhMDY4NDllNmVhY2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c6881ba42c1c4605968c984c630b2e28",
+      "statement": "read_config возвращает пустой словарь при любой проблеме — отсутствии файла, ошибке разбора или если корень JSON не объект.",
+      "evidence": [
+        {
+          "resource": "repo://app/config.py#L27-L32",
+          "version": "repo-lines-v1:sha256:9b03e9e9906a06b9bd02f908bc891e5fa939782b36176650134ffe4015f73814:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYwZWE0OTUwNTUyN2RkYTE2YjFjMDM1MWJkYjAzMmFkNjdiOWQ0NTUxY2M5NWJmZjVhMTA4NmYyMmRhODc0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzMwY2UxYWJkYjdhNjgzNTlmMjBiZGNhYjZlM2ZjNmQ4ZDBmN2VkNGJiY2ExNTkwNDVmMjRkNTUwYzE2ZTNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTExZTcyZGIzOTJmYWRiMzYwOWQ0ODZiOTkxZmExNTBjODU0M2IyYTdkNzkyN2QzNjQ4OWQ1MjlhOWI2MDkyOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjljZDNmMTI0NjZiZjJjZDkwZWVmYTEyODg0Yjc0MmRhYmU5YmI3NzQwZWQ0ZjE3YzE2Yzk1MjBlYzJlN2NkNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c9227f9695154d33a6cf55cbc60784e9",
+      "statement": "Ключи состояния обновления в config.json: update_pending (version, notes, file, kind, page, attempts), last_update (version, notes, file, seen) и boot_check (version, fails, clean).",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L318-L336",
+          "version": "repo-lines-v1:sha256:9101df837d7c4e0f2cb3374cb005c9801bf26fc9561a42092e7c6d847c9aa492:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3OWU0ZDIwZTBlNmQyNWE1MGNlMTNiMWY5YmQ0Yjc0ZGE1OTUyMDJhZDdjZmUyMDQ5MDZmMTQ2ZmFhNzIwMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYzU0NTNmMzdlNmIzMGNjYzgxMWZhYWU2YzhlY2IxNzAxODBlZGYzNzUwOTFiYzlkZGE4NmJhODRiZmUzOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkNzMxNWY4YmE3MjY2ZDQwZjQ5MjY4NGEwMGMxMzcyNjkxNDYwMWU1ZDQ5OWM5OTVlMmUyMjU4MzZmNDZlMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzOTU5MGE5ZDc5NDU2ODBmMDI1OWYyMmE0Njk2NzRhNmRhMzViZjY5ZDE3YmQyZDAwOThlZjAyMWI2NDY1NjcifQ"
+        },
+        {
+          "resource": "repo://app/updater.py#L339-L375",
+          "version": "repo-lines-v1:sha256:249fe3b8dbdc561aef6bbccd3ab90f8506b190a417caee09fc89fc0bd8a333f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2MzZmYjhlZDVmZjFjMDFmNjM2MDJmYTgwY2YyN2M4OTM0YTAxMjJkYmQ2NGU2NjdiODEzN2YyYjA5OGE2NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMWM3MzljYTRiOWQ4MzEzMDFmYjZiMWU3NDdlNWQ1Y2FjMWY5MGY4OTAxNDgxZWY5ZjYwNmIzNTZkOGRlY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5NTg2MmE4OGM3NDdhYjAxMDA4YjJhZWJkZTE2NzczZGY2NWNiOWYyMTczYmUzZDQxMGMwMzI2OTgxNThhYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0MmM2MWJhNWFiMDQzNGVlM2ZiY2U2ODEyM2QwZjViOGQwMTdlNTU3ZTg3ODcwZDZjY2Y5MTI4MTE0NmE3NmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_db22ebe8c44c44af85e9884cdc4518c3",
+      "statement": "boot_step увеличивает счётчик fails только если предыдущий сеанс той же версии не был помечен как clean, и требует отката при достижении BOOT_FAIL_LIMIT.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L719-L732",
+          "version": "repo-lines-v1:sha256:d6e72adf9b6c42ad0582b1f02246c842e2a085b15259a12e2ed16bd17050eba8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNjAzOGFmODNiYzY3ZDI5MGYxZmQ2MzZhODk2MzA1ZWJjMzU5MThjM2IxNDhhYTRkZGNjMjg1NTZkYTU2ZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4ODE0YzhkOTFhODgxMGI4NzI5N2I3MTY3ODIxYzgxMzVmYWNlMjMwMzgzZjI4MWM4ZDYyNDg1ZTZmNGVlNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyYzMxNWNiODliZDk2ZmRlMzljMDBiZmI5MTIwOTkzNDFhYmQ1Njc4YjQwYjMxOWZhMDRhZGZmZDM2MTk1YjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjMmNiOWRiNjBmNDdmMmYxOTM2Nzk3NTAwMGQxMjc5OTMxZWFhNTEyNTdiNjlkZjE5YmQyYjQ4ZWYwNGU0NjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_83499bb68d7a4f4e8101805a98fe11e3",
+      "statement": "Поле seen в last_update управляет показом окна «Что нового»: whatsnew_unseen возвращает истину, если заметки ещё не помечены как просмотренные.",
+      "evidence": [
+        {
+          "resource": "repo://app/updater.py#L344-L360",
+          "version": "repo-lines-v1:sha256:edf53693df5383dd60091075098300cf469cc8ec12803d479ade0e5785cba566:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMWQzMzhkNTYzYWMyNTExNGNlODI5ZDNjMmZjN2JjOTEyNDk3NTY4Zjc2NWYxYzNkYjc2NTNiMjg5MDE3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MzkwM2IzNGZiM2NjZWZlNzhlNjAyN2UzOWQ2ZmRkODdhZmUzMDgxYTY3OTI2OTk4Zjc1ZTYxYzg1Mjc0ZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkYjVmZjM5MjBiYjJmNTg3NTllYzEzZTA5ZGY2MzlhYWY4YTAyZjM3NWJkNTZjMjExZDhiNGY0M2FiZGJlZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYmUyMmEzNDQ0ZTg4Y2Y3OGNmODNmYjI3YmViYzJiYmE2MDhiNWIxYmRhYmM0ZTEzNzYxY2JlNTFhY2EyOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aff7b7a2a1b54a378280571de32a5916",
+      "statement": "Ротации подлежат ровно три журнала — crash.log, nodexy_update.log, nodexy_install.log; файл больше 2 МБ переименовывается в .old с перезаписью прежнего.",
+      "evidence": [
+        {
+          "resource": "repo://app/config.py#L10-L11",
+          "version": "repo-lines-v1:sha256:cdce33f387fec084531e5839330187937b6321a5c4e3b23942f08f7d9d1eb117:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVlNzVkMjdmNzgwODVkNmQ3YTg0ODBiMGU2NmZhMDg0NDA2ZmQ1NDk5YWFiZThhYzI5NWZiM2UyNmE1MmI4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg4YzFhNTU1YWNiMmQzNzVjMGU4M2VhODZjMmYxNGYyYjdkNTAwNTJjYzI5NzZhYjRhZGVmY2Y2MTllMmM4OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjIyNDZkOTAzODBmZjBlM2I5ZjA4ZTA3ZDlhZjM4ZGFhMGE1ZjU4Nzc5ZDYwM2QzNTQyYmU4YmNlMGJmZTBlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjZjNTcxMDNhMmVkODQwOGU2MGIwZGIyYTA3YjIzYzRiNDBlNTVhMjQ3Yjk2NDhkOWU1N2Q3Y2ZlMGZiODZhYyJ9"
+        },
+        {
+          "resource": "repo://app/config.py#L69-L82",
+          "version": "repo-lines-v1:sha256:bbb6ef2c7e7e99e22b9ebfa7599d1ceceaa555947510dee81cc85f1a30ecb948:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzYWY4NDAyMTYzY2M3ZGJjNWRkM2M1ZTM0ZjgzNjU4OTJmOTc4MDQ2YmY2Y2QwZjBkY2ZiN2Q5OTdiZmY5MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlOGQ3NmU2NmJiNzhhZmIzYTE2NTZlN2ZhZjE0NTU2YWM5M2RkYmExOGQ3NzVjNDNmYmI4NzEzOTFlOTJiYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1OGQ4MGFlZGRiNjI3ZGUzZTE4MzNjM2UxMGU4NjVkY2ZkNTllZjQ1MmMzYmY2YTEwZGRkYzY1NThlZWVjZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c1fc860684674ed18f68afba47fc3870",
+      "statement": "crash.log открывается на уровне импорта, и в него направляется faulthandler для перехвата фатальных сбоев, включая падения в нативном коде Qt.",
+      "evidence": [
+        {
+          "resource": "repo://main.py#L25-L27",
+          "version": "repo-lines-v1:sha256:b731deeaa62cc81c03345542955c43e2c6a83ccfdf065fecffec12a1c78110af:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA4ZWVlN2RjMjlhMDQ5MmFhN2QyZTNlNTVmMTU3YmIwYTdhNDg4ZDMyMjE5YWU3ZDdhZDNmZjU3YjQ2YTk3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODQ1MTVkMmZiZTlhNjNiODU2MTA1MWFjYjk5MjNiMTY4ODFiYTlkZTdhMTU1ODUxYjk1NzZkNWVjZWMxOGQ2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTEyZTYxYzgyOTIzYmVkZTEwZThmMTY4YzUxNDdhOWQ3NzFmZTc2OWVmYmY0Yzk5MWMzOTdlY2NlOTRkMzQxOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzg0YTJkMzFiNTFlYzRjZjAwY2E4YjJjZmEwMDg0MWM2YWNlZWQ5NWI2MjI0YWVjMDllZGU5ZTQyZDk3OTU5OSJ9"
+        },
+        {
+          "resource": "repo://main.py#L30-L39",
+          "version": "repo-lines-v1:sha256:24e07df0b7d52f39028152ce8c0628e0b32eb1bdb84b3bfda1d89a755903039e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5N2ExYTNlYjNiOTAxZTVlOWYwNTI2OTZmM2RkMDM0YTAwODQ1MTRkM2Y2MTBkZjg0YWU5OGViMzU4NDU4ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmODM5NGZmZjkwNGQyNDQ3NWYyYWViNjI3NGU5MDZhZjJlNTljYjU0OGFiZmQwZTE5YzkxMmFkMWQxODMyMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiYzA0OTVhNTk4MjI0NGNlY2QyMzI2YzkyMWY1YTFlNGRmOGFkNDliOGUxMTI4N2FlZWNhYTA1ZmZlYjMwOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlZjQyN2M5ZDMxNzRmMWI0YWQ1NzFlN2JlODMyOTJlYTdiZjhhNzk4NTk2MjI0MzExOWJmYjYwZTdiNjBiNmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab4e9c8fa22d44a1b1a0b12905abe2e3",
+      "statement": "log_error пишет в crash.log заголовок с ISO-временем и сообщением, затем traceback.format_exc(), и используется там, где ошибку нужно зафиксировать без прерывания работы.",
+      "evidence": [
+        {
+          "resource": "repo://app/config.py#L57-L66",
+          "version": "repo-lines-v1:sha256:1d3a0ae131beed316975ed3dfe78931ad4504bd796d46190aacf7fc6ae338f3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxMzJmZjRiNGVkMzNlYzMxYjUxNzg1MjQwNzFiYWM1ZjcyMjlkZThiZjQ5YmM1YjQ4MGFmZDhjOTUzOGQyZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlOGQ3NmU2NmJiNzhhZmIzYTE2NTZlN2ZhZjE0NTU2YWM5M2RkYmExOGQ3NzVjNDNmYmI4NzEzOTFlOTJiYjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwODdmODE1MzY2MWM1ZDhhMzBjZTdmYjQ1MjhkNDkzNjkzNzg1NjI3OTYyODliZDY4MWM1YjIxMjRmOWE4NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjZjEwYWFkY2I3MTE1MGRhYWVhZjYzZWY3YTM4YWM5ZGQ4MWNjNmRhOTMxMTEzODAxMjkyYTk1ZGUyOWY1YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_257a3b5f77d1443da23cb9c1491a15e9",
+      "statement": "Различие has() и get_int() нужно при синхронизации автозапуска: autostart=0 и отсутствие ключа требуют разных действий.",
+      "evidence": [
+        {
+          "resource": "repo://app/db.py#L397-L400",
+          "version": "repo-lines-v1:sha256:82841f4ee342ceb23aca5541c3cd3b38e7772bd8736ee9bbe2caab3dc2c5904b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGQ4YTE2MGMwMDM3MWRjMjdiOTFlNmVjNTQ0ODYyYTA2MTNlOGE2YjkwYmMwMjQ0ODAwMTk4NTg0YWM4NjFiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU2NzQ3MWU1M2YwOWVlYjRlYjBmODU1NzkzZTBiZDc1MjM1YWU3Y2Y3YzBiMzgyYTI5OWRjZGFkMTY1NGM2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjE5Yzk1Zjg1OGU3OTQ0NWFjNzEzNjllM2Y5MjhjYzA3ZjUxMDAyYzk3MjNjYWQ1YTBiYjBlNDNkNDg5NjJmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTk2ZjMzZDdmZmNmMzdkNzNiMWQ0OTM2MDNmZjVmOGM5NDlmZWUzODRmMmZlODZjNjhmNTYyMzg3ODM3ZDZhNCJ9"
+        },
+        {
+          "resource": "repo://main.py#L240-L248",
+          "version": "repo-lines-v1:sha256:c3c04e69f06ed58bae6cb587712644b811df4ea661b69a7f7cfffc1a17ae8497:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQxM2UyMTcyZTcyNmZlMTExNDkwM2I1MWI3OGI5MWZjMTRmZTE2ZWZmY2ZjYTA2NDE1MmQzM2I5MGQwM2VhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTNhYTdjODYxODcyMWU1YzY2ZTgxYWQ3M2Q0YjJmMDc0MTQ1MDcxOTE2NzhhOGFiOWQzM2FhNjE4NGM1NDM3ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTkxZGVhYThhOTBkZGI1N2JjYTM3ZTM5OTg3MDc2YmZhMTIzYTFhZGQ4ZDIwNmFiYjhhMTk0NDYxNmUwN2E3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjI5MDE3OTViMzQ2NmYyYjg0M2MyM2IyYTlhYmU4YTdmNTMzMzE2ZjFkNGExNWZhYWUwNjlmZDBjMGMzZDFmYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5848153cd6a64fa3bc84b9b1d2fe3d75",
+      "statement": "Пользовательские настройки — порог простоя, фоновый учёт, тема, автозапуск и маркеры миграций — живут в таблице settings базы, а не в config.json.",
+      "evidence": [
+        {
+          "resource": "repo://app/tracker.py#L70-L80",
+          "version": "repo-lines-v1:sha256:af88a2310a6495e308e89db78d99b41b33bddde1d215c5d1faf6c9c50f08e40d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwMjM0ZjNmMDkwZWZjNDkxOGVmN2M5NWZjODQ0MzJmZjU5NjgyZmIxNjhhMzIzNjA2N2NkMDI0YWYxOTZmNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3ZjRhYmQ2Mjk0YmUxNzQzZGZjYjg0ZDY3ZWJjYjcwZTU3MzgxYjRlOTQwM2E4ZTE4MjBhZGU5NjZlYjFhNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkYWNkYTI1ZTQ1YmVkYzcwNDk3Y2RkYmQ0NDZhNzk0MzE4N2ZmOWM3NmUxZTNjOTVlZGM1ZTQ4YWIxZTA5MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2NzM0NWJmN2FhY2M1MzM3MTliN2FjNTFlNzk2NjhiNWU0OGY5NTg0Y2JmNGIzYTRmZTZlZTY3MzU3NWQzZGYifQ"
+        },
+        {
+          "resource": "repo://app/ui/main_window.py#L226-L226",
+          "version": "repo-lines-v1:sha256:c51c6af77e32ee275391454e72b8c59fd6cb1daf0e5168d29906742ba1357179:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzUxYzZhZjc3ZTMyZWUyNzUzOTE0NTRlNzJiOGM1OWZkNmNiMWRhZjBlNTE2OGQyOTkwNjc0MmJhMTM1NzE3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzUxYzZhZjc3ZTMyZWUyNzUzOTE0NTRlNzJiOGM1OWZkNmNiMWRhZjBlNTE2OGQyOTkwNjc0MmJhMTM1NzE3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjNiYWYxMDIzZWEzMGE4ZWI5MGM2NTBkMTU1ZmIzODZjZmM3MjNhYmQzYTc2NWMxZmQ1ZTUwMjgxOTNlMDQ4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTFiNDY4YWYwMzJkNWU0YzFhNGU3MjcxMDQzNDk1MTljMTRmYjE2NmVlMTFmM2I3NDMyYmI0YTI0Nzg4Yjk5OCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}

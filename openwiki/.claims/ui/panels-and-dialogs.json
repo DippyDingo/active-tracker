@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:5bf8a32c00b4eda5055d91ad7b963d54e8680463976f681eabb4f90bcfadc957",
+  "claims": [
+    {
+      "id": "claim_bdb4fe77d8a447a2a8635d1b68c46fd2",
+      "statement": "ModalOverlay намеренно не использует QGraphicsOpacityEffect, потому что этот эффект рендерит подложку в промежуточную поверхность и шрифты на ней размываются; вместо этого подложка рисуется в paintEvent.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/modal.py#L1-L8",
+          "version": "repo-lines-v1:sha256:078c27d0713d97870281b889a52026f5d8db09779b7eb421574bba2bcad11cdf:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzQ4YTdjZWQ2MDAyOGNlZDZjN2M5N2ZiMThlMjdkMjEzMzQ0YTQ2MWExOTNmYTQyMDIzYmNjMWMyMWJhNDg0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ViNzAyNTc1OTNkYTA2ZjY4MmEzZGRkYTU0YTlkMjYwZDRmYzUxNGY2NDUyMzdmNWNhNzRiMDhmOGRhNjFhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTIwN2Y4ZjQxYjNiMDc4NmRjZDQxMzg0YjZmMzAwOWI1YjlkMWVkOTBiNTY5OWEyZjlmODMxMTY0YmFmMWM0OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b51beabfa90b4ae19ca893d5f4ee586b",
+      "statement": "ModalOverlay берёт размер панели из sizeHint с ограничением по ширине и высоте хоста (отступы 90 и 70) и минимумом 320×240, центрирует её и фиксирует размер.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/modal.py#L17-L50",
+          "version": "repo-lines-v1:sha256:48988123bca4fd7e252a14a23adb573b9449e9d740e0b5dedc98f000cf283ac7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3Y2Y3Y2EyMzI0OGQ1NzVlN2Y2MjQ3YzhlY2Y0MDI5M2I1ZTUzNGUzMzA5NzliODc0OTllZDQwMTM3ZjE2NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5Y2IwNGI1ZjJkYzk4ZWExMDBhM2I0NWNhOGQzMzA1MmE3NmQzNmQ2OTE1NGY3ZmIwYWI5OWMwODJjYjE2ZmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9f07f00e272a49e6b85ea846cc94a8d7",
+      "statement": "eventFilter в ModalOverlay реагирует на изменение размера хоста: оверлей растягивается, панель перецентрируется, а при недостатке места размер панели корректируется.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/modal.py#L50-L80",
+          "version": "repo-lines-v1:sha256:50b1743d533ede1dcb37911a98fd4f4694b1f53df68b45fef1f6391c1965c568:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZDc5NDZmODJmNzcyM2M5NWRlOTQxNzNjMmM5OTllNzZjMjkzMjMyNzVmNTM3YzBhYzNiNTU3Y2JmODVhNDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNTc4MTViMzhiYmQyYTY3NjMzNWYyYmM1ZGY3M2ZkMzM5MzVhYmQzOTkxNjgxNWViNzY3ODM1Y2E2YTQ5MTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxOGIyZWU0ODNjZTdiMjRkZWIwMzMwZjFkNzMzOWNiNWQzNGE3ODA3MWM2NTI4MjI2MDQ3M2QxOTEyZDBkNjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7e0973324804ea8a85e5d5e942a6e7b",
+      "statement": "MainWindow._show_modal ставит новую панель в очередь _pending_modal, если оверлей уже открыт, и перед показом красит фон панели и всех её QAbstractScrollArea, иначе прокрутка получила бы системный цвет.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L1150-L1175",
+          "version": "repo-lines-v1:sha256:ef8b63480565240f7893a911e645ecaaad87bb2052917b525dd614e5736b39b2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmNmUxZTZmNmFjMjhjNzYwOTA2ZmU1ODkyNDg0NjIxMjdhYWI4ZDU3NWRjMWE3MTg3ODU2ZGYyOTE5NWQ5OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMDRhNzM0MjY5YmE5NDZjYTIyNzMwYmU1OWJhZTBkMDQ1MWM2ODgyZGNiMTAwZjNiYjNkMTFmM2U5ZDcwZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2MzBjZmQ2ZGY3OGIxOTU5MWMyY2YxMjY0OGQ4MGZjNWVlZGYyOTQwMWQ0N2IxY2EzNDVlNzEzMGZmOWM3ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYmZmZThkNDM0YjQyNmNiOTNkOTA0Yzc1N2NiYjJiMmYyOWJjNzQ0YTdiOTNmZGEyZDcxMThmNzQ0MWQzNjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2a4fc173d4bb415aadaa49875ec387f3",
+      "statement": "WelcomeDialog — единственный настоящий QDialog, потому что при первом запуске главного окна ещё нет; он предлагает создать новую базу или загрузить существующую с проверкой через Database.validate.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/welcome_dialog.py#L1-L45",
+          "version": "repo-lines-v1:sha256:e9db9aec671be90b3a100dc6251c2270fce10ab84e07383166751b21db4cb7b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ODgyYzYwNTM0YzdlYjM0YTdmZjYyY2UzYTAwY2JkOGM3MDg5Mzc3ZTlmYTU3YTYzMzlkMzM2NTkwMzhhZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNmFmOGY5MTdjMDFkMTc5NzIzMWM2YTAyMTEzYTE0ODE0ODczYzY5NGJhZjkyMDQxYTFiNWFjNmRiYWQ1ZmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyM2JhODU2MTA4OTQ3ZTU1MGRlZWU5MjU5NmFkMmZmNWEyMGQwOWY2YTNkYjBmZDkzNjE4ZTU3Zjg5NGMxZGQifQ"
+        },
+        {
+          "resource": "repo://main.py#L106-L116",
+          "version": "repo-lines-v1:sha256:96015689dfe3f6f0b2529f51d2d1426b6daf190cd51522b54254eb1876c919bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkODQ1NzA0MzBmODZiMzdmZjk4NzczZTU0YmQ5OTBhMDVmMDkzMDk5MzJiMTQwNmFkNTJmY2VkM2UxZTczYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ODQ3MWRmMjRjN2M2OThiYzM3MWE0YWFjMzhjYzEzNmMyMjI2NmI1OWE1Y2NkMzUwOWMyMjUzNTA3YWJiNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0ZWFmZjkxZmJjMGI0MjhmNmIyYzVlMGY4NzY1NzJmZmMzN2ZlYmI3ZjViNGRkMGYyZjc2ZTA4NTlhM2RhNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3MDczMGQzOWQwMjU4ZTk0ZmZjMTM2OGM0Zjk4NDI0ZDlhMWQxNGJjODdlYTI1MTBmMzI5NzViNGRmN2QyODEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c755d078e0d04e859a788f907b372451",
+      "statement": "Сканирование выполняется в _ScanWorker (QThread), который перехватывает исключение и отдаёт пустой список, чтобы панель открылась даже при полном провале сканирования; живые потоки регистрируются в модульном множестве _active_workers.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/add_dialog.py#L45-L77",
+          "version": "repo-lines-v1:sha256:2b1251a1815f1b29b567edef320efebb4736174dc0b17c015a0cc61c861d30bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0N2IyN2YzZTYyYTAyZjI0MzZmYzllNjc3MTQwMzZlNjgwNWVkM2YyYzE3N2FiZmQ1OGZmM2JlYjg0YWYyZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1OTE5NTU5ZjE2MDFjMGU3YWI4YmQ1YjUyZGMxYTExNDMwMTZiYjkzYWI5ZmJmZGUxNTJhZDQ5NmYxNzY0NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyYmNkNmZlMDc2YmJkODY1YmZmNTQyN2JiYmNmODZkNTA5Y2JjZmUyN2E0YTBkM2NkZDcwNjM3MjkyZmY2MjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0935fbe12b334356bdc297b99107b4f7",
+      "statement": "wait_workers с дедлайном 8000 мс подписана на aboutToQuit и ждёт завершения потоков, иначе Qt уничтожил бы работающий QThread с порчей памяти при выходе.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/add_dialog.py#L60-L77",
+          "version": "repo-lines-v1:sha256:04a3a4bbc2e86dc8d5c12a35b74925e321d8ad91d5842efd73dfb815c09861a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NjEyMDk5N2ZhODZkNzkxMDg1ZDMyNmM2ZGQ4ZjgzYWE1YTcwY2RhOTM4NzVkZWQ0NjM2NWNjNGY1OWJlZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyOTM2YmJmNmNiZGJiOTRkOGJkZTk4NjQ0NWQ0ZDUzZDhkOTM1NzQxNTQ0YWVhNTllN2M2ZjRiOGM5MjZhNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyYmNkNmZlMDc2YmJkODY1YmZmNTQyN2JiYmNmODZkNTA5Y2JjZmUyN2E0YTBkM2NkZDcwNjM3MjkyZmY2MjgifQ"
+        },
+        {
+          "resource": "repo://main.py#L265-L273",
+          "version": "repo-lines-v1:sha256:e68a68c3d300d13cbd8bdd82182576bfb7993a15abaac64ddc5057e1524d414b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTY4MDQzNWQyMDUyMjRiMWE4NTA0ZWVkNzIyMTZiOGU5OTkxNTYwNzFhNDQ4N2U2YWVjNGUxZjJjYTI0NjYwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTlkMTI4ODI4MzdjZDA5YjM0MjcxN2E1M2NiYzBlY2U4MWM2YjUyMzZlZTg2YjM4ZTMyOWJhZTE4Mzk0MWM1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjgzNTBmY2ZjOGFkMTBjMDUxYjI4NWZkOTYzMTFkNGM5ZWFjOTBkMzk0OWJjNGQ2MjRmZGFhNDhhNzJkNTczMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg1NzUwZjM1NzkyOGE0ZTIxMzkyNWFiMWQ4OTg0NTVjZjdmNDE4YWFiOWQzYTVhMTMwMGU2YTYzMDFjODkyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e7756b4b86134341a6dd63c9146e9671",
+      "statement": "В _IconTask.run перед извлечением иконки вызывается pythoncom.CoInitialize(), потому что COM в потоках пула не инициализирован автоматически.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/add_dialog.py#L93-L105",
+          "version": "repo-lines-v1:sha256:021a174452f96016a24baa63bc4e3fab4c746fc488899d224a11da002a3a4f5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyOTdjODFmMTY3N2FlNzdmYTA5MGEyYzY3MWZiOTFlNTZjMWZhNGYwZjU4MDExMzRmNWI2ZTIxYmRjM2NiYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNjA4MWY5ODE0NjU0ZGRkYTVhMWQ2YWI5ZGVlM2Q4NWE4YmE2MDAxN2VhNjAzOTk2MDRiYzYzZjZkMTc4ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlYTI3MzhmYTI0ZTk3NTM5NDE2ZjM0YzkwZGYyZWYwMWFlMzJiYzkxN2QyZDFmOTA1YjU0NTc5NWYzNzNlYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4YmIxYzJiMjJkNWVjYTBiNDYxZTc3NjEyZTczMjllNWEzYzc3NDlmNWM0YTQyNjg5NDIzNDNkYmVlNDYwMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf107a195082403fac9aa4246a986940",
+      "statement": "Иконки загружаются отдельными QRunnable с setAutoDelete(True) в QThreadPool.globalInstance(), по одной задаче на строку, чтобы список отображался сразу.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/add_dialog.py#L237-L237",
+          "version": "repo-lines-v1:sha256:eba22a01377bc5fe5d3cf17019c12920c160fdbc04bb56b8964c36de184cdf77:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWJhMjJhMDEzNzdiYzVmZTVkM2NmMTcwMTljMTI5MjBjMTYwZmRiYzA0YmI1NmI4OTY0YzM2ZGUxODRjZGY3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWJhMjJhMDEzNzdiYzVmZTVkM2NmMTcwMTljMTI5MjBjMTYwZmRiYzA0YmI1NmI4OTY0YzM2ZGUxODRjZGY3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTU2MmIyOTQ2NTg5NDAxODVmMjg4OTA2M2M5ZDBjMmY5ZmI4OGM5Mjc4MzQwNTAxNGIzZjAxODg3ODVjMmMxZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzM2MmNhOWYwMDI5NTZjYjczMDdjNzkzZWM5NmMxOTg3M2NiZjViOGIwM2EzYTA0N2I4YjJhMzI4ZDM1YTFjYyJ9"
+        },
+        {
+          "resource": "repo://app/ui/add_dialog.py#L83-L105",
+          "version": "repo-lines-v1:sha256:e62604ef4573a2f05a7ce85ba189491217047a14696bba007d0259553a4bc77e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NDZhMTc5MzdiNzY4ODU0ZDU0NmFjNzJmNTZkYzc3NmVjNzY0YTRiYTQyMjc4ZDIzMjY4MjM3ZTYzNGFiNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNjA4MWY5ODE0NjU0ZGRkYTVhMWQ2YWI5ZGVlM2Q4NWE4YmE2MDAxN2VhNjAzOTk2MDRiYzYzZjZkMTc4ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjMDRiYWFmZjFhNmViZmQ5N2EzNTA3YTQyOTEyN2FmMTBiMzI5ODgyNzA4MGZhZDU3MTM0ODRiZWY0Mzk0YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4YmIxYzJiMjJkNWVjYTBiNDYxZTc3NjEyZTczMjllNWEzYzc3NDlmNWM0YTQyNjg5NDIzNDNkYmVlNDYwMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_caf10bce46b14c0eb3ef8d2748e5ec44",
+      "statement": "shutdown панели подключается как обработчик on_closed, а отмена задач и ожидание потоков — разные механизмы: первый не даёт запускать новую работу, второй гарантирует, что запущенная не будет убита.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/main_window.py#L1195-L1205",
+          "version": "repo-lines-v1:sha256:90f46c430424135bc16219835608919a0206c05ea6463cf68fc19b176c92b173:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4ZDc3NzFhODRjNjRjNGYwZjdkOThmOWI2ZTFkODUwYmFiZTg5OTczYzc3ZTlkMTE3ZmQ2MmY2NTFhZDU4MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiNWRjZGQ4OTc0OGY1ODZiYTgzOGNlNzhjOWQwY2U5YjAyYzg3NDIyYjUwZTZmNGUyYmY1OTEzOWQ5NTg3NzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3NTY5NTljNDIwYjZjNjIwMmY5ODRjMzQ2N2NiMWVlYzVmNTNiYWM0YzY4ODVlMGU2NzFhOGJlM2FhNWNiNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0MTQ4OTVlZmMzZDcyNDU0NWY3N2FiMTEzMmVkYWJmMzgxYzQxZjk5NTI4ZTM3MzFiOTBkYzI0MjY2ZjhkZWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1d122d9c86ac4ed0bad37ec4c2db2f92",
+      "statement": "SettingsPanel передаёт результат сигналом saved с шестью аргументами и хранит _theme_initial и флаг _committed, который выставляется в _save и отличает сохранение от отмены.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/settings_dialog.py#L18-L45",
+          "version": "repo-lines-v1:sha256:54d68acb98c39f28258ed3797a1832e5a8e4cd54d6bea625136edbfe0be0e5a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0MDQxNWIyYjg5N2YyN2ZjN2FmNzk2YmZlMGQzN2Q0ZTE4MzgzOWJjMzAwZDhkNzc3YjQ4NTIwODA5NjVlMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwYTAyOTFhMTE3ZWJjOWZhYjIwZDhmNzZkNjA1NWUwMmFmMDIzYmY1YmE3NWM5NjFmOWQwZjFkMmQyYmMxYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1N2YxMTkxODkzMjQyYTVjNGM4ZDEwMTkzNjI4MWRiZWJiY2M2NDU2MGFiNzEyNzdiNTU3MzJhNmVhNTY1MmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1NDQzOWQ1ZTllOGM3MWJlMWEyOWI3MTMyYTZlZjVjMTY5Mzk2NjQyMDllYTIxNmJiN2M4YjY0NzhkNzI4NDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c535a1aa86046009129b461a9f85b53",
+      "statement": "close_requested подключён к _revert_if_cancelled, поэтому при закрытии без сохранения прежняя тема восстанавливается и предпросмотр не залипает.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/settings_dialog.py#L40-L50",
+          "version": "repo-lines-v1:sha256:217b17e1e55a5582181132ede88ba9b097b0c057f085b02119285140a59096cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ODI0YmRhNjA5YTE2NWRhOWVjYzExNTlkMjY3YTdjYzM4NWRlNWVmMDc4Njc2ZmRhZTUxYTJiNjZiMzdkNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxNzQ1NGI5MjgzOWQxYjc5N2I1ZWFhMjA0YzMwMjRjYTIyNTRiNTBmNTQ3ZDkxZTNiNjU1MDhhM2RhODZiZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmOWIzNDg4ZGRmMWFmNjM5YzUxODg5ODg4N2U1MTQzZjI1ZTIwZmI0OWQ1NzAzNWFkMmJiYzQzZTE4ZjIyNzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53d46bed271741519a215c740b0f91f9",
+      "statement": "UpdatePanel реализует машину состояний через _set_state и _clear_actions, а shutdown отменяет активную загрузку при закрытии панели.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/update_dialog.py#L1-L30",
+          "version": "repo-lines-v1:sha256:50070ee9249a41e7decc9ec7ec1273437ab85ae4d5cdfab0b49f0b0e7e961b61:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlNDlkOTE2YzcwMDg2YzE4NWM2MGFkMGQ0NTY0NGVkZjEyOGE3NWEwYzJmYjk4OTI4MjhiZmQ4ZDcxZmZlM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMGVjYmUzYzIxZjQ0Yjc2YWIzOTA2MmUwY2FiODc4ZjE1NDNmYjVhOWNlN2RmNzlmYzU0MGFjZTNjMWZiNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMjFjNmI1NGYwNjljNWY5YmY5ZTJkYzIyZjAyYTA4OTEwMzYxNWUwZWM2MzY3ODI2NzExNGVmZGZkNzRkZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ac6aa397810d46bca89b0a1b9f6b0590",
+      "statement": "FilePickerPanel и _NameDialog заменяют нативные QFileDialog и QInputDialog, потому что те не подчиняются QSS-теме.",
+      "evidence": [
+        {
+          "resource": "repo://app/ui/file_picker.py#L1-L25",
+          "version": "repo-lines-v1:sha256:e6fd7faedc1d7a53868c0f16af9f7b4ffa87aa0b42ca138c3d2e085bf1714306:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1OTdhMzgwNzQyZjJkODMyMGU5MmY3NmI2Y2E3OGUzNjQ5MGRkNWQzNTc1MzA4ZjIwOTZlMGRlMzQ4Y2E3M2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYjcwMjU3NTkzZGEwNmY2ODJhM2RkZGE1NGE5ZDI2MGQ0ZmM1MTRmNjQ1MjM3ZjVjYTc0YjA4ZjhkYTYxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxODgzYzY3ZmRhZDI1ZmYxYTkwNjBmYjU5OGI5YjZiZDI3Yjk2YzU4MTBmZmRlMDMyYzMyMjFiNmY5ZjA1NmMifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.3",
+    "at": "2026-11-04T17:40:41.767Z"
+  }
+}
