@@ -787,6 +787,16 @@ def startup_processing(skip_update: bool = False) -> dict:
             # Версия не новее текущей (ручная замена/откат) — ожидание устарело.
             cancel_pending()
 
+    # Запись «Что нового» может отстать от фактической версии (установку
+    # выполнили вручную поверх, helper не участвовал, pending потерян).
+    # Тогда плашка показывала бы прошлую версию с заметками, которых в
+    # запущенной сборке нет. Синхронизируем запись с реально запущенной
+    # версией и помечаем просмотренной — без фейковой плашки.
+    info = get_last_update()
+    if info is not None and not same_version(str(info.get("version") or ""), APP_VERSION):
+        set_last_update(f"v{APP_VERSION}", str(info.get("notes") or ""))
+        mark_whatsnew_seen(f"v{APP_VERSION}")
+
     if getattr(sys, "frozen", False):
         # Перечитываем конфиг: логика выше могла его изменить, а запись
         # устаревшего снимка воскресила бы update_pending (залипшее состояние).

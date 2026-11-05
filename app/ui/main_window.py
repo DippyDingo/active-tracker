@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QLayout,
     QMainWindow,
     QMenu,
     QMessageBox,
@@ -580,8 +581,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("REDIS")
         self.setWindowIcon(theme.load_app_icon())
         self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
-        self.resize(1210, 780)
-        self.setMinimumSize(1020, 680)
+        self.resize(1540, 900)
+        # Расчёт: rail 64 + sidebar 264 + content margins 52 +
+        # 3 карточки по 300 + два промежутка по 18 = 1298 px.
+        # Округляем вверх: заголовок и search не должны конфликтовать.
+        self.setMinimumSize(1320, 760)
         # Нативный фон окна под цвет темы: без этого при первом показе и при
         # перестроении карточек мелькает белый HWND/QAbstractScrollArea.
         self._apply_window_palette()
@@ -826,6 +830,7 @@ class MainWindow(QMainWindow):
         self._period_group.setExclusive(True)
         periods_wrap = QHBoxLayout()
         periods_wrap.setSpacing(2)
+        periods_wrap.setSizeConstraint(QLayout.SetFixedSize)
         for idx, label in enumerate(PERIOD_TITLES):
             btn = QPushButton(label)
             btn.setObjectName("periodBtn")
@@ -839,6 +844,9 @@ class MainWindow(QMainWindow):
         header.addLayout(periods_wrap)
 
         self._search = SearchEdit()
+        self._search.setMinimumWidth(140)
+        self._search.setMaximumWidth(240)
+        self._search.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self._search.textChanged.connect(self._on_filter_changed)
         header.addWidget(self._search)
 
@@ -1235,12 +1243,10 @@ class MainWindow(QMainWindow):
         return values
 
     def _current_cols(self) -> int:
-        width = self.width()
-        if width >= 1210:
-            return 3
-        if width >= 940:
-            return 2
-        return 1
+        # Сетка всегда минимум из трёх колонок: минимальная ширина окна ниже
+        # рассчитана именно под 3 карточки, поэтому карточки не превращаются
+        # в две широкие/одну узкую и интерфейс сохраняет композицию.
+        return 3
 
     def _match_rank(self, app_id: int, q: str) -> int | None:
         """Ранг совпадения (чем меньше, тем лучше) или None."""

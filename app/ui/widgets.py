@@ -1848,9 +1848,13 @@ class AppCard(QFrame):
 
         name_label = QLabel()
         name_label.setObjectName("cardName")
+        # Минимальная ширина имени: при сжатии окна карточка сжимается, но
+        # название получает многоточие только когда действительно не влезает,
+        # а точка активности и кнопка закрытия всегда остаются видимыми.
+        name_label.setMinimumWidth(120)
         fm = name_label.fontMetrics()
         name_label.setText(fm.elidedText(name, Qt.ElideRight, 148))
-        top.addWidget(name_label)
+        top.addWidget(name_label, 1)
 
         self._dot = QLabel()
         self._dot.setObjectName("runningDot")
