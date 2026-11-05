@@ -737,6 +737,35 @@ QFrame#titleBar {
     border: none;
     border-bottom: 1px solid $sidebar_edge;
 }
+QFrame#navigationRail {
+    background: $sidebar;
+    border-right: 1px solid $sidebar_edge;
+}
+QLabel#statsTitle {
+    color: $text;
+    background: transparent;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+QFrame#statsCard {
+    background: $card;
+    border: 1px solid $sidebar_edge;
+    border-radius: 16px;
+}
+QLabel#statsCardCaption {
+    color: $text3;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+}
+QLabel#statsCardValue {
+    color: $text;
+    background: transparent;
+    font-size: 24px;
+    font-weight: 800;
+}
 QLabel#titleBarBrand {
     color: $text;
     background: transparent;

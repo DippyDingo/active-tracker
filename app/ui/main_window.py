@@ -10,6 +10,7 @@ from PySide6.QtCore import (
     QParallelAnimationGroup,
     QPoint,
     QPropertyAnimation,
+    QRectF,
     QSize,
     Qt,
     QTimer,
@@ -33,6 +34,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QStackedWidget,
     QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
@@ -375,6 +377,147 @@ class RedisTitleBar(QFrame):
         super().mouseDoubleClickEvent(event)
 
 
+class NavButton(QPushButton):
+    """Кнопка левой навигационной рейки.
+
+    Фон рисует сама рейка (наведение/активность), кнопка прозрачна и держит
+    два варианта иконки: обычную и акцентную для активного состояния.
+    """
+
+    def __init__(self, icon_name: str, parent=None):
+        super().__init__(parent)
+        self._icon_name = icon_name
+        self.setObjectName("navButton")
+        self.setFixedSize(48, 48)
+        # Иконка 24×24 ровно в центре кнопки 48×48: без внутренних отступов,
+        # размер не меняется между состояниями — не сдвигается при hover.
+        self.setIconSize(QSize(24, 24))
+        self.setCheckable(True)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setFocusPolicy(Qt.NoFocus)
+        self.setStyleSheet("QPushButton { background: transparent; border: none; }")
+        self._sync_icon()
+
+    def _sync_icon(self) -> None:
+        color = theme.pal().accent if self.isChecked() else theme.pal().text2
+        self.setIcon(ui_icon(self._icon_name, color=color, size=24))
+
+    def set_active(self, active: bool) -> None:
+        self.setChecked(bool(active))
+        self._sync_icon()
+
+    def retheme(self) -> None:
+        self._sync_icon()
+
+
+class NavigationRail(QFrame):
+    """Вертикальная панель навигации: кнопки строго одна под другой.
+
+    Активная кнопка — мягкая заливка accent + вертикальная полоска-индикатор
+    слева. Наведение — едва заметная заливка без рамок и наложений.
+    """
+
+    INDENT = 8          # поле кнопки от левого края рейки
+    RADIUS = 12.0
+    INDICATOR_W = 3.0   # толщина индикатора активного раздела
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("navigationRail")
+        self.setFixedWidth(64)
+        self._hovered: NavButton | None = None
+        self.settings_button: NavButton | None = None
+        self._active: NavButton | None = None
+        self._indicator = QVariantAnimation(self)
+        self._indicator.setDuration(180)
+        self._indicator.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._indicator.valueChanged.connect(lambda _v: self.update())
+        box = QVBoxLayout(self)
+        box.setContentsMargins(self.INDENT, 12, self.INDENT, 12)
+        box.setSpacing(8)
+        box.setAlignment(Qt.AlignTop)
+
+    def add_button(self, button: NavButton) -> None:
+        self.layout().addWidget(button, 0, Qt.AlignHCenter | Qt.AlignTop)
+        button.installEventFilter(self)
+
+    def add_stretch(self) -> None:
+        """Распорка: всё после неё уезжает в низ рейки (настройки)."""
+        self.layout().addStretch(1)
+
+    def set_active(self, button: NavButton | None) -> None:
+        if button is self._active:
+            return
+        self._active = button
+        # Плавный переход индикатора: анимируем прогресс 0→1, чтобы подсветка
+        # не «выскакивала» мгновенно.
+        self._indicator.stop()
+        self._indicator.setStartValue(0.0)
+        self._indicator.setEndValue(1.0)
+        self._indicator.start()
+        self.update()
+
+    def eventFilter(self, obj, event) -> bool:
+        etype = event.type()
+        if etype == QEvent.Type.Enter:
+            self._hovered = obj
+            self.update()
+        elif etype == QEvent.Type.Leave:
+            if self._hovered is obj:
+                self._hovered = None
+            self.update()
+        return super().eventFilter(obj, event)
+
+    def _button_rect(self, button: NavButton) -> QRectF:
+        return QRectF(button.geometry())
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        accent = QColor(theme.pal().accent)
+
+        # Наведение — только на неактивной кнопке: едва заметный фон.
+        if (
+            self._hovered is not None
+            and self._hovered is not self._active
+            and self._hovered.isEnabled()
+        ):
+            hover = QColor(theme.pal().text2)
+            hover.setAlpha(26)
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(hover)
+            painter.drawRoundedRect(
+                self._button_rect(self._hovered), self.RADIUS, self.RADIUS
+            )
+
+        active = self._active
+        if active is None or not active.isVisible():
+            painter.end()
+            return
+        geo = self._button_rect(active)
+        progress = float(self._indicator.currentValue() or 1.0)
+
+        # Мягкая заливка активной кнопки (один слой, без наложений).
+        fill = QColor(accent)
+        fill.setAlphaF(0.16 * progress)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(fill)
+        painter.drawRoundedRect(geo, self.RADIUS, self.RADIUS)
+
+        # Индикатор-полоска у левого края кнопки.
+        bar_h = geo.height() * 0.42
+        bar = QRectF(
+            geo.left() - self.INDENT,
+            geo.center().y() - bar_h / 2 * progress,
+            self.INDICATOR_W,
+            bar_h * progress,
+        )
+        painter.setBrush(accent)
+        painter.drawRoundedRect(bar, self.INDICATOR_W / 2, self.INDICATOR_W / 2)
+        painter.end()
+
+
 class MainWindow(QMainWindow):
     def __init__(self, db: Database, tracker: Tracker, boot: dict | None = None):
         super().__init__()
@@ -462,6 +605,21 @@ class MainWindow(QMainWindow):
         self._build_sidebar(root_layout)
         self._build_content(root_layout)
 
+        # Контент приложений и будущая статистика — страницы общего стека.
+        self._apps_page = QWidget()
+        apps_layout = QHBoxLayout(self._apps_page)
+        apps_layout.setContentsMargins(0, 0, 0, 0)
+        apps_layout.setSpacing(0)
+        apps_layout.addWidget(self._sidebar)
+        apps_layout.addWidget(self._content, 1)
+        self._pages.addWidget(self._apps_page)
+        self._stats_page = self._make_stats_placeholder()
+        self._pages.addWidget(self._stats_page)
+        root_layout.addWidget(self._pages, 1)
+
+        self._nav_buttons["apps"].set_active(True)
+        self._nav_buttons["stats"].set_active(False)
+        self._nav_rail.set_active(self._nav_buttons["apps"])
         self._status = QLabel()
         self.statusBar().addWidget(self._status, 1)
         self._status_right = QLabel()
@@ -488,7 +646,44 @@ class MainWindow(QMainWindow):
         self._update_timer.start()
 
     def _build_sidebar(self, root_layout) -> None:
-        sidebar = QFrame()
+        rail = NavigationRail()
+        self._nav_rail = rail
+        self._nav_buttons: dict[str, NavButton] = {}
+
+        plans = (
+            ("apps", "Мои приложения", "apps", True),
+            ("stats", "Статистика", "stats", True),
+            ("chat", "Чат с ИИ — скоро", "chat", False),
+        )
+        for key, label, icon_name, enabled in plans:
+            button = NavButton(icon_name)
+            button.setToolTip(label)
+            button.setEnabled(enabled)
+            if enabled:
+                button.clicked.connect(self._on_nav_clicked)
+            rail.add_button(button)
+            self._nav_buttons[key] = button
+        rail.set_active(self._nav_buttons["apps"])
+
+        # Вход в настройки — шестерёнка в самом низу рейки (как в образце).
+        rail.add_stretch()
+        settings_btn = NavButton("settings")
+        settings_btn.setToolTip("Настройки")
+        settings_btn.clicked.connect(self._open_settings)
+        rail.add_button(settings_btn)
+        self._settings_btn = settings_btn
+
+        root_layout.addWidget(rail)
+
+        # Переключение экранов: стек из «Мои приложения» и «Статистика».
+        # Анимация — плавный crossfade через QGraphicsOpacityEffect.
+        self._pages = QStackedWidget()
+        self._pages.setObjectName("pagesStack")
+        self._nav_animation: QPropertyAnimation | None = None
+        self._page_animation: QPropertyAnimation | None = None
+
+        self._sidebar = QFrame()
+        sidebar = self._sidebar
         sidebar.setObjectName("sidebar")
         sidebar.setFixedWidth(264)
         layout = QVBoxLayout(sidebar)
@@ -539,10 +734,77 @@ class MainWindow(QMainWindow):
         footer.addStretch(1)
         layout.addLayout(footer)
 
-        root_layout.addWidget(sidebar)
+
+    def _toggle_apps_sidebar(self, visible: bool) -> None:
+        """Оставлен как совместимый callback; навигация теперь через page stack."""
+        self._switch_page(0 if visible else 1)
+
+    # ------------------------------------------------- навигация (рейка)
+    _PAGE_FADE_MS = 220
+
+    def _on_nav_clicked(self) -> None:
+        """Переключает экран приложений/статистики с плавным переходом."""
+        button = self.sender()
+        if button is None or self._pages is None:
+            return
+        key = next(
+            (k for k, b in self._nav_buttons.items() if b is button), None
+        )
+        if key in (None, "chat"):
+            return
+        if key == "apps":
+            target = 0
+        elif key == "stats":
+            target = 1
+        else:
+            return
+        if self._pages.currentIndex() == target:
+            return
+        self._switch_page(target)
+
+    def _switch_page(self, index: int) -> None:
+        """Плавный crossfade между экранами: старый растворяется, новый проявляется."""
+        buttons = self._nav_buttons
+        if index == 0:
+            buttons["apps"].set_active(True)
+            buttons["stats"].set_active(False)
+            self._nav_rail.set_active(buttons["apps"])
+        else:
+            buttons["apps"].set_active(False)
+            buttons["stats"].set_active(True)
+            self._nav_rail.set_active(buttons["stats"])
+        if self._page_animation is not None:
+            self._page_animation.stop()
+        if self._nav_animation is not None:
+            self._nav_animation.stop()
+
+        self._pages.setCurrentIndex(index)
+        page = self._pages.currentWidget()
+        if page is None:
+            return
+        effect = QGraphicsOpacityEffect(page)
+        page.setGraphicsEffect(effect)
+        page_anim = QPropertyAnimation(effect, b"opacity", self)
+        page_anim.setDuration(self._PAGE_FADE_MS)
+        page_anim.setStartValue(0.0)
+        page_anim.setEndValue(1.0)
+        page_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        page_anim.finished.connect(lambda: page.setGraphicsEffect(None))
+        self._page_animation = page_anim
+        page_anim.start()
+
+        sidebar_width = 264 if index == 0 else 0
+        # Боковой список остаётся постоянной ширины: прячем/показываем только
+        # содержимое страницы crossfade-анимацией. Анимация maximumWidth
+        # сжимала дочерние виджеты и после окончания резко возвращала их размер.
+        self._sidebar.setMinimumWidth(264)
+        self._sidebar.setMaximumWidth(264)
+        self._sidebar.setFixedWidth(264)
+        self._nav_animation = None
 
     def _build_content(self, root_layout) -> None:
         content = QWidget()
+        self._content = content
         layout = QVBoxLayout(content)
         layout.setContentsMargins(26, 18, 26, 8)
         layout.setSpacing(16)
@@ -657,7 +919,53 @@ class MainWindow(QMainWindow):
         self._popup.load_requested.connect(self._load_database)
         self._popup.quit_requested.connect(self._quit_app)
 
-        root_layout.addWidget(content, 1)
+    def _make_stats_placeholder(self) -> QWidget:
+        """Визуальная заглушка экрана статистики (функционал будет позже)."""
+        page = QWidget()
+        page.setObjectName("statsPage")
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(26, 18, 26, 8)
+        layout.setSpacing(16)
+
+        titles = QVBoxLayout()
+        titles.setSpacing(2)
+        title = QLabel("СТАТИСТИКА")
+        title.setObjectName("statsTitle")
+        titles.addWidget(title)
+        subtitle = QLabel("Раздел в разработке — здесь появится подробная аналитика")
+        subtitle.setObjectName("pageSub")
+        titles.addWidget(subtitle)
+        layout.addLayout(titles)
+        layout.addStretch(1)
+
+        grid = QGridLayout()
+        grid.setSpacing(18)
+        self._stats_cards: list[QFrame] = []
+        for idx, (label, value) in enumerate(
+            (
+                ("ВСЕГО ЗА НЕДЕЛЮ", "23 ч 58 м"),
+                ("САМОЕ АКТИВНОЕ", "OpenCode"),
+                ("СРЕДНЕЕ В ДЕНЬ", "3 ч 25 м"),
+            )
+        ):
+            card = QFrame()
+            card.setObjectName("statsCard")
+            card.setMinimumHeight(120)
+            card_layout = QVBoxLayout(card)
+            card_layout.setContentsMargins(20, 16, 20, 16)
+            card_layout.setSpacing(6)
+            cap = QLabel(label)
+            cap.setObjectName("statsCardCaption")
+            val = QLabel(value)
+            val.setObjectName("statsCardValue")
+            card_layout.addWidget(cap)
+            card_layout.addWidget(val)
+            card_layout.addStretch(1)
+            grid.addWidget(card, 0, idx)
+            self._stats_cards.append(card)
+        layout.addLayout(grid)
+        layout.addStretch(1)
+        return page
 
     def _show_app_menu(self) -> None:
         corner = self._profile_btn.mapToGlobal(
@@ -1838,6 +2146,9 @@ class MainWindow(QMainWindow):
             f"background: {theme.pal().accent}; border-radius: 4px;"
         )
         self._popup.retheme()
+        for button in self._nav_buttons.values():
+            button.retheme()
+        self._nav_rail.update()
         for card in self._cards.values():
             card.update()
             card.chart.update()

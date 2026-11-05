@@ -158,8 +158,13 @@ def smooth_path(pts: list[QPointF]) -> QPainterPath:
 def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
     if color is None:
         color = theme.pal().text2
-    scale = 3
-    px = size * scale
+    # Рендер в 3× для чёткости. Важно: масштаб сетки привязан к размеру
+    # холста (16 условных единиц = весь холст). Раньше scale был константой,
+    # и при size != 16 контент занимал только левый верхний угол холста —
+    # иконки «уезжали» из центра кнопки.
+    render_scale = 3
+    px = size * render_scale
+    scale = px / 16.0
     pm = QPixmap(px, px)
     pm.fill(Qt.transparent)
     painter = QPainter(pm)
@@ -187,11 +192,33 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
         path.closeSubpath()
         painter.drawPath(path)
     elif kind == "settings":
-        for y, kx in ((4.2, 10.4), (8.0, 5.6), (11.8, 11.0)):
-            painter.drawLine(pt(2.6, y), pt(13.4, y))
-            painter.setBrush(QColor(color))
-            painter.drawEllipse(pt(kx, y), 1.7 * scale, 1.7 * scale)
-            painter.setBrush(Qt.NoBrush)
+        # Точная геометрия присланного SVG redis-settings.svg: viewBox 24×24,
+        # stroke 1.8, round cap/join, без старой «линейной» шестерёнки.
+        q = px / 24.0
+        painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        gear = QPainterPath()
+        points = (
+            (8.939, 4.609), (9.795, 4.310), (10.092, 2.184),
+            (13.908, 2.184), (14.205, 4.310), (15.061, 4.609),
+            (15.878, 5.003), (17.592, 3.710), (20.290, 6.408),
+            (18.997, 8.122), (19.391, 8.939), (19.690, 9.795),
+            (21.816, 10.092), (21.816, 13.908), (19.690, 14.205),
+            (19.391, 15.061), (18.997, 15.878), (20.290, 17.592),
+            (17.592, 20.290), (15.878, 18.997), (15.061, 19.391),
+            (14.205, 19.690), (13.908, 21.816), (10.092, 21.816),
+            (9.795, 19.690), (8.939, 19.391), (8.122, 18.997),
+            (6.408, 20.290), (3.710, 17.592), (5.003, 15.878),
+            (4.609, 15.061), (4.310, 14.205), (2.184, 13.908),
+            (2.184, 10.092), (4.310, 9.795), (4.609, 8.939),
+            (5.003, 8.122), (3.710, 6.408), (6.408, 3.710),
+            (8.122, 5.003),
+        )
+        gear.moveTo(points[0][0] * q, points[0][1] * q)
+        for x, y in points[1:]:
+            gear.lineTo(x * q, y * q)
+        gear.closeSubpath()
+        painter.drawPath(gear)
+        painter.drawEllipse(QRectF(8.8 * q, 8.8 * q, 6.4 * q, 6.4 * q))
     elif kind == "upload":
         painter.drawLine(pt(8, 13.2), pt(8, 4.2))
         painter.drawLine(pt(4.6, 7.4), pt(8, 4.0))
@@ -225,6 +252,43 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
         painter.drawEllipse(pt(8, 8), 5.6 * scale, 5.6 * scale)
         painter.drawLine(pt(8, 7.4), pt(8, 11.4))
         painter.drawPoint(pt(8, 5.0))
+    elif kind == "apps":
+        # Сетка 2×2 на 16-unit viewbox; bbox 1.6..14.4 строго центрирован.
+        s = 5.2
+        g = 2.4
+        lo = (16.0 - (2 * s + g)) / 2.0
+        hi = lo + s + g
+        for x, y in ((lo, lo), (hi, lo), (lo, hi), (hi, hi)):
+
+            painter.drawRoundedRect(
+                QRectF(x * scale, y * scale, s * scale, s * scale),
+                1.5 * scale,
+                1.5 * scale,
+            )
+    elif kind == "stats":
+        # Три столбика разной высоты (Lucide "BarChart3"): низ общий на y=19
+        # из 24-й сетки → 13.0 в 16-й, вертикали 9/5/2.8.
+        painter.drawLine(pt(5.0, 13.0), pt(5.0, 9.0))
+        painter.drawLine(pt(8.0, 13.0), pt(8.0, 6.0))
+        painter.drawLine(pt(11.0, 13.0), pt(11.0, 3.4))
+    elif kind == "chat":
+        # Контур сообщения с хвостиком и двумя строками (Lucide "MessageSquareText").
+        path = QPainterPath()
+        # Форма исходно была сдвинута вниз-вправо; координаты сдвинуты
+        # на 1.2 viewBox unit, теперь видимый контур центрирован в 16×16.
+        path.moveTo(pt(3.8, 2.4))
+        path.lineTo(pt(11.4, 2.4))
+        path.quadTo(pt(12.4, 2.4), pt(12.4, 3.4))
+        path.lineTo(pt(12.4, 10.4))
+        path.quadTo(pt(12.4, 11.4), pt(11.4, 11.4))
+        path.lineTo(pt(6.0, 11.4))
+        path.lineTo(pt(3.4, 13.4))
+        path.lineTo(pt(3.4, 11.4))
+        path.lineTo(pt(3.4, 3.4))
+        path.quadTo(pt(3.4, 2.4), pt(3.8, 2.4))
+        painter.drawPath(path)
+        painter.drawLine(pt(5.8, 5.8), pt(10.0, 5.8))
+        painter.drawLine(pt(5.8, 8.2), pt(8.4, 8.2))
     elif kind == "update":
         # Круговая стрелка («обновление»): дуга ~250° + наконечник.
         painter.drawArc(
@@ -234,7 +298,7 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
         painter.drawLine(pt(10.6, 3.5), pt(8.5, 3.1))
         painter.drawLine(pt(10.6, 3.5), pt(11.3, 5.5))
     painter.end()
-    pm.setDevicePixelRatio(scale)
+    pm.setDevicePixelRatio(render_scale)
     return QIcon(pm)
 
 
