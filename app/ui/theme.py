@@ -445,6 +445,15 @@ QFrame#modalPanel {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
         stop:0 $popup, stop:1 $popup2);
 }
+QFrame#whatsnewCard {
+    border-radius: 14px;
+    border: 1px solid $card_border;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 $card, stop:1 $card2);
+}
+QFrame#whatsnewCard QScrollArea {
+    background: transparent;
+}
 QFrame#statBox {
     border-radius: 12px;
     border: 1px solid $card_border;
@@ -841,6 +850,39 @@ QMessageBox QLabel {
     font-size: 14px;
 }
 
+QFrame#settingsNav {
+    background: $sidebar;
+    border-right: 1px solid $sidebar_edge;
+}
+QPushButton#settingsNavBtn {
+    min-height: 38px;
+    text-align: left;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: $text2;
+    font-weight: 600;
+}
+QPushButton#settingsNavBtn:hover {
+    background: rgba($accent_rgb, 8%);
+    color: $text;
+}
+QPushButton#settingsNavBtn:checked {
+    background: rgba($accent_rgb, 16%);
+    border-color: rgba($accent_rgb, 40%);
+    color: $accent;
+}
+QFrame#settingsCard {
+    background: $card;
+    border: 1px solid $sidebar_edge;
+    border-radius: 12px;
+}
+QLabel#settingsCardTitle {
+    color: $text;
+    font-size: 13px;
+    font-weight: 700;
+}
 QFrame#themeSample {
     border: 1px solid $card_border;
     border-radius: 10px;

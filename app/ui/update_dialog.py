@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import (
@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 
 from .. import updater
 from ..updater import ReleaseInfo
+from .widgets import ui_icon
 
 
 class UpdatePanel(QFrame):
@@ -255,26 +256,62 @@ class WhatsNewPanel(QFrame):
         top.addWidget(close_btn)
         layout.addLayout(top)
 
-        notes_area = QScrollArea()
-        notes_area.setWidgetResizable(True)
-        notes_area.setFixedHeight(240)
+        # Карточка «Что нового» — живой статус и единый стиль
+        whatsnew_card = QFrame()
+        whatsnew_card.setObjectName("whatsnewCard")
+        card_layout = QVBoxLayout(whatsnew_card)
+        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.setSpacing(8)
+
+        # Заголовок карточки
+        header = QHBoxLayout()
+        header.setContentsMargins(12, 12, 12, 8)
+        header.setSpacing(8)
+
+        icon = QLabel()
+        icon.setPixmap(ui_icon("info", None, 24).pixmap(QSize(24, 24)))
+        icon.setFixedSize(24, 24)
+        header.addWidget(icon)
+
+        title_label = QLabel("Что нового")
+        title_label.setObjectName("cardName")
+        header.addWidget(title_label)
+        header.addStretch(1)
+
+        header.addWidget(QLabel("v" + version.split(".")[-1] if "." in version else version))
+        header.addWidget(QLabel("Октябрь 2026"))
+        header.addStretch(1)
+
+        card_layout.addLayout(header)
+
+        # Основной текст заметок
+        notes_scroll = QScrollArea()
+        notes_scroll.setWidgetResizable(True)
+        notes_scroll.setFrameShape(QFrame.NoFrame)
+        notes_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
         notes_host = QWidget()
         notes_text = QLabel(notes or "Без описания изменений.")
         notes_text.setObjectName("subtleLabel")
         notes_text.setWordWrap(True)
         notes_text.setTextInteractionFlags(Qt.TextSelectableByMouse)
         notes_layout = QVBoxLayout(notes_host)
-        notes_layout.setContentsMargins(10, 8, 10, 8)
+        notes_layout.setContentsMargins(12, 12, 12, 12)
         notes_layout.addWidget(notes_text)
         notes_layout.addStretch(1)
-        notes_area.setWidget(notes_host)
-        layout.addWidget(notes_area)
+        notes_scroll.setWidget(notes_host)
 
+        card_layout.addWidget(notes_scroll)
+
+        # Нижняя часть — кнопка закрытия
         bottom = QHBoxLayout()
+        bottom.setContentsMargins(12, 8, 12, 12)
         bottom.addStretch(1)
         ok_btn = QPushButton("Закрыть")
         ok_btn.setObjectName("primary")
         ok_btn.setCursor(Qt.PointingHandCursor)
         ok_btn.clicked.connect(self.close_requested)
         bottom.addWidget(ok_btn)
+
+        layout.addWidget(whatsnew_card)
         layout.addLayout(bottom)
