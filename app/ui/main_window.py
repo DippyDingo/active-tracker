@@ -2510,6 +2510,13 @@ class MainWindow(QMainWindow):
         release = self._update_available
         if release is None:
             return
+        # Если автообновление уже успело начать фоновую загрузку, передаём
+        # управление пользователю: ручная кнопка в панели должна запускать
+        # загрузку с первого нажатия, а не получать «already-downloading».
+        if self._silent_task is not None:
+            self._silent_task.cancel()
+            self._silent_task.wait(1500)
+            self._silent_task = None
         self._popup.hide()
         can, reason = updater.can_self_update()
         panel = UpdatePanel(release, self._update_notes, can, reason, self)

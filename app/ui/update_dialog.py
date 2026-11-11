@@ -216,8 +216,11 @@ class UpdatePanel(QFrame):
             self._status.setText("Скачивание отменено.")
             self._set_state("idle")
         elif message == "already-downloading":
-            self._status.setText("Загрузка уже идёт — подождите завершения.")
-            self._set_state("idle")
+            # Фоновая загрузка отменяется перед открытием панели. Если гонка
+            # всё же произошла, оставляем понятное состояние повторной попытки
+            # без ложного сообщения о уже начавшемся ожидании.
+            self._status.setText("Не удалось начать загрузку. Нажмите «Повторить».")
+            self._set_state("error")
         else:
             self._status.setText(f"Не удалось скачать: {message}")
             self._set_state("error")
