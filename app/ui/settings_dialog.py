@@ -1,9 +1,10 @@
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QEvent, QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
     QLayout,
+    QButtonGroup,
     QPushButton,
     QSpinBox,
     QStackedWidget,
@@ -36,12 +37,13 @@ class _SectionCard(QFrame):
         super().__init__(parent)
         self.setObjectName("settingsCard")
         lay = QHBoxLayout(self)
-        lay.setContentsMargins(16, 12, 16, 12)
-        lay.setSpacing(10)
+        lay.setContentsMargins(20, 16, 20, 16)
+        lay.setSpacing(16)
         texts = QVBoxLayout()
-        texts.setSpacing(2)
+        texts.setSpacing(5)
         t = QLabel(title)
         t.setObjectName("settingsCardTitle")
+        t.setWordWrap(True)
         texts.addWidget(t)
         if note:
             n = QLabel(note)
@@ -50,6 +52,89 @@ class _SectionCard(QFrame):
             texts.addWidget(n)
         lay.addLayout(texts, 1)
         self.texts = texts
+
+
+class _ThemeOption(QPushButton):
+    """Theme option with a compact preview of the application palette."""
+
+    def __init__(self, palette: "theme.Palette", parent=None):
+        super().__init__(parent)
+        self.setObjectName("themeOption")
+        self.setCheckable(True)
+        self.setCursor(Qt.PointingHandCursor)
+        row = QHBoxLayout(self)
+        row.setContentsMargins(14, 10, 16, 10)
+        row.setSpacing(14)
+        row.addWidget(self._make_preview(palette), 0, Qt.AlignVCenter)
+
+        text = QVBoxLayout()
+        text.setSpacing(2)
+        title = QLabel(palette.title)
+        title.setObjectName("themeOptionTitle")
+        subtitle = QLabel("Светлая тема" if palette.is_light else "Тёмная тема")
+        subtitle.setObjectName("themeOptionNote")
+        text.addWidget(title)
+        text.addWidget(subtitle)
+        row.addLayout(text, 1)
+
+        self._check = QLabel("✓")
+        self._check.setObjectName("themeOptionCheck")
+        self._check.setAlignment(Qt.AlignCenter)
+        self._check.setFixedSize(22, 22)
+        row.addWidget(self._check)
+        self.toggled.connect(self._sync_check)
+        self._sync_check(self.isChecked())
+
+    @staticmethod
+    def _make_preview(palette: "theme.Palette") -> QFrame:
+        preview = QFrame()
+        preview.setObjectName("themePreview")
+        preview.setFixedSize(82, 52)
+        preview.setStyleSheet(
+            f"QFrame#themePreview {{ background:{palette.bg}; border:1px solid {palette.border}; border-radius:7px; }}"
+        )
+        layout = QHBoxLayout(preview)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(4)
+        sidebar = QFrame()
+        sidebar.setFixedWidth(15)
+        sidebar.setStyleSheet(f"background:{palette.sidebar}; border-radius:3px;")
+        side_layout = QVBoxLayout(sidebar)
+        side_layout.setContentsMargins(3, 5, 3, 5)
+        side_layout.setSpacing(3)
+        for index in range(3):
+            mark = QFrame()
+            mark.setFixedSize(8, 3)
+            mark.setStyleSheet(
+                f"background:{palette.accent if index == 0 else palette.text3}; border-radius:1px;"
+            )
+            side_layout.addWidget(mark)
+        side_layout.addStretch(1)
+        layout.addWidget(sidebar)
+
+        content = QVBoxLayout()
+        content.setContentsMargins(0, 0, 0, 0)
+        content.setSpacing(4)
+        for index in range(2):
+            card = QFrame()
+            card.setStyleSheet(f"background:{palette.card}; border-radius:3px;")
+            card_layout = QVBoxLayout(card)
+            card_layout.setContentsMargins(5, 4, 5, 4)
+            card_layout.setSpacing(3)
+            bar = QFrame()
+            bar.setFixedSize(18 if index == 0 else 13, 3)
+            bar.setStyleSheet(f"background:{palette.text2}; border-radius:1px;")
+            line = QFrame()
+            line.setFixedSize(31 if index == 0 else 23, 2)
+            line.setStyleSheet(f"background:{palette.accent}; border-radius:1px;")
+            card_layout.addWidget(bar)
+            card_layout.addWidget(line)
+            content.addWidget(card, 1)
+        layout.addLayout(content, 1)
+        return preview
+
+    def _sync_check(self, checked: bool) -> None:
+        self._check.setVisible(checked)
 
 
 class SettingsPanel(QFrame):
@@ -73,7 +158,7 @@ class SettingsPanel(QFrame):
     ):
         super().__init__(parent)
         self.setObjectName("modalPanel")
-        self.setFixedSize(640, 520)
+        self.setFixedSize(700, 680)
         self._theme_choice = theme_key if theme_key in theme.PALETTES else theme.DEFAULT_THEME
         self._theme_initial = self._theme_choice
         self._committed = False
@@ -86,15 +171,15 @@ class SettingsPanel(QFrame):
         # ------------------------------------------------- левое меню
         sidebar = QFrame()
         sidebar.setObjectName("settingsNav")
-        sidebar.setFixedWidth(176)
+        sidebar.setFixedWidth(190)
         nav = QVBoxLayout(sidebar)
-        nav.setContentsMargins(12, 18, 8, 18)
-        nav.setSpacing(4)
+        nav.setContentsMargins(16, 22, 12, 20)
+        nav.setSpacing(6)
 
         brand = QLabel("Настройки")
         brand.setObjectName("modalTitle")
         nav.addWidget(brand)
-        nav.addSpacing(10)
+        nav.addSpacing(12)
 
         self._nav_buttons: dict[str, _NavRow] = {}
         for key, icon_name, label in (
@@ -115,12 +200,25 @@ class SettingsPanel(QFrame):
         quit_btn = _NavRow("power_exit", "Выход")
         quit_btn.setObjectName("settingsQuitBtn")
         quit_btn.setCheckable(False)
+        quit_btn.setIcon(ui_icon("power_exit", theme.pal().text2, size=18))
+        self._quit_btn = quit_btn
+        quit_btn.installEventFilter(self)
         quit_btn.clicked.connect(self.quit_requested.emit)
         nav.addWidget(quit_btn)
-        self._quit_btn = quit_btn
-        version_label = QLabel(f"REDIS v{APP_VERSION}")
-        version_label.setObjectName("mutedLabel")
-        nav.addWidget(version_label)
+        version_row = QHBoxLayout()
+        version_row.setContentsMargins(2, 12, 2, 0)
+        version_row.setSpacing(0)
+        version_rule = QFrame()
+        version_rule.setObjectName("settingsVersionRule")
+        version_rule.setFixedWidth(3)
+        version_rule.setFixedHeight(18)
+        version_label = QLabel(f"REDIS  {APP_VERSION}")
+        version_label.setObjectName("settingsVersion")
+        version_row.addWidget(version_rule)
+        version_row.addSpacing(9)
+        version_row.addWidget(version_label)
+        version_row.addStretch(1)
+        nav.addLayout(version_row)
         root.addWidget(sidebar)
 
         # ------------------------------------------------- правая часть
@@ -129,18 +227,23 @@ class SettingsPanel(QFrame):
         right.setSpacing(0)
 
         head = QHBoxLayout()
-        head.setContentsMargins(4, 16, 18, 10)
-        self._section_title = QLabel("Общие")
+        head.setContentsMargins(28, 24, 26, 12)
+        self._section_title = QLabel("Учёт времени")
         self._section_title.setObjectName("modalTitle")
         head.addWidget(self._section_title)
         head.addStretch(1)
         close_btn = QPushButton("✕")
         close_btn.setObjectName("deleteBtn")
-        close_btn.setFixedSize(26, 26)
+        close_btn.setFixedSize(32, 32)
         close_btn.setCursor(Qt.PointingHandCursor)
         close_btn.clicked.connect(self.close_requested)
         head.addWidget(close_btn)
         right.addLayout(head)
+
+        self._section_note = QLabel("Настройте правила учёта активности")
+        self._section_note.setObjectName("subtleLabel")
+        self._section_note.setContentsMargins(28, 0, 26, 16)
+        right.addWidget(self._section_note)
 
         self._pages = QStackedWidget()
         self._pages.addWidget(self._make_general_page(threshold_minutes, background_enabled))
@@ -151,8 +254,8 @@ class SettingsPanel(QFrame):
         right.addWidget(self._pages, 1)
 
         footer = QHBoxLayout()
-        footer.setContentsMargins(4, 8, 18, 14)
-        footer.setSpacing(10)
+        footer.setContentsMargins(28, 14, 26, 22)
+        footer.setSpacing(12)
         self._update_status = QLabel("")
         self._update_status.setObjectName("subtleLabel")
         self._update_status.setWordWrap(True)
@@ -165,7 +268,6 @@ class SettingsPanel(QFrame):
         save_btn.setCursor(Qt.PointingHandCursor)
         save_btn.clicked.connect(self._save)
         footer.addWidget(cancel_btn)
-        footer.addSpacing(10)
         footer.addWidget(save_btn)
         right.addLayout(footer)
         root.addLayout(right, 1)
@@ -173,15 +275,25 @@ class SettingsPanel(QFrame):
         self._switch("general")
         self._mark_theme_active()
 
+    def eventFilter(self, watched, event):
+        if watched is self._quit_btn:
+            if event.type() == QEvent.Type.Enter:
+                self._quit_btn.setIcon(ui_icon("power_exit", theme.pal().danger, size=18))
+            elif event.type() == QEvent.Type.Leave:
+                self._quit_btn.setIcon(ui_icon("power_exit", theme.pal().text2, size=18))
+        return super().eventFilter(watched, event)
+
     # ------------------------------------------------- страницы
     def _make_general_page(self, threshold, background) -> QWidget:
         page = QWidget()
         lay = QVBoxLayout(page)
-        lay.setContentsMargins(4, 0, 4, 0)
-        lay.setSpacing(10)
+        lay.setContentsMargins(28, 0, 26, 0)
+        lay.setSpacing(12)
 
         card = _SectionCard("Порог простоя", "Если активности нет дольше порога — простой не засчитывается")
         spin_row = QHBoxLayout()
+        spin_row.setContentsMargins(0, 8, 0, 0)
+        spin_row.setSpacing(12)
         self._spin = QSpinBox()
         self._spin.setRange(1, 240)
         self._spin.setValue(int(threshold))
@@ -203,8 +315,8 @@ class SettingsPanel(QFrame):
     def _make_data_page(self) -> QWidget:
         page = QWidget()
         lay = QVBoxLayout(page)
-        lay.setContentsMargins(4, 0, 4, 0)
-        lay.setSpacing(10)
+        lay.setContentsMargins(28, 0, 26, 0)
+        lay.setSpacing(12)
 
         card = _SectionCard("Выгрузить базу данных", "Сохранить копию данных в файл")
         self._export_btn = QPushButton("Выгрузить базу")
@@ -232,13 +344,15 @@ class SettingsPanel(QFrame):
     def _make_appearance_page(self, show_help: bool) -> QWidget:
         page = QWidget()
         lay = QVBoxLayout(page)
-        lay.setContentsMargins(4, 0, 4, 0)
-        lay.setSpacing(10)
+        lay.setContentsMargins(28, 0, 26, 0)
+        lay.setSpacing(12)
 
         card = _SectionCard("Тема", "Применяется сразу во всём приложении")
         samples_wrap = QVBoxLayout()
-        samples_wrap.setSpacing(6)
-        self._theme_samples: dict[str, QFrame] = {}
+        samples_wrap.setSpacing(8)
+        self._theme_samples: dict[str, _ThemeOption] = {}
+        self._theme_group = QButtonGroup(self)
+        self._theme_group.setExclusive(True)
         for key, p in theme.PALETTES.items():
             samples_wrap.addWidget(self._theme_sample(key, p))
         card.texts.addLayout(samples_wrap)
@@ -257,8 +371,8 @@ class SettingsPanel(QFrame):
     def _make_system_page(self, autostart: bool) -> QWidget:
         page = QWidget()
         lay = QVBoxLayout(page)
-        lay.setContentsMargins(4, 0, 4, 0)
-        lay.setSpacing(10)
+        lay.setContentsMargins(28, 0, 26, 0)
+        lay.setSpacing(12)
         card = _SectionCard(
             "Запуск при входе в Windows",
             "Приложение стартует автоматически при входе в систему",
@@ -272,8 +386,8 @@ class SettingsPanel(QFrame):
     def _make_updates_page(self, autoupdate) -> QWidget:
         page = QWidget()
         lay = QVBoxLayout(page)
-        lay.setContentsMargins(4, 0, 4, 0)
-        lay.setSpacing(10)
+        lay.setContentsMargins(28, 0, 26, 0)
+        lay.setSpacing(12)
 
         card = _SectionCard("Автообновление", "Новые версии скачиваются и устанавливаются автоматически")
         self._autoupdate_toggle = ToggleSwitch(autoupdate)
@@ -313,6 +427,13 @@ class SettingsPanel(QFrame):
         "system": "Система",
         "updates": "Обновления",
     }
+    _SECTION_NOTES = {
+        "general": "Настройте правила учёта активности",
+        "appearance": "Выберите оформление и параметры графиков",
+        "data": "Создавайте резервные копии и восстанавливайте данные",
+        "system": "Управляйте запуском приложения в Windows",
+        "updates": "Контролируйте получение обновлений REDIS",
+    }
 
     def _switch(self, key: str) -> None:
         index = {
@@ -324,40 +445,21 @@ class SettingsPanel(QFrame):
         }.get(key, 0)
         self._pages.setCurrentIndex(index)
         self._section_title.setText(self._SECTION_TITLES[key])
+        self._section_note.setText(self._SECTION_NOTES[key])
         for k, button in self._nav_buttons.items():
             button.setChecked(k == key)
 
     # ------------------------------------------------- темы
-    def _theme_sample(self, key: str, p: "theme.Palette") -> QFrame:
-        sample = QFrame()
-        sample.setObjectName("themeSample")
-        sample.setProperty("active", False)
-        sample.setCursor(Qt.PointingHandCursor)
-        lay = QHBoxLayout(sample)
-        lay.setContentsMargins(8, 6, 10, 6)
-        lay.setSpacing(6)
-        dot = QLabel()
-        dot.setFixedSize(16, 16)
-        dot.setStyleSheet(
-            f"background: {p.bg}; border: 3px solid {p.accent}; border-radius: 8px;"
-        )
-        lay.addWidget(dot, 0, Qt.AlignVCenter)
-        name = QLabel(p.title)
-        name.setObjectName("themeName")
-        lay.addWidget(name, 0, Qt.AlignVCenter)
-        lay.addStretch(1)
-        sample.mouseReleaseEvent = lambda _e, k=key: self._pick_theme(k)
-        self._theme_samples[key] = sample
-        return sample
+    def _theme_sample(self, key: str, p: "theme.Palette") -> _ThemeOption:
+        option = _ThemeOption(p)
+        self._theme_group.addButton(option)
+        option.clicked.connect(lambda _checked=False, k=key: self._pick_theme(k))
+        self._theme_samples[key] = option
+        return option
 
     def _mark_theme_active(self) -> None:
-        for key, sample in self._theme_samples.items():
-            active = key == self._theme_choice
-            if sample.property("active") != active:
-                sample.setProperty("active", active)
-                sample.style().unpolish(sample)
-                sample.style().polish(sample)
-                sample.update()
+        for key, option in self._theme_samples.items():
+            option.setChecked(key == self._theme_choice)
 
     def _pick_theme(self, key: str) -> None:
         if key == self._theme_choice:

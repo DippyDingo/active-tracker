@@ -873,6 +873,31 @@ QPushButton#settingsNavBtn:checked {
     border-color: rgba($accent_rgb, 40%);
     color: $accent;
 }
+QPushButton#settingsQuitBtn {
+    min-height: 42px;
+    background: $soft3;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: $text2;
+    font-weight: 600;
+}
+QPushButton#settingsQuitBtn:hover {
+    background: rgba($danger_rgb, 14%);
+    border-color: rgba($danger_rgb, 38%);
+    color: $danger;
+}
+QPushButton#settingsQuitBtn:pressed {
+    background: rgba($danger_rgb, 22%);
+}
+QLabel#settingsVersion {
+    color: $text3;
+    font-size: 11px;
+    font-weight: 600;
+}
+QFrame#settingsVersionRule {
+    background: $accent;
+    border-radius: 1px;
+}
 QFrame#settingsCard {
     background: $card;
     border: 1px solid $sidebar_edge;
@@ -902,6 +927,43 @@ QLabel#themeName {
 }
 QFrame#themeSample[active="true"] QLabel#themeName {
     color: $text;
+}
+QPushButton#themeOption {
+    min-height: 70px;
+    text-align: left;
+    border: 1px solid $card_border;
+    border-radius: 10px;
+    background: $soft3;
+    color: $text;
+    padding: 0;
+}
+QPushButton#themeOption:hover {
+    border-color: $hover_border;
+    background: $soft4;
+}
+QPushButton#themeOption:checked {
+    border: 2px solid $accent;
+    background: rgba($accent_rgb, 10%);
+}
+QPushButton#themeOption:focus {
+    outline: none;
+}
+QPushButton#themeOption QLabel#themeOptionTitle {
+    color: $text;
+    font-size: 13px;
+    font-weight: 700;
+}
+QPushButton#themeOption QLabel#themeOptionNote {
+    color: $text3;
+    font-size: 11px;
+}
+QPushButton#themeOption QLabel#themeOptionCheck {
+    color: $accent;
+    background: rgba($accent_rgb, 14%);
+    border: 1px solid rgba($accent_rgb, 38%);
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 800;
 }
 
 QProgressBar {
