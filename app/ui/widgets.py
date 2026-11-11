@@ -179,6 +179,9 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
     if kind == "plus":
         painter.drawLine(pt(8, 3.2), pt(8, 12.8))
         painter.drawLine(pt(3.2, 8), pt(12.8, 8))
+    elif kind == "close":
+        painter.drawLine(pt(4.2, 4.2), pt(11.8, 11.8))
+        painter.drawLine(pt(11.8, 4.2), pt(4.2, 11.8))
     elif kind == "minus":
         painter.drawLine(pt(3.2, 8), pt(12.8, 8))
     elif kind == "folder":
@@ -262,6 +265,14 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
         painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         painter.drawLine(QPointF(12 * q, 3 * q), QPointF(12 * q, 12 * q))
         painter.drawArc(QRectF(4 * q, 4 * q, 16 * q, 16 * q), 129 * 16, 282 * 16)
+    elif kind == "system_apps":
+        q = px / 24.0
+        painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawRect(QRectF(3 * q, 4 * q, 18 * q, 13 * q))
+        painter.drawLine(QPointF(8 * q, 20 * q), QPointF(16 * q, 20 * q))
+        painter.drawLine(QPointF(12 * q, 17 * q), QPointF(12 * q, 20 * q))
+        painter.drawLine(QPointF(7 * q, 8 * q), QPointF(17 * q, 8 * q))
+        painter.drawLine(QPointF(7 * q, 12 * q), QPointF(14 * q, 12 * q))
     elif kind == "power":
         painter.setPen(QPen(QColor(color), 1.6 * scale, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         painter.drawArc(int(4.0 * scale), int(4.0 * scale), int(8.0 * scale), int(8.0 * scale), 150 * 16, 240 * 16)

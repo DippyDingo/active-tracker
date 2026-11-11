@@ -28,10 +28,12 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
     QHBoxLayout,
+    QButtonGroup,
     QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -188,6 +190,11 @@ class _Row(QFrame):
         self.btn.clicked.connect(self._on_add)
         layout.addWidget(self.btn)
 
+        self._category = QLabel()
+        self._category.setObjectName("pathLabel")
+        self._category.setText("Системное" if app.category == "system" else "Приложение")
+        texts.insertWidget(1, self._category)
+
     def _on_add(self) -> None:
         if not self.added:
             self.add_clicked.emit(self.app)
@@ -210,6 +217,13 @@ class _Row(QFrame):
             or lowered in self.app.name.lower()
             or lowered in self.app.exe_path.lower()
         )
+
+    def category_matches(self, category: str, show_system: bool) -> bool:
+        if self.app.category == "system":
+            return show_system and category in ("installed", "all")
+        if category == "installed":
+            return self.app.primary
+        return True
 
     def enterEvent(self, event) -> None:
         if not self.added:
@@ -256,11 +270,51 @@ class AddPanel(QFrame):
         self._search = QLineEdit()
         self._search.setObjectName("searchEdit")
         self._search.setPlaceholderText("  Поиск по названию или пути")
-        self._search.setClearButtonEnabled(True)
+        # Qt's native clear button is a platform-specific gray circle. Use a
+        # themed button so the search affordance matches the rest of the UI.
+        self._search.setClearButtonEnabled(False)
         self._search.addAction(magnifier_icon(), QLineEdit.LeadingPosition)
-        self._search.setTextMargins(14, 0, 0, 0)
+        self._search.setTextMargins(14, 0, 38, 0)
+        self._search_clear = QToolButton(self._search)
+        self._search_clear.setObjectName("searchClearButton")
+        self._search_clear.setIcon(ui_icon("close", theme.pal().text3, 16))
+        self._search_clear.setIconSize(QSize(14, 14))
+        self._search_clear.setToolTip("Очистить поиск")
+        self._search_clear.setCursor(Qt.PointingHandCursor)
+        self._search_clear.clicked.connect(self._search.clear)
         self._search.textChanged.connect(self._apply_filter)
+        self._search.textChanged.connect(self._update_search_clear)
+        self._position_search_clear()
+        self._update_search_clear(self._search.text())
         layout.addWidget(self._search)
+
+        filters = QHBoxLayout()
+        filters.setSpacing(6)
+        self._category_filter = QButtonGroup(self)
+        self._category_buttons = {}
+        for label, key in (("Установленные", "installed"), ("Все", "all")):
+            button = QPushButton(label)
+            button.setObjectName("filterSegment")
+            button.setCheckable(True)
+            button.setCursor(Qt.PointingHandCursor)
+            button.setProperty("filterKey", key)
+            button.clicked.connect(lambda _checked=False, value=key: self._set_category_filter(value))
+            self._category_filter.addButton(button)
+            self._category_buttons[key] = button
+            filters.addWidget(button)
+        self._category_buttons["installed"].setChecked(True)
+        filters.addStretch(1)
+        self._system_btn = QPushButton()
+        self._system_btn.setObjectName("systemToggle")
+        self._system_btn.setIcon(ui_icon("system_apps"))
+        self._system_btn.setIconSize(QSize(18, 18))
+        self._system_btn.setFixedSize(38, 38)
+        self._system_btn.setToolTip("Показать системные приложения")
+        self._system_btn.setCheckable(True)
+        self._system_btn.setCursor(Qt.PointingHandCursor)
+        self._system_btn.toggled.connect(lambda _v: self._apply_filter(self._search.text()))
+        filters.addWidget(self._system_btn)
+        layout.addLayout(filters)
 
         self._hint = QLabel("Загрузка списка установленных программ...")
         self._hint.setObjectName("subtleLabel")
@@ -306,6 +360,21 @@ class AddPanel(QFrame):
         _active_workers.add(self._worker)
         self._worker.start()
 
+    def _position_search_clear(self) -> None:
+        button = getattr(self, "_search_clear", None)
+        if button is None:
+            return
+        button.setGeometry(self._search.width() - 32, (self._search.height() - 26) // 2, 26, 26)
+
+    def _update_search_clear(self, text: str) -> None:
+        button = getattr(self, "_search_clear", None)
+        if button is not None:
+            button.setVisible(bool(text))
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._position_search_clear()
+
     # ------------------------------------------------------------- фон
     def _paint_bg(self) -> None:
         theme.paint_background(self._scroll)
@@ -322,7 +391,8 @@ class AddPanel(QFrame):
         # повторном открытии. Теперь они остаются в списке и помечаются как
         # добавленные, чтобы пользователь видел полный каталог.
         seen: set[str] = set()
-        for app in apps:
+        priority = {"installed": 0, "system": 1}
+        for app in sorted(apps, key=lambda item: (priority.get(item.category, 3), item.name.lower(), item.exe_path.lower())):
             key = os.path.normcase(app.exe_path)
             if key in seen:
                 continue
@@ -362,20 +432,31 @@ class AddPanel(QFrame):
 
     def _apply_filter(self, text: str) -> None:
         lowered = (text or "").strip().lower()
+        category = self._category_key
+        show_system = self._system_btn.isChecked()
         shown = 0
+        added = 0
         for row in self._rows:
-            match = row.matches(lowered)
+            match = row.matches(lowered) and row.category_matches(category, show_system)
             row.setVisible(match)
             shown += 1 if match else 0
-        added = sum(1 for row in self._rows if row.added)
+            added += 1 if match and row.added else 0
         if self._worker.isRunning() and not self._rows:
             self._hint.setText("Загрузка списка установленных программ...")
         elif lowered:
             self._hint.setText(f"Найдено: {shown}  ·  уже добавлено: {added}")
         else:
             self._hint.setText(
-                f"Доступно приложений: {len(self._rows)}  ·  уже добавлено: {added}"
+                f"Доступно приложений: {shown}  ·  уже добавлено: {added}"
             )
+
+    _category_key = "installed"
+
+    def _set_category_filter(self, category: str) -> None:
+        self._category_key = category
+        for key, button in self._category_buttons.items():
+            button.setChecked(key == category)
+        self._apply_filter(self._search.text())
 
     def _pick_path(self) -> None:
         # Свой тёмный выбор файла вместо QFileDialog: системный диалог

@@ -1,7 +1,10 @@
 import os
 import re
 import winreg
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from threading import Lock
+from time import monotonic
 
 import psutil
 
@@ -23,6 +26,16 @@ _NAME_BLOCKLIST = (
 )
 
 _UNINSTALLER_MARKERS = ("unins", "uninst", "unwise", "unreg", "uninstall", "remove")
+_TECHNICAL_MARKERS = (
+    "update", "updater", "helper", "service", "crash", "report", "repair",
+    "runtime", "redist", "vcredist", "redistributable", "driver", "setup",
+    "installer", "launcher", "bootstrap", "uninstall", "mainten", "telemetry",
+    "webview", "cef", "elevat", "background", "broker", "browser", "repl",
+)
+_TECHNICAL_FOLDERS = ("drivers", "driverstore", "system32", "syswow64", "redist")
+_APP_CACHE_TTL = 45.0
+_app_cache: tuple[float, list["InstalledApp"]] | None = None
+_app_cache_lock = Lock()
 
 
 @dataclass(frozen=True)
@@ -31,6 +44,9 @@ class InstalledApp:
     exe_path: str
     icon_path: str
     icon_index: int
+    category: str = "installed"
+    primary: bool = True
+    source: str = ""
 
 
 def _reg_value(root: int, path: str, name: str):
@@ -53,6 +69,107 @@ def _as_str(value) -> str:
 def _looks_like_uninstaller(path: str) -> bool:
     base = os.path.basename(path).lower()
     return any(base.startswith(m) for m in _UNINSTALLER_MARKERS)
+
+
+def _looks_technical(app: InstalledApp) -> bool:
+    path = os.path.normcase(app.exe_path).replace("/", "\\")
+    base = os.path.splitext(os.path.basename(path))[0].lower()
+    name = app.name.lower()
+    return (
+        any(marker in base or marker in name for marker in _TECHNICAL_MARKERS)
+        or any(f"\\{folder}\\" in path for folder in _TECHNICAL_FOLDERS)
+    )
+
+
+_SOURCE_SCORE = {"registry": 50, "start_menu": 42, "steam": 40, "running": 10}
+_TECHNICAL_SUFFIXES = (
+    "code mode host", "command runner", "computer use swift", "computer use",
+    "browser", "helper", "launcher", "service", "updater", "update",
+    "runtime", "host", "broker", "worker", "crash handler", "reporter",
+)
+_VERSION_RE = re.compile(r"\s+v?\d+(?:[._-]\d+)*", re.I)
+_ARCH_RE = re.compile(r"\s*\([^)]*(?:x?64|x86|32|64|bit)[^)]*\)\s*$", re.I)
+
+
+def _normalized_product_name(name: str) -> str:
+    """Return a stable product key, removing versions and executable roles."""
+    value = re.sub(r"[._-]+", " ", (name or "").lower())
+    value = re.sub(r"\s+", " ", value).strip()
+    value = _ARCH_RE.sub("", value).strip()
+    value = re.sub(r"\s*\([^)]*\)\s*$", "", value).strip()
+    value = _VERSION_RE.sub("", value).strip()
+    changed = True
+    while changed:
+        changed = False
+        for suffix in _TECHNICAL_SUFFIXES:
+            if value.endswith(" " + suffix):
+                value = value[: -len(suffix) - 1].strip()
+                changed = True
+                break
+    return value or "unknown"
+
+
+def _group_key(app: InstalledApp) -> str:
+    name_key = _normalized_product_name(app.name)
+    # DisplayName/FileDescription is the strongest identity. Installed versions
+    # commonly live in different versioned directories, so the directory must
+    # not split otherwise identical products into separate visible entries.
+    if name_key != "unknown":
+        return "name:" + name_key
+
+    # Nameless process-derived candidates still need a little path context to
+    # avoid merging every generic executable into one application.
+    parent = os.path.normcase(os.path.dirname(app.exe_path)).replace("/", "\\")
+    while True:
+        reduced = re.sub(r"\\(?:app|bin|x64|x86|win32|win64|v?\d+(?:\.\d+)*)$", "", parent, flags=re.I)
+        if reduced == parent:
+            break
+        parent = reduced
+    return "name:" + name_key + "|root:" + parent
+
+
+def _main_score(app: InstalledApp) -> tuple[int, int, int, int, int]:
+    base = os.path.splitext(os.path.basename(app.exe_path))[0].lower()
+    name = _normalized_product_name(app.name)
+    technical = _looks_technical(app)
+    exact = int(base.replace("_", " ").replace("-", " ") == name)
+    name_match = int(name and (base in name or name in base))
+    try:
+        size = min(os.path.getsize(app.exe_path), 2_000_000_000)
+    except OSError:
+        size = 0
+    return (
+        int(not technical),
+        _SOURCE_SCORE.get(app.source, 0),
+        exact * 2 + name_match,
+        int(app.category == "game"),
+        size,
+    )
+
+
+def _deduplicate_and_rank(apps: list[InstalledApp]) -> list[InstalledApp]:
+    by_path: dict[str, InstalledApp] = {}
+    for app in apps:
+        key = os.path.normcase(os.path.normpath(app.exe_path))
+        previous = by_path.get(key)
+        if previous is None or _SOURCE_SCORE.get(app.source, 0) > _SOURCE_SCORE.get(previous.source, 0):
+            by_path[key] = app
+
+    groups: dict[str, list[InstalledApp]] = {}
+    for app in by_path.values():
+        groups.setdefault(_group_key(app), []).append(app)
+
+    result: list[InstalledApp] = []
+    for candidates in groups.values():
+        leader = max(candidates, key=_main_score)
+        for app in candidates:
+            category = "system" if app.category == "system" else app.category
+            primary = app is leader and not _looks_technical(app) and category != "system"
+            result.append(InstalledApp(
+                app.name, app.exe_path, app.icon_path, app.icon_index,
+                category, primary, app.source,
+            ))
+    return result
 
 
 def _pick_main_exe(directory: str) -> str:
@@ -104,7 +221,8 @@ def _read_entry(key) -> InstalledApp | None:
         return None
     if not icon_path or not os.path.exists(icon_path):
         icon_path, icon_index = exe_path, 0
-    return InstalledApp(name=name, exe_path=exe_path, icon_path=icon_path, icon_index=icon_index)
+    return InstalledApp(name=name, exe_path=exe_path, icon_path=icon_path, icon_index=icon_index,
+                        category="installed", source="registry")
 
 
 def _raw_value(key, name: str):
@@ -142,6 +260,7 @@ def _registry_apps() -> list[InstalledApp]:
 _GAME_EXE_BLOCKLIST = (
     "unins", "setup", "redist", "vcredist", "directx", "dxsetup", "launcher",
     "crash", "report", "cleanup", "uninstall", "configure", "dotnet", "ue4-prereq",
+    "easyanticheat", "start_protected_game", "unitycrashhandler", "ue4crash",
 )
 
 
@@ -153,36 +272,73 @@ def _pick_game_exe(directory: str, game_name: str) -> str:
     except OSError:
         return ""
     exes = [e for e in entries if e.lower().endswith(".exe")]
-    if not exes:
+    candidates = [(directory, e) for e in exes]
+    # Many Steam games keep the real binary in Game/, Base/Binaries/Win64,
+    # or a similar subdirectory. Keep this bounded so a game cannot cause a
+    # scan of arbitrary user data through a junction or nested runtime folder.
+    try:
+        for dirpath, dirnames, filenames in os.walk(directory):
+            relative_depth = os.path.relpath(dirpath, directory).count(os.sep) + 1
+            if relative_depth > 4:
+                dirnames[:] = []
+                continue
+            dirnames[:] = [d for d in dirnames if d.lower() not in {
+                "redist", "redistributables", "directx", "_commonredist",
+                "easyanticheat", "crashpad", "cef", "node_modules",
+            }]
+            for entry in filenames:
+                if entry.lower().endswith(".exe"):
+                    candidates.append((dirpath, entry))
+    except OSError:
+        pass
+    if not candidates:
         return ""
-    exact = game_name.lower() + ".exe"
-    for e in exes:
-        if e.lower() == exact:
-            return os.path.join(directory, e)
-    filtered = [e for e in exes if not any(m in e.lower() for m in _GAME_EXE_BLOCKLIST)]
-    pool = filtered or exes
-    if len(pool) > 1:
+
+    game_key = re.sub(r"[^a-z0-9]+", "", game_name.lower())
+    def score(item: tuple[str, str]) -> tuple[int, int, int, int]:
+        folder, entry = item
+        base = os.path.splitext(entry)[0].lower()
+        compact = re.sub(r"[^a-z0-9]+", "", base)
+        blocked = any(marker in base for marker in _GAME_EXE_BLOCKLIST)
+        exact = int(compact == game_key or game_key in compact or compact in game_key)
+        depth = folder.count(os.sep) - directory.count(os.sep)
         try:
-            pool.sort(key=lambda e: os.path.getsize(os.path.join(directory, e)), reverse=True)
+            size = min(os.path.getsize(os.path.join(folder, entry)), 2_000_000_000)
         except OSError:
-            pass
-    return os.path.join(directory, pool[0])
+            size = 0
+        return (int(not blocked), exact, -depth, size)
+
+    folder, entry = max(candidates, key=score)
+    return os.path.join(folder, entry)
 
 
 def _steam_games() -> list[InstalledApp]:
-    steam_path = _as_str(_reg_value(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Valve\Steam", "SteamPath"))
+    steam_paths = [
+        _as_str(_reg_value(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Valve\Steam", "SteamPath")),
+        _as_str(_reg_value(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Valve\Steam", "InstallPath")),
+        _as_str(_reg_value(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath")),
+    ]
+    steam_path = next((path for path in steam_paths if path), "")
     if not steam_path:
         return []
     steam_path = steam_path.replace("/", os.sep)
-    libraries: list[str] = []
+    libraries: list[str] = [steam_path]
     vdf_path = os.path.join(steam_path, "steamapps", "libraryfolders.vdf")
     try:
         with open(vdf_path, encoding="utf-8", errors="ignore") as f:
-            libraries = re.findall(r'"path"\s+"([^"]+)"', f.read())
+            libraries.extend(re.findall(r'"path"\s+"([^"]+)"', f.read()))
     except OSError:
-        libraries = []
-    if not libraries and os.path.isdir(steam_path):
-        libraries = [steam_path]
+        pass
+
+    normalized_libraries: list[str] = []
+    seen_libraries: set[str] = set()
+    for library in libraries:
+        library = library.replace("\\\\", "\\").replace("/", "\\")
+        key = os.path.normcase(os.path.normpath(library))
+        if key not in seen_libraries and os.path.isdir(library):
+            seen_libraries.add(key)
+            normalized_libraries.append(library)
+    libraries = normalized_libraries
 
     games: list[InstalledApp] = []
     seen: set[str] = set()
@@ -215,7 +371,8 @@ def _steam_games() -> list[InstalledApp]:
             if key in seen:
                 continue
             seen.add(key)
-            games.append(InstalledApp(name=game_name, exe_path=exe, icon_path=exe, icon_index=0))
+            games.append(InstalledApp(name=game_name, exe_path=exe, icon_path=exe, icon_index=0,
+                                      category="game", source="steam"))
     return games
 
 
@@ -257,6 +414,8 @@ def _start_menu_apps() -> list[InstalledApp]:
                             exe_path=target,
                             icon_path=target,
                             icon_index=0,
+                            category="installed",
+                            source="start_menu",
                         )
                     )
         del shell
@@ -282,23 +441,51 @@ def _running_apps() -> list[InstalledApp]:
                 continue
             if not exe or not os.path.isfile(exe):
                 continue
-            if os.path.normcase(exe).startswith(windows_dir + os.sep):
-                continue
-            if _looks_like_uninstaller(exe):
+            is_system = os.path.normcase(exe).startswith(windows_dir + os.sep)
+            if _looks_like_uninstaller(exe) and not is_system:
                 continue
             base = os.path.basename(exe)
             if base.lower() in ("explorer.exe", "searchhost.exe", "applicationframehost.exe"):
                 continue
             name = get_file_description(exe) or os.path.splitext(base)[0]
-            apps.append(InstalledApp(name=name, exe_path=exe, icon_path=exe, icon_index=0))
+            apps.append(InstalledApp(name=name, exe_path=exe, icon_path=exe, icon_index=0,
+                                     category="system" if is_system else "installed", source="running"))
     except Exception:
         pass
     return apps
 
 
 def get_installed_apps() -> list[InstalledApp]:
-    found: dict[str, InstalledApp] = {}
-    sources = _registry_apps() + _start_menu_apps() + _steam_games() + _running_apps()
-    for app in sources:
-        found.setdefault(os.path.normcase(app.exe_path), app)
-    return sorted(found.values(), key=lambda a: a.name.lower())
+    global _app_cache
+    now = monotonic()
+    with _app_cache_lock:
+        if _app_cache is not None and now - _app_cache[0] < _APP_CACHE_TTL:
+            return list(_app_cache[1])
+
+    # Registry, Start Menu, Steam and running processes are independent. Steam
+    # is the slowest source, so running them concurrently removes its latency
+    # from the critical path of the other three sources.
+    source_functions = (_registry_apps, _start_menu_apps, _steam_games, _running_apps)
+    with ThreadPoolExecutor(max_workers=len(source_functions), thread_name_prefix="app-scan") as pool:
+        futures = [pool.submit(function) for function in source_functions]
+        sources = [app for future in futures for app in future.result()]
+    apps = _deduplicate_and_rank(sources)
+    result = sorted(
+        apps,
+        key=lambda a: (
+            a.category == "system",
+            not a.primary,
+            a.name.lower(),
+            a.exe_path.lower(),
+        ),
+    )
+    with _app_cache_lock:
+        _app_cache = (monotonic(), result)
+    return list(result)
+
+
+def clear_installed_apps_cache() -> None:
+    """Force the next add-apps dialog to rescan installed software."""
+    global _app_cache
+    with _app_cache_lock:
+        _app_cache = None

@@ -642,6 +642,22 @@ QLineEdit#searchEdit {
     border-radius: 16px;
     padding: 7px 16px;
 }
+QToolButton#searchClearButton {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+}
+QToolButton#searchClearButton:hover {
+    border-color: rgba($accent_rgb, 46%);
+    background: rgba($accent_rgb, 15%);
+}
+QToolButton#searchClearButton:pressed {
+    border-color: $accent;
+    background: rgba($accent_rgb, 25%);
+}
 QSpinBox::up-button, QSpinBox::down-button {
     background: $soft8;
     border: none;
@@ -837,6 +853,42 @@ QPushButton#settingsNavBtn:hover {
 QPushButton#settingsNavBtn:checked {
     background: rgba($accent_rgb, 16%);
     border-color: rgba($accent_rgb, 40%);
+    color: $accent;
+}
+QPushButton#systemToggle {
+    min-width: 38px;
+    max-width: 38px;
+    min-height: 38px;
+    max-height: 38px;
+    padding: 0;
+    border: 1px solid $card_border;
+    border-radius: 10px;
+    background: $soft3;
+}
+QPushButton#systemToggle:hover {
+    border-color: $hover_border;
+    background: $soft4;
+}
+QPushButton#systemToggle:checked {
+    border-color: $accent;
+    background: rgba($accent_rgb, 14%);
+}
+QPushButton#filterSegment {
+    min-height: 38px;
+    padding: 0 18px;
+    border: 1px solid $card_border;
+    border-radius: 9px;
+    background: $soft3;
+    color: $text2;
+    font-weight: 600;
+}
+QPushButton#filterSegment:hover {
+    border-color: $hover_border;
+    color: $text;
+}
+QPushButton#filterSegment:checked {
+    border-color: $accent;
+    background: rgba($accent_rgb, 14%);
     color: $accent;
 }
 QPushButton#settingsQuitBtn {

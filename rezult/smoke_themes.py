@@ -116,7 +116,6 @@ for key in theme.PALETTES:
     rc.set_series(values, labels, labels, min_visible=4)
     pm_rc = render(rc)
     check(pm_rc.width() == 560, f"{key}: RangeChart не отрендерился")
-
     # Токены для painted-кода существуют и валидны
     for token in (
         "chart_line", "chart_fill_top", "chart_fill_bottom", "chart_dim",
