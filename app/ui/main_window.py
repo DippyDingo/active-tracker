@@ -7,7 +7,6 @@ from datetime import date, datetime, timedelta
 from PySide6.QtCore import (
     QEasingCurve,
     QEvent,
-    QParallelAnimationGroup,
     QPoint,
     QPropertyAnimation,
     QRectF,
@@ -84,7 +83,6 @@ from .widgets import (
     InlineEdit,
     SidebarItem,
     magnifier_icon,
-    menu_icon,
     ui_icon,
 )
 
@@ -136,147 +134,6 @@ class SearchEdit(QLineEdit):
 
     def retheme(self) -> None:
         self._icon_action.setIcon(magnifier_icon())
-
-
-class _PopupItem(QFrame):
-    clicked = Signal()
-
-    def __init__(self, icon, text, parent=None):
-        super().__init__(parent)
-        self.setObjectName("popupItem")
-        self.setCursor(Qt.PointingHandCursor)
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(12, 8, 12, 8)
-        lay.setSpacing(0)
-        # Иконка в фиксированном квадратном контейнере: у всех пунктов одна колонка.
-        icon_box = QLabel()
-        icon_box.setFixedSize(20, 20)
-        icon_box.setAlignment(Qt.AlignCenter)
-        icon_box.setPixmap(icon.pixmap(QSize(18, 18)))
-        lay.addWidget(icon_box, 0, Qt.AlignVCenter)
-        lay.addSpacing(10)
-        lb = QLabel(text)
-        lb.setObjectName("popupItemText")
-        lay.addWidget(lb, 1, Qt.AlignVCenter)
-        self._icon_box = icon_box
-        self._text_label = lb
-
-    def set_icon(self, icon) -> None:
-        self._icon_box.setPixmap(icon.pixmap(QSize(18, 18)))
-
-    def set_text(self, text: str) -> None:
-        self._text_label.setText(text)
-
-    def mouseReleaseEvent(self, event) -> None:
-        if event.button() == Qt.LeftButton:
-            self.clicked.emit()
-        super().mouseReleaseEvent(event)
-
-
-class AppMenuPopup(QFrame):
-    settings_requested = Signal()
-    export_requested = Signal()
-    load_requested = Signal()
-    quit_requested = Signal()
-    update_requested = Signal()
-    whatsnew_requested = Signal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent, Qt.Popup | Qt.FramelessWindowHint | Qt.NoDropShadowWindowHint)
-        self.setObjectName("profilePopup")
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setFixedWidth(286)
-        self._anim = None
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(4)
-
-        self._version_label = QLabel(f"REDIS v{APP_VERSION}")
-        self._version_label.setObjectName("popupVersion")
-        layout.addWidget(self._version_label)
-
-        for text, signal, icon_kind in (
-            ("Настройки", self.settings_requested, "settings"),
-            ("Экспорт базы данных", self.export_requested, "upload"),
-            ("Загрузить базу данных", self.load_requested, "download"),
-        ):
-            item = _PopupItem(ui_icon(icon_kind), text)
-            item.clicked.connect(signal.emit)
-            layout.addWidget(item)
-
-        self._update_item = _PopupItem(ui_icon("update"), "Доступно обновление")
-        self._update_item.clicked.connect(self.update_requested)
-        self._update_item.setVisible(False)
-        layout.addWidget(self._update_item)
-
-        self._whatsnew_item = _PopupItem(ui_icon("info"), "Что нового")
-        self._whatsnew_item.clicked.connect(self.whatsnew_requested)
-        self._whatsnew_item.setVisible(False)
-        layout.addWidget(self._whatsnew_item)
-
-        sep = QFrame()
-        sep.setFixedHeight(1)
-        self._sep = sep
-        layout.addWidget(sep)
-
-        self._quit_item = _PopupItem(ui_icon("power", theme.pal().danger), "Выход")
-        self._quit_item.clicked.connect(self.quit_requested)
-        layout.addWidget(self._quit_item)
-        self.retheme()
-
-    def retheme(self) -> None:
-        self._sep.setStyleSheet(f"background: {theme.pal().card}; border: none;")
-        self._quit_item.set_icon(ui_icon("power", theme.pal().danger))
-        self._update_item.set_icon(ui_icon("update"))
-        self._whatsnew_item.set_icon(ui_icon("info"))
-        self.update()
-
-    def set_update_available(self, version: str | None) -> None:
-        if version:
-            self._update_item.set_text(f"Доступно обновление {version}")
-            self._update_item.setVisible(True)
-        else:
-            self._update_item.setVisible(False)
-
-    def set_whatsnew(self, visible: bool) -> None:
-        self._whatsnew_item.setVisible(visible)
-
-    def paintEvent(self, event) -> None:
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        path = QPainterPath()
-        path.addRoundedRect(0.5, 0.5, self.width() - 1.0, self.height() - 1.0, 12, 12)
-        painter.fillPath(path, theme.color("popup_bg"))
-        painter.setPen(theme.color("popup_border"))
-        painter.drawPath(path)
-        painter.end()
-
-    def popup_at(self, global_bottom_right: QPoint) -> None:
-        self.adjustSize()
-        x = global_bottom_right.x() - self.width()
-        y = global_bottom_right.y() + 8
-        target = QPoint(x, y)
-        self.move(x, y - 10)
-        self.setWindowOpacity(0.0)
-        self.show()
-        self.raise_()
-        if self._anim is not None:
-            self._anim.stop()
-        group = QParallelAnimationGroup(self)
-        move = QPropertyAnimation(self, b"pos")
-        move.setDuration(170)
-        move.setStartValue(self.pos())
-        move.setEndValue(target)
-        move.setEasingCurve(QEasingCurve.OutCubic)
-        fade = QPropertyAnimation(self, b"windowOpacity")
-        fade.setDuration(170)
-        fade.setStartValue(0.0)
-        fade.setEndValue(1.0)
-        group.addAnimation(move)
-        group.addAnimation(fade)
-        self._anim = group
-        group.start()
 
 
 class TitleBarButton(QPushButton):
@@ -366,7 +223,7 @@ class RedisTitleBar(QFrame):
         self.sync_maximize()
 
     def mousePressEvent(self, event) -> None:
-        if self._handle_resize_event(self, event):
+        if self.window()._handle_resize_event(self, event):
             return
         if event.button() == Qt.LeftButton:
             handle = self.window().windowHandle()
@@ -642,10 +499,7 @@ class MainWindow(QMainWindow):
         self.refresh_apps()
         self._on_tick()
 
-        self._popup.update_requested.connect(self._open_update_panel)
-        self._popup.whatsnew_requested.connect(self._open_whats_new)
         if updater.whatsnew_unseen():
-            self._popup.set_whatsnew(True)
             self._title_bar.set_whatsnew_visible(True)
         if self._boot.get("failed_url"):
             self._update_failed_url = self._boot["failed_url"]
@@ -858,17 +712,7 @@ class MainWindow(QMainWindow):
         self._search.textChanged.connect(self._on_filter_changed)
         header.addWidget(self._search)
 
-        self._profile_btn = QPushButton()
-        self._profile_btn.setObjectName("profileBtn")
-        self._profile_btn.setCursor(Qt.PointingHandCursor)
-        self._profile_btn.setFixedSize(36, 36)
-        self._profile_btn.setIcon(menu_icon())
-        self._profile_btn.setIconSize(QSize(18, 18))
-        self._profile_btn.setToolTip("Меню")
-        self._profile_btn.clicked.connect(self._show_app_menu)
-        header.addWidget(self._profile_btn)
-
-        self._badge = QLabel(self._profile_btn)
+        self._badge = QLabel(self)
         self._badge.setFixedSize(9, 9)
         self._badge.setStyleSheet(
             f"background: {theme.pal().accent}; border-radius: 4px;"
@@ -929,11 +773,6 @@ class MainWindow(QMainWindow):
         # Вьюпорт прокрутки создан — закрасить его нативный фон под тему.
         self._apply_window_palette()
 
-        self._popup = AppMenuPopup()
-        self._popup.settings_requested.connect(self._open_settings)
-        self._popup.export_requested.connect(self._export_database)
-        self._popup.load_requested.connect(self._load_database)
-        self._popup.quit_requested.connect(self._quit_app)
 
     def _make_stats_placeholder(self) -> QWidget:
         """Визуальная заглушка экрана статистики (функционал будет позже)."""
@@ -982,12 +821,6 @@ class MainWindow(QMainWindow):
         layout.addLayout(grid)
         layout.addStretch(1)
         return page
-
-    def _show_app_menu(self) -> None:
-        corner = self._profile_btn.mapToGlobal(
-            QPoint(self._profile_btn.width(), self._profile_btn.height())
-        )
-        self._popup.popup_at(corner)
 
     def refresh_apps(self) -> None:
         self.tracker.flush()
@@ -2175,7 +2008,6 @@ class MainWindow(QMainWindow):
         self.refresh_apps()
 
     def _open_settings(self) -> None:
-        self._popup.hide()
         panel = SettingsPanel(
             self.tracker.threshold_minutes(),
             self.tracker.background_counting(),
@@ -2253,11 +2085,9 @@ class MainWindow(QMainWindow):
     def _retheme(self) -> None:
         self._search.retheme()
         self._add_app_btn.retheme()
-        self._profile_btn.setIcon(menu_icon())
         self._badge.setStyleSheet(
             f"background: {theme.pal().accent}; border-radius: 4px;"
         )
-        self._popup.retheme()
         for button in self._nav_buttons.values():
             button.retheme()
         self._nav_rail.update()
@@ -2365,7 +2195,6 @@ class MainWindow(QMainWindow):
         release = self._update_available
         if release is None:
             return
-        self._popup.set_update_available(release.tag)
         can, _reason = updater.can_self_update()
         if self._autoupdate_on() and can:
             self._start_silent_download()
@@ -2517,7 +2346,6 @@ class MainWindow(QMainWindow):
             self._silent_task.cancel()
             self._silent_task.wait(1500)
             self._silent_task = None
-        self._popup.hide()
         can, reason = updater.can_self_update()
         panel = UpdatePanel(release, self._update_notes, can, reason, self)
         panel.install_requested.connect(lambda: self._install_and_restart(panel))
@@ -2556,7 +2384,6 @@ class MainWindow(QMainWindow):
         QApplication.quit()
 
     def _open_whats_new(self) -> None:
-        self._popup.hide()
         info = updater.get_last_update()
         if not info:
             return
@@ -2565,7 +2392,6 @@ class MainWindow(QMainWindow):
 
     def _whatsnew_seen(self) -> None:
         """После просмотра «Что нового» убираем подсказку и из тайтлбара, и из меню."""
-        self._popup.set_whatsnew(False)
         self._title_bar.set_whatsnew_visible(False)
         # Помечаем, что пользователь уже видел notes текущего обновления,
         # чтобы при следующем запуске не показывать снова.

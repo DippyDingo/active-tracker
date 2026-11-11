@@ -594,34 +594,6 @@ QLabel#periodLabel {
     font-size: 12px;
     font-weight: 600;
 }
-QPushButton#profileBtn {
-    background: transparent;
-    border: none;
-    padding: 4px 10px;
-    border-radius: 18px;
-    color: $text;
-    font-weight: 600;
-}
-QPushButton#profileBtn:hover {
-    background: $soft6;
-}
-QFrame#popupItem {
-    background: transparent;
-    border: none;
-    border-radius: 8px;
-}
-QFrame#popupItem:hover {
-    background: rgba($accent_rgb, 10%);
-}
-QLabel#popupItemText {
-    color: $text2;
-    font-weight: 600;
-    background: transparent;
-}
-QFrame#popupItem:hover QLabel#popupItemText {
-    color: $text;
-}
-
 QFrame#addRow {
     border-radius: 10px;
     border: 1px solid transparent;
@@ -835,12 +807,6 @@ QToolTip {
     border-radius: 6px;
 }
 
-QFrame#profilePopup {
-    border-radius: 12px;
-    border: 1px solid $card_border;
-    background: $popup;
-}
-
 QMessageBox {
     background-color: $popup;
 }
@@ -998,12 +964,6 @@ QLabel#updatePlateText {
     color: $text;
     font-size: 13px;
     font-weight: 700;
-}
-QLabel#popupVersion {
-    color: $text3;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 12px;
 }
 """)
 
