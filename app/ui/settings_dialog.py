@@ -63,7 +63,7 @@ class _ThemeOption(QPushButton):
         self.setCheckable(True)
         self.setCursor(Qt.PointingHandCursor)
         row = QHBoxLayout(self)
-        row.setContentsMargins(14, 10, 16, 10)
+        row.setContentsMargins(12, 8, 14, 8)
         row.setSpacing(14)
         row.addWidget(self._make_preview(palette), 0, Qt.AlignVCenter)
 
@@ -349,7 +349,8 @@ class SettingsPanel(QFrame):
 
         card = _SectionCard("Тема", "Применяется сразу во всём приложении")
         samples_wrap = QVBoxLayout()
-        samples_wrap.setSpacing(8)
+        samples_wrap.setContentsMargins(0, 2, 0, 2)
+        samples_wrap.setSpacing(6)
         self._theme_samples: dict[str, _ThemeOption] = {}
         self._theme_group = QButtonGroup(self)
         self._theme_group.setExclusive(True)

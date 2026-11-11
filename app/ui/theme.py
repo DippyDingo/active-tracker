@@ -34,6 +34,12 @@ PALETTES: dict[str, Palette] = {
     p.key: p
     for p in (
         Palette(
+            "redis", "REDIS",
+            "#0A0B16", "#0D0F1C", "#0F111E", "#161824", "#1D1F2E", "#2D2F44",
+            "#FFFFFF", "#94A3B8", "#64748B", "#8B5CF6", "#C026D3", "#FB7185",
+            "#121426", (7, 8, 22, 175), (4, 3, 18, 185), 82, 8,
+        ),
+        Palette(
             "midnight", "Полночь",
             "#0b1220", "#0f172a", "#0f1b2d", "#1e293b", "#243247", "#24344d",
             "#e5e7eb", "#9ca3af", "#6b7280", "#60a5fa", "#22d3ee", "#f87171",
@@ -57,12 +63,6 @@ PALETTES: dict[str, Palette] = {
             "#1e293b", "#55637a", "#8b98ac", "#2f6fed", "#0e8fa8", "#dc2626",
             "#ffffff", (30, 41, 59, 110), (100, 116, 139, 90), 130, 30,
             is_light=True,
-        ),
-        Palette(
-            "redis", "REDIS",
-            "#0A0B16", "#0D0F1C", "#0F111E", "#161824", "#1D1F2E", "#2D2F44",
-            "#FFFFFF", "#94A3B8", "#64748B", "#8B5CF6", "#C026D3", "#FB7185",
-            "#121426", (7, 8, 22, 175), (4, 3, 18, 185), 82, 8,
         ),
     )
 }
@@ -835,6 +835,8 @@ QMessageBox QLabel {
 QFrame#settingsNav {
     background: $sidebar;
     border-right: 1px solid $sidebar_edge;
+    border-top-left-radius: 18px;
+    border-bottom-left-radius: 18px;
 }
 QPushButton#settingsNavBtn {
     min-height: 38px;
@@ -947,17 +949,17 @@ QFrame#themeSample[active="true"] QLabel#themeName {
     color: $text;
 }
 QPushButton#themeOption {
-    min-height: 70px;
+    min-height: 62px;
     text-align: left;
     border: 1px solid $card_border;
     border-radius: 10px;
-    background: $soft3;
+    background: $card;
     color: $text;
     padding: 0;
 }
 QPushButton#themeOption:hover {
     border-color: $hover_border;
-    background: $soft4;
+    background: $card2;
 }
 QPushButton#themeOption:checked {
     border: 2px solid $accent;
