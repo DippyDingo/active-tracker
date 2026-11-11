@@ -366,6 +366,8 @@ class RedisTitleBar(QFrame):
         self.sync_maximize()
 
     def mousePressEvent(self, event) -> None:
+        if self._handle_resize_event(self, event):
+            return
         if event.button() == Qt.LeftButton:
             handle = self.window().windowHandle()
             if handle is not None:
@@ -581,11 +583,17 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("REDIS")
         self.setWindowIcon(theme.load_app_icon())
         self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
-        self.resize(1540, 900)
         # Расчёт: rail 64 + sidebar 264 + content margins 52 +
         # 3 карточки по 300 + два промежутка по 18 = 1298 px.
         # Округляем вверх: заголовок и search не должны конфликтовать.
-        self.setMinimumSize(1320, 760)
+        self._min_window_size = QSize(1320, 760)
+        self.setMinimumSize(self._min_window_size)
+        self._restore_window_size_and_center()
+        self._resize_cursor_widget = None
+        self._resize_cursor_active = False
+        app = QApplication.instance()
+        if app is not None:
+            app.installEventFilter(self)
         # Нативный фон окна под цвет темы: без этого при первом показе и при
         # перестроении карточек мелькает белый HWND/QAbstractScrollArea.
         self._apply_window_palette()
@@ -1307,7 +1315,34 @@ class MainWindow(QMainWindow):
         if hasattr(self, "_grid") and self._current_cols() != self._cols:
             self._relayout_grid()
 
-    _RESIZE_MARGIN = 6
+    # Узкая зона нужна для frameless-окна: широкая зона начинает забирать
+    # наведение у боковой навигации и других элементов у края.
+    _RESIZE_MARGIN = 4
+
+    def _restore_window_size_and_center(self) -> None:
+        """Восстанавливает размер окна и ставит его в центр рабочей области."""
+        cfg = config.read_config()
+        width = max(self.minimumWidth(), int(cfg.get("window_width", self.minimumWidth())))
+        height = max(self.minimumHeight(), int(cfg.get("window_height", self.minimumHeight())))
+        screen = self.screen() or QApplication.primaryScreen()
+        if screen is None:
+            self.resize(width, height)
+            return
+        available = screen.availableGeometry()
+        width = min(width, available.width())
+        height = min(height, available.height())
+        self.resize(width, height)
+        frame = self.frameGeometry()
+        frame.moveCenter(available.center())
+        self.move(frame.topLeft())
+
+    def _save_window_size(self) -> None:
+        if self.isMaximized() or self.isFullScreen():
+            return
+        cfg = config.read_config()
+        cfg["window_width"] = self.width()
+        cfg["window_height"] = self.height()
+        config.write_config(cfg)
 
     def _resize_edges(self, pos) -> Qt.Edges:
         """Стороны окна под курсором для смены размера (frameless)."""
@@ -1325,6 +1360,67 @@ class MainWindow(QMainWindow):
             edges |= Qt.Edge.BottomEdge
         return edges
 
+    def _handle_resize_event(self, obj, event) -> bool:
+        # Глобальный фильтр получает события всех окон приложения. Ресайз
+        # разрешён только для самого главного окна: границы настроек,
+        # статистики и других модальных панелей менять нельзя.
+        if not isinstance(obj, QWidget) or obj.window() is not self:
+            return False
+        if self._overlay is not None and not self._overlay.isHidden():
+            self._clear_resize_cursor()
+            return False
+        # События интерактивных дочерних поверхностей не должны превращаться
+        # в ресайз главного окна. В частности, это левая панель и меню.
+        if event.type() in (QEvent.Type.MouseMove, QEvent.Type.MouseButtonPress):
+            try:
+                global_pos = event.globalPosition().toPoint()
+            except AttributeError:
+                global_pos = event.globalPos()
+            if self.isVisible() and self.frameGeometry().contains(global_pos):
+                local = self.mapFromGlobal(global_pos)
+                edges = self._resize_edges(local)
+                if event.type() == QEvent.Type.MouseMove:
+                    self._update_resize_cursor(edges)
+                elif event.button() == Qt.MouseButton.LeftButton and edges:
+                    handle = self.windowHandle()
+                    if handle is not None and handle.startSystemResize(edges):
+                        return True
+            elif event.type() == QEvent.Type.MouseMove:
+                self._update_resize_cursor(Qt.Edges())
+        return False
+
+    def _update_resize_cursor(self, edges: Qt.Edges) -> None:
+        cursors = {
+            (True, False, False, False): Qt.CursorShape.SizeHorCursor,
+            (False, True, False, False): Qt.CursorShape.SizeHorCursor,
+            (False, False, True, False): Qt.CursorShape.SizeVerCursor,
+            (False, False, False, True): Qt.CursorShape.SizeVerCursor,
+            (True, False, True, False): Qt.CursorShape.SizeFDiagCursor,
+            (False, True, False, True): Qt.CursorShape.SizeFDiagCursor,
+            (False, True, True, False): Qt.CursorShape.SizeBDiagCursor,
+            (True, False, False, True): Qt.CursorShape.SizeBDiagCursor,
+        }
+        key = (
+            bool(edges & Qt.Edge.LeftEdge),
+            bool(edges & Qt.Edge.RightEdge),
+            bool(edges & Qt.Edge.TopEdge),
+            bool(edges & Qt.Edge.BottomEdge),
+        )
+        if edges:
+            cursor = cursors.get(key, Qt.CursorShape.ArrowCursor)
+            if not self._resize_cursor_active:
+                QApplication.setOverrideCursor(cursor)
+                self._resize_cursor_active = True
+            else:
+                QApplication.changeOverrideCursor(cursor)
+        else:
+            self._clear_resize_cursor()
+
+    def _clear_resize_cursor(self) -> None:
+        if self._resize_cursor_active:
+            QApplication.restoreOverrideCursor()
+            self._resize_cursor_active = False
+
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.LeftButton:
             edges = self._resize_edges(event.position().toPoint())
@@ -1335,6 +1431,8 @@ class MainWindow(QMainWindow):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
+        if self._handle_resize_event(self, event):
+            return
         edges = self._resize_edges(event.position().toPoint())
         if edges:
             cursors = {
@@ -1744,6 +1842,8 @@ class MainWindow(QMainWindow):
         self._apply_filter(self._filter)
 
     def eventFilter(self, obj, event) -> bool:
+        if self._handle_resize_event(obj, event):
+            return True
         if isinstance(obj, SidebarItem):
             if self._side_item_event(obj, event):
                 return True
@@ -2770,6 +2870,7 @@ class MainWindow(QMainWindow):
         self.activateWindow()
 
     def closeEvent(self, event) -> None:
+        self._save_window_size()
         if self._force_quit:
             event.accept()
             return
