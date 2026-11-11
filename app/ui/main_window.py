@@ -865,11 +865,24 @@ class MainWindow(QMainWindow):
         self._names.clear()
 
         for row in apps:
+            actual_name = win32_utils.get_file_description(row.exe_path)
+            if actual_name and actual_name != row.name:
+                self.db.update_app_name(row.id, actual_name)
+                row = replace(row, name=actual_name)
             self._rows_meta[row.id] = row
             self._names[row.id] = row.name
             self._order.append(row.id)
 
-            card = AppCard(row.id, row.name, row.exe_path, row.icon)
+            icon = row.icon
+            icon_source = row.icon_source or row.exe_path
+            icon_mtime = Database._file_mtime(icon_source)
+            if icon is None or icon_source != row.exe_path or icon_mtime != row.icon_mtime:
+                icon = win32_utils.extract_icon_png(row.exe_path, 0, 64)
+                if icon:
+                    self.db.update_app_icon(row.id, icon, row.exe_path)
+                    row = replace(row, icon=icon, icon_source=row.exe_path, icon_mtime=icon_mtime)
+                    self._rows_meta[row.id] = row
+            card = AppCard(row.id, row.name, row.exe_path, icon)
             card.delete_requested.connect(self._confirm_delete)
             card.clicked.connect(self._on_card_clicked)
             card.installEventFilter(self)
@@ -1994,7 +2007,7 @@ class MainWindow(QMainWindow):
             icon_bytes = win32_utils.extract_icon_png(app.icon_path, app.icon_index, 64)
         except Exception:
             icon_bytes = None
-        new_id = self.db.add_app(app.name, app.exe_path, icon_bytes)
+        new_id = self.db.add_app(app.name, app.exe_path, icon_bytes, app.icon_path)
         if new_id is None:
             # Путь уже есть в базе — не создаём ещё одну карточку.
             self.refresh_apps()
@@ -2580,8 +2593,17 @@ class MainWindow(QMainWindow):
             return
         if not self.db.update_app_path(app_id, normalized):
             return
+        icon = win32_utils.extract_icon_png(normalized, 0, 64)
+        if icon:
+            self.db.update_app_icon(app_id, icon, normalized)
         self.tracker.flush()
-        updated = replace(row, exe_path=normalized)
+        updated = replace(
+            row,
+            exe_path=normalized,
+            icon=icon or row.icon,
+            icon_source=normalized if icon else row.icon_source,
+            icon_mtime=Database._file_mtime(normalized) if icon else row.icon_mtime,
+        )
         self._rows_meta[app_id] = updated
         self._names[app_id] = updated.name
         card = self._cards.get(app_id)

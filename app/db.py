@@ -18,6 +18,8 @@ class AppRow:
     exe_path: str
     icon: bytes | None
     category_id: int | None = None
+    icon_source: str = ""
+    icon_mtime: int = 0
 
 
 _SCHEMA = """
@@ -26,6 +28,8 @@ CREATE TABLE IF NOT EXISTS apps (
     name TEXT NOT NULL,
     exe_path TEXT NOT NULL UNIQUE COLLATE NOCASE,
     icon BLOB,
+    icon_source TEXT NOT NULL DEFAULT '',
+    icon_mtime INTEGER NOT NULL DEFAULT 0,
     sort_order INTEGER NOT NULL DEFAULT 0,
     added_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -78,6 +82,12 @@ class Database:
             self._conn.execute(
                 "ALTER TABLE apps ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL"
             )
+            self._conn.commit()
+        if "icon_source" not in cols:
+            self._conn.execute("ALTER TABLE apps ADD COLUMN icon_source TEXT NOT NULL DEFAULT ''")
+            self._conn.commit()
+        if "icon_mtime" not in cols:
+            self._conn.execute("ALTER TABLE apps ADD COLUMN icon_mtime INTEGER NOT NULL DEFAULT 0")
             self._conn.commit()
 
     @staticmethod
@@ -175,13 +185,15 @@ class Database:
                 pass
             return False
 
-    def add_app(self, name: str, exe_path: str, icon: bytes | None = None) -> int | None:
+    def add_app(self, name: str, exe_path: str, icon: bytes | None = None,
+                icon_source: str = "") -> int | None:
         try:
             with self._conn:
                 cur = self._conn.execute(
-                    """INSERT INTO apps(name, exe_path, icon, sort_order)
-                       VALUES(?,?,?, COALESCE((SELECT MAX(sort_order) FROM apps), 0) + 1)""",
-                    (name, exe_path, sqlite3.Binary(icon) if icon else None),
+                    """INSERT INTO apps(name, exe_path, icon, icon_source, icon_mtime, sort_order)
+                       VALUES(?,?,?,?,?, COALESCE((SELECT MAX(sort_order) FROM apps), 0) + 1)""",
+                    (name, exe_path, sqlite3.Binary(icon) if icon else None,
+                     icon_source or exe_path, self._file_mtime(icon_source or exe_path)),
                 )
             return int(cur.lastrowid)
         except sqlite3.IntegrityError:
@@ -201,7 +213,7 @@ class Database:
 
     def list_apps(self) -> list[AppRow]:
         rows = self._conn.execute(
-            """SELECT id, name, exe_path, icon, category_id
+            """SELECT id, name, exe_path, icon, category_id, icon_source, icon_mtime
                FROM apps ORDER BY sort_order, name COLLATE NOCASE"""
         ).fetchall()
         return [
@@ -211,6 +223,8 @@ class Database:
                 r["exe_path"],
                 bytes(r["icon"]) if r["icon"] else None,
                 r["category_id"],
+                r["icon_source"],
+                int(r["icon_mtime"] or 0),
             )
             for r in rows
         ]
@@ -229,6 +243,29 @@ class Database:
         except sqlite3.IntegrityError:
             # Путь уже привязан к другому приложению.
             return False
+
+    @staticmethod
+    def _file_mtime(path: str) -> int:
+        try:
+            return int(Path(path).stat().st_mtime_ns)
+        except OSError:
+            return 0
+
+    def update_app_icon(self, app_id: int, icon: bytes, source: str) -> bool:
+        with self._conn:
+            cur = self._conn.execute(
+                "UPDATE apps SET icon=?, icon_source=?, icon_mtime=? WHERE id=?",
+                (sqlite3.Binary(icon), source, self._file_mtime(source), app_id),
+            )
+        return cur.rowcount > 0
+
+    def update_app_name(self, app_id: int, name: str) -> bool:
+        name = str(name or "").strip()
+        if not name:
+            return False
+        with self._conn:
+            cur = self._conn.execute("UPDATE apps SET name=? WHERE id=?", (name, app_id))
+        return cur.rowcount > 0
 
     def app_path_taken(self, exe_path: str, except_id: int | None = None) -> bool:
         """Проверяет путь без учёта регистра Windows."""

@@ -95,13 +95,14 @@ def get_file_description(path: str) -> str:
                 pairs = [(p.wLanguage, p.wCodePage) for p in table]
         if not pairs:
             pairs = [(0x0409, 0x04B0), (0x0419, 0x04E3), (0x0419, 0x04B0)]
-        for lang, codepage in pairs:
-            subkey = f"\\StringFileInfo\\{lang:04x}{codepage:04x}\\FileDescription"
-            if version_dll.VerQueryValueW(buffer, subkey, ctypes.byref(ptr), ctypes.byref(length)) and length.value > 0:
-                nchars = min(length.value, size)
-                text = ctypes.wstring_at(ptr.value, nchars).split("\x00")[0].strip()
-                if text:
-                    return text
+        for field in ("FileDescription", "ProductName"):
+            for lang, codepage in pairs:
+                subkey = f"\\StringFileInfo\\{lang:04x}{codepage:04x}\\{field}"
+                if version_dll.VerQueryValueW(buffer, subkey, ctypes.byref(ptr), ctypes.byref(length)) and length.value > 0:
+                    nchars = min(length.value, size)
+                    text = ctypes.wstring_at(ptr.value, nchars).split("\x00")[0].strip()
+                    if text:
+                        return text
         return ""
     except Exception:
         return ""
