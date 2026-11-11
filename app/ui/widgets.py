@@ -227,6 +227,41 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
         painter.drawLine(pt(8, 2.8), pt(8, 11.8))
         painter.drawLine(pt(4.6, 8.6), pt(8, 12.0))
         painter.drawLine(pt(11.4, 8.6), pt(8, 12.0))
+    elif kind in ("export_database", "import_database"):
+        # Точная геометрия присланных SVG (viewBox 24×24, stroke 1.8):
+        # цилиндр базы + стрелка выгрузки/загрузки. Все координаты в 24-сетке.
+        q = px / 24.0
+        painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        # Цилиндр: верхний эллипс, левая стенка, нижняя и средняя дуги.
+        painter.drawEllipse(QRectF(3 * q, 3 * q, 12 * q, 5 * q))
+        wall = QPainterPath()
+        wall.moveTo(3 * q, 5.5 * q)
+        wall.lineTo(3 * q, 16.5 * q)
+        wall.cubicTo(3 * q, 17.88 * q, 5.69 * q, 19.0 * q, 9.0 * q, 19.0 * q)
+        wall.cubicTo(10.02 * q, 19.0 * q, 10.98 * q, 18.89 * q, 11.82 * q, 18.7 * q)
+        painter.drawPath(wall)
+        mid = QPainterPath()
+        mid.moveTo(3 * q, 11.0 * q)
+        mid.cubicTo(3 * q, 12.38 * q, 5.69 * q, 13.5 * q, 9.0 * q, 13.5 * q)
+        mid.cubicTo(9.76 * q, 13.5 * q, 10.49 * q, 13.44 * q, 11.16 * q, 13.33 * q)
+        painter.drawPath(mid)
+        if kind == "export_database":
+            # Стрелка вверх-вправо: M14 19l6-6m-4 0h4v4
+            painter.drawLine(QPointF(14 * q, 19 * q), QPointF(20 * q, 13 * q))
+            painter.drawLine(QPointF(16 * q, 13 * q), QPointF(20 * q, 13 * q))
+            painter.drawLine(QPointF(20 * q, 13 * q), QPointF(20 * q, 17 * q))
+        else:
+            # Стрелка вниз-влево: M20 13l-6 6m0-4v4h4
+            painter.drawLine(QPointF(20 * q, 13 * q), QPointF(14 * q, 19 * q))
+            painter.drawLine(QPointF(14 * q, 15 * q), QPointF(14 * q, 19 * q))
+            painter.drawLine(QPointF(14 * q, 19 * q), QPointF(18 * q, 19 * q))
+    elif kind == "power_exit":
+        # SVG exit-power.svg: вертикаль M12 3v9 и дуга с разрывом сверху
+        # (дуга от ~129° против часовой на ~282° — разрыв 51…129°, строго сверху).
+        q = px / 24.0
+        painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawLine(QPointF(12 * q, 3 * q), QPointF(12 * q, 12 * q))
+        painter.drawArc(QRectF(4 * q, 4 * q, 16 * q, 16 * q), 129 * 16, 282 * 16)
     elif kind == "power":
         painter.setPen(QPen(QColor(color), 1.6 * scale, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         painter.drawArc(int(4.0 * scale), int(4.0 * scale), int(8.0 * scale), int(8.0 * scale), 150 * 16, 240 * 16)
@@ -289,6 +324,76 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
         painter.drawPath(path)
         painter.drawLine(pt(5.8, 5.8), pt(10.0, 5.8))
         painter.drawLine(pt(5.8, 8.2), pt(8.4, 8.2))
+    elif kind == "rocket":
+        # Lucide "Rocket" в 24-сетке — контур ракеты, окно, стабилизаторы и факел.
+        q = px / 24.0
+        painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        path = QPainterPath()
+        path.moveTo(4.5 * q, 16.5 * q)
+        path.cubicTo(3.0 * q, 17.76 * q, 2.5 * q, 21.5 * q, 2.5 * q, 21.5 * q)
+        path.cubicTo(6.24 * q, 21.0 * q, 7.5 * q, 20.0 * q, 8.0 * q, 19.5 * q)
+        painter.drawPath(path)
+        body = QPainterPath()
+        body.moveTo(12.0 * q, 15.0 * q)
+        body.lineTo(9.0 * q, 12.0 * q)
+        body.cubicTo(11.0 * q, 9.05 * q, 13.0 * q, 5.0 * q, 22.0 * q, 2.0 * q)
+        body.cubicTo(22.0 * q, 11.0 * q, 17.95 * q, 13.0 * q, 15.0 * q, 15.0 * q)
+        body.lineTo(12.0 * q, 15.0 * q)
+        painter.drawPath(body)
+        painter.drawLine(QPointF(9.0 * q, 12.0 * q), QPointF(4.0 * q, 12.0 * q))
+        painter.drawLine(QPointF(12.0 * q, 15.0 * q), QPointF(12.0 * q, 20.0 * q))
+    elif kind == "pause":
+        q = px / 24.0
+        painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawRoundedRect(QRectF(6.0 * q, 4.0 * q, 4.0 * q, 16.0 * q), q, q)
+        painter.drawRoundedRect(QRectF(14.0 * q, 4.0 * q, 4.0 * q, 16.0 * q), q, q)
+    elif kind == "sparkles":
+        # Lucide "Sparkles" — большая четырёхлучевая звезда + две маленьких.
+        q = px / 24.0
+        painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        star = QPainterPath()
+        star.moveTo(9.937 * q, 15.5 * q)
+        star.cubicTo(9.7 * q, 14.5 * q, 9.5 * q, 14.3 * q, 8.5 * q, 14.063 * q)
+        star.lineTo(2.365 * q, 12.481 * q)
+        star.cubicTo(1.9 * q, 12.35 * q, 1.9 * q, 11.65 * q, 2.365 * q, 11.519 * q)
+        star.lineTo(8.5 * q, 9.936 * q)
+        star.cubicTo(9.5 * q, 9.7 * q, 9.7 * q, 9.5 * q, 9.937 * q, 8.5 * q)
+        star.lineTo(11.519 * q, 2.365 * q)
+        star.cubicTo(11.65 * q, 1.9 * q, 12.35 * q, 1.9 * q, 12.481 * q, 2.365 * q)
+        star.lineTo(14.063 * q, 8.5 * q)
+        star.cubicTo(14.3 * q, 9.5 * q, 14.5 * q, 9.7 * q, 15.5 * q, 9.937 * q)
+        star.lineTo(21.635 * q, 11.519 * q)
+        star.cubicTo(22.1 * q, 11.65 * q, 22.1 * q, 12.35 * q, 21.635 * q, 12.481 * q)
+        star.lineTo(15.5 * q, 14.063 * q)
+        star.cubicTo(14.5 * q, 14.3 * q, 14.3 * q, 14.5 * q, 14.063 * q, 15.5 * q)
+        star.lineTo(12.481 * q, 21.635 * q)
+        star.cubicTo(12.35 * q, 22.1 * q, 11.65 * q, 22.1 * q, 11.519 * q, 21.635 * q)
+        star.closeSubpath()
+        painter.drawPath(star)
+        painter.drawLine(QPointF(20.0 * q, 3.0 * q), QPointF(20.0 * q, 7.0 * q))
+        painter.drawLine(QPointF(22.0 * q, 5.0 * q), QPointF(18.0 * q, 5.0 * q))
+        painter.drawLine(QPointF(4.0 * q, 17.0 * q), QPointF(4.0 * q, 19.0 * q))
+        painter.drawLine(QPointF(5.0 * q, 18.0 * q), QPointF(3.0 * q, 18.0 * q))
+    elif kind == "external":
+        # Lucide "ExternalLink" — квадрат со стрелкой наружу.
+        q = px / 24.0
+        painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        path = QPainterPath()
+        path.moveTo(15.0 * q, 3.0 * q)
+        path.lineTo(21.0 * q, 3.0 * q)
+        path.lineTo(21.0 * q, 9.0 * q)
+        painter.drawPath(path)
+        painter.drawLine(QPointF(10.0 * q, 14.0 * q), QPointF(21.0 * q, 3.0 * q))
+        path2 = QPainterPath()
+        path2.moveTo(18.0 * q, 13.0 * q)
+        path2.lineTo(18.0 * q, 19.0 * q)
+        path2.cubicTo(18.0 * q, 20.1 * q, 17.1 * q, 21.0 * q, 16.0 * q, 21.0 * q)
+        path2.lineTo(5.0 * q, 21.0 * q)
+        path2.cubicTo(3.9 * q, 21.0 * q, 3.0 * q, 20.1 * q, 3.0 * q, 19.0 * q)
+        path2.lineTo(3.0 * q, 8.0 * q)
+        path2.cubicTo(3.0 * q, 6.9 * q, 3.9 * q, 6.0 * q, 5.0 * q, 6.0 * q)
+        path2.lineTo(11.0 * q, 6.0 * q)
+        painter.drawPath(path2)
     elif kind == "update":
         # Круговая стрелка («обновление»): дуга ~250° + наконечник.
         painter.drawArc(
@@ -297,6 +402,57 @@ def ui_icon(kind: str, color: str | None = None, size: int = 16) -> QIcon:
         )
         painter.drawLine(pt(10.6, 3.5), pt(8.5, 3.1))
         painter.drawLine(pt(10.6, 3.5), pt(11.3, 5.5))
+    elif kind in ("time", "palette", "database", "monitor", "update_cw"):
+        # Иконки настроек из redis-icons-complete-preview.svg, колонка
+        # «Контур» (Lucide, viewBox 24×24, stroke 1.8, round cap/join).
+        q = px / 24.0
+        painter.setPen(QPen(QColor(color), 1.8 * q, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        if kind == "time":
+            # circle cx=12 cy=12 r=8; M12 7.5V12l3 2
+            painter.drawEllipse(QRectF(4 * q, 4 * q, 16 * q, 16 * q))
+            painter.drawLine(QPointF(12 * q, 7.5 * q), QPointF(12 * q, 12 * q))
+            painter.drawLine(QPointF(12 * q, 12 * q), QPointF(15 * q, 14 * q))
+        elif kind == "palette":
+            # Контур палитры с четырьмя точками.
+            path = QPainterPath()
+            path.moveTo(12 * q, 3.5 * q)
+            path.arcTo(QRectF(3.5 * q, 3.5 * q, 17 * q, 17 * q), 90, 360)
+            painter.drawPath(path)
+            for cx, cy in ((7.5, 11.0), (10.0, 7.5), (14.0, 7.5), (16.8, 10.0)):
+                painter.drawEllipse(QRectF((cx - 0.8) * q, (cy - 0.8) * q, 1.6 * q, 1.6 * q))
+        elif kind == "database":
+            # ellipse cx=12 cy=5.5 rx=7 ry=2.5 + два сегмента стенок с дугами.
+            painter.drawEllipse(QRectF(5 * q, 3 * q, 14 * q, 5 * q))
+            for top in (5.5, 11.5):
+                wall = QPainterPath()
+                wall.moveTo(5 * q, top * q)
+                wall.lineTo(5 * q, (top + 6) * q)
+                wall.cubicTo(5 * q, (top + 7.38) * q, 8.13 * q, (top + 8.5) * q, 12 * q, (top + 8.5) * q)
+                wall.cubicTo(15.87 * q, (top + 8.5) * q, 19 * q, (top + 7.38) * q, 19 * q, (top + 6) * q)
+                wall.lineTo(19 * q, top * q)
+                painter.drawPath(wall)
+        elif kind == "monitor":
+            # rect 3.5,4.5 17x12 rx=2 + стойка M9 20h6 M12 16.5V20
+            painter.drawRoundedRect(QRectF(3.5 * q, 4.5 * q, 17 * q, 12 * q), 2 * q, 2 * q)
+            painter.drawLine(QPointF(9 * q, 20 * q), QPointF(15 * q, 20 * q))
+            painter.drawLine(QPointF(12 * q, 16.5 * q), QPointF(12 * q, 20 * q))
+        else:  # update_cw — Lucide «refresh-cw» из menu-updates.svg
+            p1 = QPainterPath()
+            p1.moveTo(3 * q, 12 * q)
+            p1.cubicTo(3 * q, 7.03 * q, 7.03 * q, 3 * q, 12 * q, 3 * q)
+            p1.cubicTo(14.79 * q, 3 * q, 17.27 * q, 4.26 * q, 18.74 * q, 5.74 * q)
+            p1.lineTo(21 * q, 8 * q)
+            painter.drawPath(p1)
+            painter.drawLine(QPointF(21 * q, 3 * q), QPointF(21 * q, 8 * q))
+            painter.drawLine(QPointF(21 * q, 8 * q), QPointF(16 * q, 8 * q))
+            p2 = QPainterPath()
+            p2.moveTo(21 * q, 12 * q)
+            p2.cubicTo(21 * q, 16.97 * q, 16.97 * q, 21 * q, 12 * q, 21 * q)
+            p2.cubicTo(9.21 * q, 21 * q, 6.73 * q, 19.74 * q, 5.26 * q, 18.26 * q)
+            p2.lineTo(3 * q, 16 * q)
+            painter.drawPath(p2)
+            painter.drawLine(QPointF(8 * q, 16 * q), QPointF(3 * q, 16 * q))
+            painter.drawLine(QPointF(3 * q, 16 * q), QPointF(3 * q, 21 * q))
     painter.end()
     pm.setDevicePixelRatio(render_scale)
     return QIcon(pm)

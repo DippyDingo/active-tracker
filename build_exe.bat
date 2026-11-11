@@ -11,7 +11,7 @@ if exist .venv\Scripts\python.exe (
 if "%VERSION_ARGS%"=="" echo Предупреждение: version_info.txt не создан, сборка без ресурса версии.
 
 call .venv\Scripts\pyinstaller.exe --noconfirm --onedir --noconsole ^
-  --name Nodexy ^
+  --name REDIS ^
   %VERSION_ARGS% ^
   --icon assets\app_icon.ico ^
   --add-data "assets;assets" ^
@@ -24,11 +24,11 @@ call .venv\Scripts\pyinstaller.exe --noconfirm --onedir --noconsole ^
   main.py
 if errorlevel 1 (
   echo.
-  echo ОШИБКА СБОРКИ: dist\Nodexy.exe не создан.
+  echo ОШИБКА СБОРКИ: dist\REDIS.exe не создан.
   if not defined CI pause
   exit /b 1
 )
 echo.
-echo Готово: dist\Nodexy\Nodexy.exe
+echo Готово: dist\REDIS\REDIS.exe
 rem В CI (определена переменная CI) не ждём нажатия клавиши.
 if not defined CI pause

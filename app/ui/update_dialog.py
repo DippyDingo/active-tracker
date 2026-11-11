@@ -1,8 +1,12 @@
-from PySide6.QtCore import Qt, Signal, QSize
+from datetime import datetime
+
+from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QTimer, Qt, Signal, QSize
+from PySide6.QtGui import QPixmap
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QProgressBar,
@@ -14,6 +18,8 @@ from PySide6.QtWidgets import (
 
 from .. import updater
 from ..updater import ReleaseInfo
+from ..version import GITHUB_REPO
+from . import theme
 from .widgets import ui_icon
 
 
@@ -236,82 +242,111 @@ class WhatsNewPanel(QFrame):
 
     def __init__(self, version: str, notes: str, parent=None):
         super().__init__(parent)
-        self.setObjectName("modalPanel")
-        self.setFixedWidth(480)
+        self.setObjectName("whatsnewPanel")
+        self.setFixedSize(674, 770)
+        self._closing = False
+        p = theme.pal()
+        btn_top, btn_bottom, btn_hover_top, btn_hover_bottom = theme.button_colors()
+        self.setStyleSheet(f"""
+            QFrame#whatsnewPanel {{ background: {p.popup}; border: 1px solid {p.border}; border-radius: 22px; }}
+            QLabel#wnTitle {{ color: {p.text}; font-size: 28px; font-weight: 800; }}
+            QLabel#wnBrand {{ color: {p.accent}; font-size: 28px; font-weight: 800; }}
+            QLabel#wnSubtitle {{ color: {p.text2}; font-size: 15px; }}
+            QLabel#wnMeta {{ color: {p.text}; font-size: 13px; }}
+            QLabel#wnCardTitle {{ color: {p.text}; font-size: 15px; font-weight: 800; }}
+            QLabel#wnBody {{ color: {p.text2}; font-size: 14px; }}
+            QFrame#wnFeature {{ background: {p.card}; border: 1px solid {p.border}; border-radius: 15px; }}
+            QFrame#wnIcon {{ background: {p.card_hover}; border: 1px solid {p.accent}; border-radius: 12px; }}
+            QPushButton#wnClose {{ background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 {btn_top},stop:1 {btn_bottom}); border: none; border-radius: 12px; color: #ffffff; font-size: 15px; font-weight: 800; padding: 12px 30px; }}
+            QPushButton#wnClose:hover {{ background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 {btn_hover_top},stop:1 {btn_hover_bottom}); }}
+            QPushButton#wnClose:pressed {{ padding-top: 14px; padding-bottom: 10px; }}
+            QPushButton#wnSecondary {{ background: transparent; border: 1px solid {p.border}; border-radius: 12px; color: {p.text2}; font-size: 14px; padding: 12px 22px; }}
+            QPushButton#wnSecondary:hover {{ color: {p.text}; border-color: {p.accent}; background: rgba(128,128,128,20%); }}
+            QPushButton#wnExit {{ background: transparent; border: none; color: {p.text2}; font-size: 25px; font-weight: 400; padding: 0; }}
+            QPushButton#wnExit:hover {{ color: {p.text}; background: rgba(128,128,128,15%); border-radius: 8px; }}
+        """)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 20, 24, 18)
-        layout.setSpacing(12)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(32, 28, 32, 26)
+        root.setSpacing(14)
 
         top = QHBoxLayout()
-        title = QLabel(f"Что нового в {version}")
-        title.setObjectName("modalTitle")
-        top.addWidget(title)
+        month_names = ("январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь")
+        release_version = version if version.startswith("v") else f"v{version}"
+        badge = QLabel(f"●  {release_version}  •  {month_names[datetime.now().month - 1]} {datetime.now().year}")
+        badge.setObjectName("wnMeta")
+        badge.setStyleSheet("background:#312657; border:1px solid #7248b5; border-radius:16px; padding:7px 14px; color:#e7d8ff;")
+        top.addWidget(badge, 0, Qt.AlignLeft)
         top.addStretch(1)
-        close_btn = QPushButton("✕")
-        close_btn.setObjectName("deleteBtn")
-        close_btn.setFixedSize(26, 26)
-        close_btn.setCursor(Qt.PointingHandCursor)
-        close_btn.clicked.connect(self.close_requested)
-        top.addWidget(close_btn)
-        layout.addLayout(top)
+        close = QPushButton("×")
+        close.setObjectName("wnExit")
+        close.setFixedSize(42, 42)
+        close.setCursor(Qt.PointingHandCursor)
+        close.clicked.connect(self._animate_close)
+        top.addWidget(close)
+        root.addLayout(top)
 
-        # Карточка «Что нового» — живой статус и единый стиль
-        whatsnew_card = QFrame()
-        whatsnew_card.setObjectName("whatsnewCard")
-        card_layout = QVBoxLayout(whatsnew_card)
-        card_layout.setContentsMargins(0, 0, 0, 0)
-        card_layout.setSpacing(8)
+        heading = QHBoxLayout()
+        heading.setSpacing(0)
+        title = QLabel("Что нового в ")
+        title.setObjectName("wnTitle")
+        brand = QLabel("REDIS")
+        brand.setObjectName("wnBrand")
+        heading.addWidget(title)
+        heading.addWidget(brand)
+        heading.addStretch(1)
+        root.addLayout(heading)
+        sub = QLabel("Новая версия установлена — вот основные изменения.")
+        sub.setObjectName("wnSubtitle")
+        root.addWidget(sub)
 
-        # Заголовок карточки
-        header = QHBoxLayout()
-        header.setContentsMargins(12, 12, 12, 8)
-        header.setSpacing(8)
+        features = [
+            ("rocket", "Быстрый запуск", "Открывайте приложения прямо из карточек."),
+            ("pause", "Пауза учёта", "Ставьте учёт на паузу, не закрывая приложение."),
+            ("stats", "Обновлённый интерфейс", "Чётче графики, яснее статусы, единый стиль."),
+        ]
+        for icon_kind, card_title, body in features:
+            card = QFrame(); card.setObjectName("wnFeature")
+            row = QHBoxLayout(card); row.setContentsMargins(15, 12, 15, 12); row.setSpacing(14)
+            icon_box = QFrame(); icon_box.setObjectName("wnIcon"); icon_box.setFixedSize(40, 40)
+            icon_layout = QVBoxLayout(icon_box); icon_layout.setContentsMargins(0,0,0,0)
+            icon_label = QLabel(); icon_label.setAlignment(Qt.AlignCenter)
+            icon_label.setPixmap(ui_icon(icon_kind, None, 24).pixmap(QSize(24, 24)))
+            icon_layout.addWidget(icon_label)
+            row.addWidget(icon_box)
+            text = QVBoxLayout(); text.setSpacing(3)
+            h = QLabel(card_title); h.setObjectName("wnCardTitle"); text.addWidget(h)
+            b = QLabel(body); b.setObjectName("wnBody"); b.setWordWrap(True); text.addWidget(b)
+            row.addLayout(text, 1)
+            root.addWidget(card)
 
-        icon = QLabel()
-        icon.setPixmap(ui_icon("info", None, 24).pixmap(QSize(24, 24)))
-        icon.setFixedSize(24, 24)
-        header.addWidget(icon)
+        divider = QFrame(); divider.setFixedHeight(1); divider.setStyleSheet(f"background:{p.border}; border:none;"); root.addWidget(divider)
+        summary = QHBoxLayout()
+        check_icon = QLabel(); check_icon.setPixmap(ui_icon("info", None, 18).pixmap(QSize(18, 18))); summary.addWidget(check_icon)
+        summary_text = QLabel("Улучшения производительности и исправления мелких ошибок."); summary_text.setObjectName("wnSubtitle"); summary.addWidget(summary_text); summary.addStretch(1)
+        root.addLayout(summary)
+        root.addStretch(1)
 
-        title_label = QLabel("Что нового")
-        title_label.setObjectName("cardName")
-        header.addWidget(title_label)
-        header.addStretch(1)
+        footer = QHBoxLayout()
+        footer_label = QLabel("REDIS Desktop  •  стабильная сборка"); footer_label.setObjectName("wnSubtitle"); footer.addWidget(footer_label); footer.addStretch(1)
+        release_url = f"https://github.com/{GITHUB_REPO}/releases/tag/{release_version}"
+        secondary = QPushButton("Все изменения ↗"); secondary.setObjectName("wnSecondary"); secondary.setCursor(Qt.PointingHandCursor); secondary.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(release_url))); footer.addWidget(secondary)
+        ok = QPushButton("Понятно"); ok.setObjectName("wnClose"); ok.setCursor(Qt.PointingHandCursor); ok.clicked.connect(self._animate_close); footer.addWidget(ok)
+        root.addLayout(footer)
 
-        header.addWidget(QLabel("v" + version.split(".")[-1] if "." in version else version))
-        header.addWidget(QLabel("Октябрь 2026"))
-        header.addStretch(1)
-
-        card_layout.addLayout(header)
-
-        # Основной текст заметок
-        notes_scroll = QScrollArea()
-        notes_scroll.setWidgetResizable(True)
-        notes_scroll.setFrameShape(QFrame.NoFrame)
-        notes_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-        notes_host = QWidget()
-        notes_text = QLabel(notes or "Без описания изменений.")
-        notes_text.setObjectName("subtleLabel")
-        notes_text.setWordWrap(True)
-        notes_text.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        notes_layout = QVBoxLayout(notes_host)
-        notes_layout.setContentsMargins(12, 12, 12, 12)
-        notes_layout.addWidget(notes_text)
-        notes_layout.addStretch(1)
-        notes_scroll.setWidget(notes_host)
-
-        card_layout.addWidget(notes_scroll)
-
-        # Нижняя часть — кнопка закрытия
-        bottom = QHBoxLayout()
-        bottom.setContentsMargins(12, 8, 12, 12)
-        bottom.addStretch(1)
-        ok_btn = QPushButton("Закрыть")
-        ok_btn.setObjectName("primary")
-        ok_btn.setCursor(Qt.PointingHandCursor)
-        ok_btn.clicked.connect(self.close_requested)
-        bottom.addWidget(ok_btn)
-
-        layout.addWidget(whatsnew_card)
-        layout.addLayout(bottom)
+    def _animate_close(self) -> None:
+        if self._closing:
+            return
+        self._closing = True
+        self.setEnabled(False)
+        effect = QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(effect)
+        animation = QPropertyAnimation(effect, b"opacity", self)
+        animation.setDuration(180)
+        animation.setStartValue(1.0)
+        animation.setEndValue(0.0)
+        animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        animation.finished.connect(self.close_requested)
+        animation.finished.connect(animation.deleteLater)
+        self._close_animation = animation
+        animation.start()

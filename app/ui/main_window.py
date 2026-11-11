@@ -2088,6 +2088,12 @@ class MainWindow(QMainWindow):
         panel.saved.connect(self._apply_settings)
         panel.theme_changed.connect(self._preview_theme)
         panel.check_now.connect(lambda: self._check_updates(manual=True))
+        # Новые действия в разделе «Данные» и нижний пункт «Выход» используют
+        # те же обработчики, что и старое бургер-меню. Старые пункты меню
+        # намеренно остаются до отдельного подтверждения удаления дублей.
+        panel.export_requested.connect(self._export_database)
+        panel.load_requested.connect(self._load_database)
+        panel.quit_requested.connect(self._quit_app)
         panel.set_update_status(self._settings_status_text())
         if self._update_available is not None:
             panel.set_update_action(self._open_update_panel)
@@ -2525,7 +2531,8 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(8000, plate.deleteLater)
 
     def _export_database(self) -> None:
-        self._popup.hide()
+        if self._overlay is not None:
+            self._overlay.close_modal()
         self.tracker.flush()
         default_name = f"tracker_{date.today().isoformat()}.db"
         path, _ = QFileDialog.getSaveFileName(
@@ -2547,7 +2554,8 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Ошибка", "Не удалось экспортировать базу данных.")
 
     def _load_database(self) -> None:
-        self._popup.hide()
+        if self._overlay is not None:
+            self._overlay.close_modal()
         path, _ = QFileDialog.getOpenFileName(
             self, "Загрузка базы данных", "", "База данных (*.db);;Все файлы (*.*)"
         )
